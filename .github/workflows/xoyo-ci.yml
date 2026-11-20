@@ -125,6 +125,11 @@ jobs:
       contents: write
 
     steps:
+      - name: Lấy mã nguồn (để gh biết repo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - name: Tải APK debug
         uses: actions/download-artifact@v4
         with:
@@ -137,6 +142,7 @@ jobs:
         run: |
           TAG="debug-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
           gh release create "$TAG" apk/*.apk \
+            --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --prerelease \
             --title "XOYO Launcher debug $TAG" \
