@@ -9,7 +9,8 @@ Launcher Android cho Minecraft: Java Edition, phát triển từ [ZalithLauncher
 Nhánh `zalith-base` đang được chuyển đổi từ mã của ZalithLauncher2:
 - Đã bỏ keystore, mật khẩu ký và legal docs của upstream.
 - Đã đổi application ID thành `com.xoyo.launcher`.
-- Chưa đổi tên toàn bộ package, chưa có nhãn "Unofficial Modified Version" trên màn hình khởi động.
+- Đã có bảng màu XOYO (mặc định) và Monochrome, icon mới, nhãn "Unofficial Modified Version" trên màn hình chính.
+- Chưa đổi tên toàn bộ package. Chưa kiểm thử trên thiết bị thật.
 
 ## Yêu cầu build
 
@@ -20,7 +21,8 @@ Nhánh `zalith-base` đang được chuyển đổi từ mã của ZalithLaunche
 ## Build
 
 ```bash
-./gradlew testDebugUnitTest assembleDebug
+# -Darch: arm64 | arm | x86 | x86_64 | all (mặc định, đóng gói cả 4 ABI và ~400 MB)
+./gradlew testDebugUnitTest assembleDebug -Darch=arm64
 ```
 
 ## Cấu hình

@@ -143,6 +143,12 @@
     <string name="theme_color_urban_ash">Urban Ash</string>
     <!-- Option of the theme color setting in launcher settings -->
     <string name="theme_color_verdant_dawn">Silent Forest Dawn</string>
+    <!-- Option of the theme color setting: XOYO's own palette (default) -->
+    <string name="theme_color_xoyo">XOYO</string>
+    <!-- Option of the theme color setting: OLED black, inspired by Hyper Launcher 3 -->
+    <string name="theme_color_monochrome">Monochrome (OLED)</string>
+    <!-- Label required by the upstream license for modified builds. %1$s is the launcher name -->
+    <string name="launcher_unofficial_label">%1$s · Unofficial Modified Version</string>
     <!-- Title of the color picker dialog -->
     <string name="theme_color_picker_title">Color Picker</string>
     <!-- Button in the color picker dialog to edit the color as a hex code -->

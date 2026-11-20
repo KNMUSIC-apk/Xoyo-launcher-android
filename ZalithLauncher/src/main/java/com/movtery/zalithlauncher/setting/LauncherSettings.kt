@@ -32,12 +32,11 @@ import com.movtery.zalithlauncher.ui.theme.ColorThemeType
 object LauncherSettings : SettingsRegistry() {
     /**
      * 颜色主题色
-     * Android 12+ 默认动态主题色
+     * XOYO: bảng màu mặc định của bản chỉnh sửa này
      */
     val launcherColorTheme = enumSetting(
         "launcherColorTheme",
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ColorThemeType.DYNAMIC
-        else ColorThemeType.EMBERMIRE
+        ColorThemeType.XOYO
     )
 
     /**

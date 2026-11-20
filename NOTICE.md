@@ -15,7 +15,7 @@ XOYO Launcher là bản chỉnh sửa của **ZalithLauncher2**:
 
 **Trạng thái tuân thủ:**
 - [x] Không dùng tên "ZalithLauncher" làm tên sản phẩm (tên hiển thị là "XOYO Launcher").
-- [ ] Hiển thị "Unofficial Modified Version" (chưa làm).
+- [x] Hiển thị "Unofficial Modified Version" trên màn hình chính (lớp phủ đáy trái của `LauncherScreen`, chuỗi `launcher_unofficial_label`).
 - [x] Giữ nguyên thông báo bản quyền trong các file đã import.
 
 ## Không kế thừa từ upstream
@@ -32,7 +32,11 @@ XOYO Launcher là bản chỉnh sửa của **ZalithLauncher2**:
 - `ZalithLauncher/build.gradle.kts`: thêm task copy `assets/game/versions.txt` và `version-alias.csv` vào test resources, để test đọc được `/assets/game/*`.
 - `ZalithLauncher/src/test/.../FileTest.kt`, `MurmurHash2IncrementalTest.kt`: đánh dấu `@Ignore`, vì hai test này đọc file trên máy Windows của upstream.
 - `VersionCompareTest.kt`: đánh dấu `@Ignore` cho `testCompareLegacySnapshots` và `testCompareNewSnapshots`. Kỳ vọng của hai test này chưa được xác nhận (dùng alias placeholder và hai assert mâu thuẫn). Cần kiểm tra lại với upstream trước khi bỏ `@Ignore`.
-- `.github/workflows/xoyo-ci.yml`: CI riêng của XOYO.
+- `ZalithLauncher/src/main/java/.../ui/theme/XoyoPalettes.kt` (mới): bảng màu XOYO (mặc định) và Monochrome. Monochrome lấy ý tưởng nền đen OLED từ Hyper Launcher 3 (LGPL-3.0), không sao chép mã.
+- `ColorTheme.kt`, `Theme.kt`, `NativeThemeUtils.kt`, `LauncherSettingsScreen.kt`, `LauncherSettings.kt`: thêm hai giá trị `XOYO`, `MONOCHROME`; đặt `XOYO` làm mặc định.
+- `ZalithLauncher/src/main/res/drawable/ic_launcher_foreground.xml`, `ic_launcher_monochrome.xml`, `values/ic_launcher_background.xml`: icon mới (chữ X hai màu trên nền mực). Icon khối của upstream đã bị thay thế.
+- `ZalithLauncher/src/main/java/.../ui/screens/content/LauncherScreen.kt`: thêm nhãn "Unofficial Modified Version" trên màn hình chính.
+- `.github/workflows/xoyo-ci.yml`: CI riêng của XOYO; build với `-Darch=arm64` và in thống kê APK.
 
 ## Thư viện bên thứ ba
 

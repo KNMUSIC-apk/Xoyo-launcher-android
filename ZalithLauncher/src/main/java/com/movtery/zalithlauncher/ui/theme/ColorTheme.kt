@@ -32,6 +32,10 @@ data class ColorTheme(
 
 enum class ColorThemeType {
     DYNAMIC,
+    /** Bảng màu riêng của XOYO, mặc định */
+    XOYO,
+    /** Nền đen OLED kiểu Monochrome (ý tưởng từ Hyper Launcher 3) */
+    MONOCHROME,
     EMBERMIRE,
     VELVET_ROSE,
     MISTWAVE,

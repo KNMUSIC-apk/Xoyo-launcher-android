@@ -59,7 +59,20 @@ jobs:
           # Client ID là public, nhưng đưa qua secret để không phải commit vào repo.
           # Nếu chưa đặt secret thì build vẫn chạy; chỉ luồng đăng nhập Microsoft báo lỗi lúc chạy.
           OAUTH_CLIENT_ID: ${{ secrets.XOYO_MS_CLIENT_ID }}
-        run: ./gradlew testDebugUnitTest assembleDebug --stacktrace
+        # -Darch=arm64: chỉ đóng gói native lib và runtime Java cho arm64.
+        # Bản "all" đóng gói cả 4 ABI và mọi runtime, nặng khoảng 400 MB.
+        run: ./gradlew testDebugUnitTest assembleDebug -Darch=arm64 --stacktrace
+
+      - name: Thống kê APK
+        if: always()
+        run: |
+          shopt -s nullglob
+          for f in ZalithLauncher/build/outputs/apk/debug/*.apk; do
+            echo "== $f"
+            ls -lh "$f"
+            echo "-- 25 entry lớn nhất (dung lượng gốc, byte):"
+            unzip -lv "$f" | sort -k1,1 -n -r | head -25
+          done
 
       - name: Lưu báo cáo kiểm thử khi lỗi
         if: failure()

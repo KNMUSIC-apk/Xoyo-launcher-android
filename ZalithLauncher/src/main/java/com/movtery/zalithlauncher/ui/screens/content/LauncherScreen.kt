@@ -80,6 +80,7 @@ import com.movtery.guide.LocalGuideStep
 import com.movtery.guide.guideNode
 import com.movtery.petlib.PetAnimation
 import com.movtery.petlib.PetTapReaction
+import com.movtery.zalithlauncher.BuildKeys
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.game.account.AccountsManager
 import com.movtery.zalithlauncher.game.account.getAccountTypeName
@@ -277,13 +278,25 @@ private fun ContentMenu(
         LocalHomeCardVersionSettings provides onOpenVersionSettings,
         LocalServerCardQuickPlay provides onQuickPlayServer
     ) {
-        HomeGrid(
-            state = gridState,
-            isVisible = isVisible,
-            modifier = modifier
-                .fillMaxSize()
-                .animated(ctx)
-        )
+        Box(modifier = modifier.fillMaxSize()) {
+            HomeGrid(
+                state = gridState,
+                isVisible = isVisible,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .animated(ctx)
+            )
+            // Nhãn bắt buộc theo điều khoản bổ sung của ZalithLauncher2 khi phát hành bản chỉnh sửa
+            Text(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .alpha(0.6f),
+                text = stringResource(R.string.launcher_unofficial_label, BuildKeys.LAUNCHER_NAME),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
     }
 }
 
