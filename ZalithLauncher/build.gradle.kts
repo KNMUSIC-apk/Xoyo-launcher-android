@@ -310,11 +310,22 @@ android {
     }
     sourceSets {
         getByName("test") {
-            //HMCL 的 GameVersionNumber 通过 getResourceAsStream 读取 /assets/game/*.txt,
-            //assets 目录不会自动进入本地单测的 classpath, 这里显式加入
-            resources.srcDir("src/main/assets")
+            //HMCL 的 GameVersionNumber 通过 getResourceAsStream 读取 /assets/game/*.txt
+            resources.srcDir("build/generated/unitTestResources")
         }
     }
+}
+
+//单测 classpath 需要 /assets/game/versions.txt 这样的路径, 因此复制到 assets/ 前缀下
+val copyUnitTestAssets by tasks.registering(Copy::class) {
+    from("src/main/assets") {
+        include("game/versions.txt", "game/version-alias.csv")
+    }
+    into("build/generated/unitTestResources/assets")
+}
+
+tasks.matching { it.name.startsWith("process") && it.name.endsWith("UnitTestJavaRes") }.configureEach {
+    dependsOn(copyUnitTestAssets)
 }
 
 androidComponents {

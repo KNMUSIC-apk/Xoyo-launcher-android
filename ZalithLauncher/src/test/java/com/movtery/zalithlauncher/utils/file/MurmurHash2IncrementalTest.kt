@@ -30,6 +30,7 @@ import kotlin.random.Random
 
 class MurmurHash2IncrementalTest {
 
+    @Ignore("Test thủ công: đọc file F:\\\\ trên máy Windows của tác giả upstream, không chạy được trên CI")
     @Test
     fun testTwoWay() {
         val file = File("F:\\Download\\geckolib-forge-1.21.8-5.2.2.jar")
