@@ -12,6 +12,16 @@ Nhánh `zalith-base` đang được chuyển đổi từ mã của ZalithLaunche
 - Đã có bảng màu XOYO (mặc định) và Monochrome, icon mới, nhãn "Unofficial Modified Version" trên màn hình chính.
 - Chưa đổi tên toàn bộ package. Chưa kiểm thử trên thiết bị thật.
 
+## Cài đặt từ GitHub Actions
+
+Artifact `xoyo-launcher-debug` luôn được GitHub nén thành file `.zip`. Để cài:
+
+1. Tải file `.zip` về và **giải nén** trước, ví dụ bằng ứng dụng Files hoặc trình quản lý file có chức năng "Giải nén".
+2. Mở file `.apk` trong thư mục đã giải nén. **Không** bấm vào `.apk` ngay trong màn hình xem nội dung file zip, vì trình cài sẽ báo "phân tích cú pháp gói".
+3. Cho phép ứng dụng quản lý file "cài đặt ứng dụng không xác định" nếu Android hỏi.
+
+APK chỉ có kiến trúc `arm64-v8a`, tức là chỉ cài được trên điện thoại ARM 64-bit (hầu hết máy hiện nay).
+
 ## Yêu cầu build
 
 - JDK 17

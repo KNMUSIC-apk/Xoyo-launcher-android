@@ -74,6 +74,24 @@ jobs:
             unzip -lv "$f" | sort -k1,1 -n -r | head -25
           done
 
+      # Kiểm tra APK có đọc và cài được không. Trình cài Android báo
+      # "phân tích cú pháp gói" khi APK hỏng, có entry trùng tên, hoặc không có chữ ký.
+      - name: Kiểm tra APK có hợp lệ để cài không
+        if: always()
+        run: |
+          shopt -s nullglob
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)
+          echo "build-tools: $BT"
+          for f in ZalithLauncher/build/outputs/apk/debug/*.apk; do
+            echo "== $f"
+            echo "-- Entry trùng tên (phải không có dòng nào):"
+            unzip -Z1 "$f" | sort | uniq -d
+            echo "-- Chữ ký (apksigner):"
+            "${BT}apksigner" verify --verbose --print-certs "$f"
+            echo "-- Thông tin gói (aapt2):"
+            "${BT}aapt2" dump badging "$f" | grep -E "^(package|sdkVersion|targetSdkVersion|native-code|application-label)"
+          done
+
       - name: Lưu báo cáo kiểm thử khi lỗi
         if: failure()
         uses: actions/upload-artifact@v4
