@@ -31,6 +31,13 @@ XOYO_MS_CLIENT_ID=<client-id-của-bạn>
 
 Nếu để trống, `MicrosoftAuthenticator` sẽ báo lỗi khi khởi tạo.
 
+Trên GitHub, thêm secret `XOYO_MS_CLIENT_ID` tại Settings → Secrets and variables → Actions để CI build đúng cấu hình.
+
+## CI
+
+Workflow `.github/workflows/android.yml` chạy khi push lên `main` và khi mở pull request:
+kiểm tra checksum Gradle wrapper, chạy unit test, build APK debug và lưu APK làm artifact.
+
 ## Kiểm thử
 
 ```bash
