@@ -1,0 +1,16 @@
+# Gradle / build output
+.gradle/
+build/
+app/build/
+.cxx/
+.externalNativeBuild/
+captures/
+
+# Máy cục bộ (đường dẫn SDK) và IDE
+local.properties
+.idea/
+*.iml
+
+# Hệ điều hành
+.DS_Store
+Thumbs.db
