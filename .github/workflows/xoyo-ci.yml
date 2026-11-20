@@ -5,6 +5,11 @@ on:
     branches: [ main, zalith-base ]
   pull_request:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Đăng APK debug lên GitHub Release (pre-release)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -108,3 +113,32 @@ jobs:
           path: ZalithLauncher/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
+
+  # Chỉ chạy khi gọi thủ công và chọn publish=true. Đăng APK để tải trực tiếp, không cần zip.
+  publish:
+    name: Đăng APK lên GitHub Release
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Tải APK debug
+        uses: actions/download-artifact@v4
+        with:
+          name: xoyo-launcher-debug
+          path: apk
+
+      - name: Tạo pre-release với APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="debug-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          gh release create "$TAG" apk/*.apk \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "XOYO Launcher debug $TAG" \
+            --notes "Bản debug tự động từ commit $GITHUB_SHA. Đây là bản chỉnh sửa không chính thức (Unofficial Modified Version), chỉ dùng để thử nghiệm."
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.assets[].browser_download_url'
