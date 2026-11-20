@@ -29,6 +29,8 @@ XOYO Launcher là bản chỉnh sửa của **ZalithLauncher2**:
 
 - `ZalithLauncher/gradle.properties`: đổi tên, URL, phiên bản; bỏ mật khẩu keystore và `legal_docs_ref`.
 - `ZalithLauncher/build.gradle.kts`: đổi application ID thành `com.xoyo.launcher`; cấu hình ký chuyển sang `xoyo_release.jks` (không bắt buộc); bản debug dùng khóa debug mặc định.
+- `ZalithLauncher/build.gradle.kts`: thêm `src/main/assets` vào test resources, để test đọc được `/assets/game/*`.
+- `ZalithLauncher/src/test/.../FileTest.kt`, `MurmurHash2IncrementalTest.kt`: đánh dấu `@Ignore`, vì hai test này đọc file trên máy Windows của upstream.
 - `.github/workflows/xoyo-ci.yml`: CI riêng của XOYO.
 
 ## Thư viện bên thứ ba

@@ -21,11 +21,13 @@ package com.movtery.zalithlauncher.utils.file
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.jackhuang.hmcl.util.DigestUtils
+import org.junit.Ignore
 import org.junit.Test
 import java.io.File
 
 class FileTest {
 
+    @Ignore("Test thủ công: đọc file F:\\\\ trên máy Windows của tác giả upstream, không chạy được trên CI")
     @Test
     fun testCalculateFileSha1() {
         val file = File("F:\\Download\\geckolib-forge-1.21.8-5.2.2.jar")

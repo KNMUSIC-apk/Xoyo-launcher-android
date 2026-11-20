@@ -308,6 +308,13 @@ android {
             isReturnDefaultValues = true
         }
     }
+    sourceSets {
+        getByName("test") {
+            //HMCL 的 GameVersionNumber 通过 getResourceAsStream 读取 /assets/game/*.txt,
+            //assets 目录不会自动进入本地单测的 classpath, 这里显式加入
+            resources.srcDir("src/main/assets")
+        }
+    }
 }
 
 androidComponents {

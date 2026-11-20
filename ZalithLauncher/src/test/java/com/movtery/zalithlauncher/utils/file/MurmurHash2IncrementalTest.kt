@@ -20,6 +20,7 @@ package com.movtery.zalithlauncher.utils.file
 
 import org.apache.commons.codec.digest.MurmurHash2
 import org.junit.Assert.assertEquals
+import org.junit.Ignore
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.File
