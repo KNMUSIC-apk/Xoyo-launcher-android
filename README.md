@@ -1,57 +1,39 @@
 # XOYO Launcher
 
-Launcher Android cho Minecraft: Java Edition. Dự án đang ở giai đoạn khung ban đầu.
+Launcher Android cho Minecraft: Java Edition, phát triển từ [ZalithLauncher2](https://github.com/ZalithLauncher/ZalithLauncher2).
 
-## Yêu cầu
+> Đây là bản chỉnh sửa không chính thức. Xem [LICENSE](LICENSE) và [NOTICE.md](NOTICE.md) để biết điều kiện sử dụng và danh sách thay đổi.
+
+## Trạng thái
+
+Nhánh `zalith-base` đang được chuyển đổi từ mã của ZalithLauncher2:
+- Đã bỏ keystore, mật khẩu ký và legal docs của upstream.
+- Đã đổi application ID thành `com.xoyo.launcher`.
+- Chưa đổi tên toàn bộ package, chưa có nhãn "Unofficial Modified Version" trên màn hình khởi động.
+
+## Yêu cầu build
 
 - JDK 17
-- Android Studio (khuyến nghị) hoặc Android SDK với `compileSdk` 35
-- Android 8.0 (API 26) trở lên
+- Android SDK với compileSdk 37
+- NDK 25.2.9519653 (build native bằng ndk-build)
 
 ## Build
 
 ```bash
-./gradlew assembleDebug
+./gradlew testDebugUnitTest assembleDebug
 ```
 
-Lần đầu chạy, Gradle sẽ tải các dependency từ Google Maven và Maven Central.
+## Cấu hình
 
-## Cấu hình đăng nhập Microsoft
+| Thiết lập | Cách đặt |
+|---|---|
+| Client ID Microsoft | biến môi trường `OAUTH_CLIENT_ID` hoặc file `.oauth_client_id.txt` (không commit) |
+| Khóa phát hành | file `xoyo_release.jks` cạnh `ZalithLauncher/build.gradle.kts`, cùng `STORE_PASSWORD`, `KEY_PASSWORD`, `KEY_ALIAS` |
+| CurseForge API key | biến môi trường `CURSEFORGE_API_KEY` hoặc file `.curseforge_api.txt` (tùy chọn) |
 
-Cần một client ID đăng ký trên [Azure Portal](https://portal.azure.com) với:
-- Loại tài khoản hỗ trợ: tài khoản Microsoft cá nhân
-- Bật "Allow public client flows"
-- Không cần client secret
+Nếu không có khóa phát hành, bản release sẽ không được ký. Bản debug dùng khóa debug mặc định của Android.
 
-Thêm vào `~/.gradle/gradle.properties` (không commit file này):
+## Tài liệu
 
-```properties
-XOYO_MS_CLIENT_ID=<client-id-của-bạn>
-```
-
-Nếu để trống, `MicrosoftAuthenticator` sẽ báo lỗi khi khởi tạo.
-
-Trên GitHub, thêm secret `XOYO_MS_CLIENT_ID` tại Settings → Secrets and variables → Actions để CI build đúng cấu hình.
-
-## CI
-
-Workflow `.github/workflows/android.yml` chạy khi push lên `main` và khi mở pull request:
-kiểm tra checksum Gradle wrapper, chạy unit test, build APK debug và lưu APK làm artifact.
-
-## Kiểm thử
-
-```bash
-./gradlew testDebugUnitTest
-```
-
-## Cấu trúc
-
-```
-app/src/main/java/com/xoyo/launcher/
-  auth/        Đăng nhập Microsoft (device-code), lưu token mã hóa
-  renderer/    Đăng ký renderer và chọn renderer có phương án dự phòng
-app/src/main/res/                      Layout, chuỗi, theme
-docs/ARCHITECTURE.md                   Kiến trúc và quy tắc bảo mật
-docs/research/                         Ghi chú khảo sát các dự án tham khảo
-gradle/libs.versions.toml              Khai báo version và dependency
-```
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): kiến trúc và quy tắc bảo mật của XOYO
+- [docs/research/ZALITH_HYPER_REVIEW.md](docs/research/ZALITH_HYPER_REVIEW.md): ghi chú khảo sát hai dự án tham khảo

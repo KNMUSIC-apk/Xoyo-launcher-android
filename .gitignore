@@ -1,16 +1,41 @@
-# Gradle / build output
-.gradle/
-build/
-app/build/
-.cxx/
-.externalNativeBuild/
-captures/
-
-# Máy cục bộ (đường dẫn SDK) và IDE
-local.properties
-.idea/
 *.iml
-
-# Hệ điều hành
+.gradle
+.idea
+.kotlin
+/local.properties
 .DS_Store
-Thumbs.db
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+.oauth_client_id.txt
+.store_password.txt
+.key_password.txt
+.key_alias.txt
+.curseforge_api.txt
+
+# Khóa ký và keystore (không bao giờ commit)
+*.jks
+*.keystore
+xoyo_release.jks
+LWJGL/build/
+LWJGL/*/build/
+
+# AI agent
+.zcode/
+.agent/
+.claude/
+.cursor/
+.codex/
+.continue/
+.aider/
+.roo/
+.windsurf/
+.trae/
+.gemini/
+.ampersand/
+.awb/
+
+.vscode/
+
