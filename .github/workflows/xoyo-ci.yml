@@ -35,6 +35,25 @@ jobs:
       - name: Kiểm tra checksum của Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
 
+      - name: Cài Android NDK 25.2 (native build)
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "ndk;25.2.9519653"
+
+      - name: Cài Rust và các target Android (PetLib)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: PetLib/rust
+
+      - name: Cài cargo-ndk
+        run: cargo install cargo-ndk --locked
+
       - name: Chạy unit test và build bản debug
         env:
           # Client ID là public, nhưng đưa qua secret để không phải commit vào repo.
