@@ -37,6 +37,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.nonInteractiveScrollbar
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -98,6 +100,7 @@ import com.movtery.zalithlauncher.ui.screens.content.elements.OtherAccountRelogi
 import com.movtery.zalithlauncher.ui.screens.content.elements.OtherLoginOperation
 import com.movtery.zalithlauncher.ui.screens.content.elements.OtherServerLoginDialog
 import com.movtery.zalithlauncher.ui.screens.content.elements.ServerOperation
+import com.movtery.zalithlauncher.ui.screens.content.elements.WebSkinDialog
 import com.movtery.zalithlauncher.utils.copyText
 import com.movtery.zalithlauncher.utils.string.getMessageOrToString
 import com.movtery.zalithlauncher.viewmodel.AccountManageEffect
@@ -673,6 +676,16 @@ private fun AccountsLayout(
     val ctx = rememberAnimatedContext(isVisible = isVisible)
     val context = LocalContext.current
 
+    // XOYO: chọn file PNG làm cape cho tài khoản offline đang được thao tác
+    var capeTarget by remember { mutableStateOf<Account?>(null) }
+    val capePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val target = capeTarget
+        capeTarget = null
+        if (uri != null && target != null) {
+            actions.onIntent(AccountManageIntent.ApplyLocalCapeFile(target, uri))
+        }
+    }
+
     AccountOperation(accountOperation, actions)
 
     AccountSkinOperation(
@@ -715,6 +728,17 @@ private fun AccountsLayout(
                                     )
                                 )
                             }
+                        },
+                        onPickCapeFile = {
+                            capeTarget = account
+                            capePicker.launch(arrayOf("image/png"))
+                        },
+                        onWebSkinClick = {
+                            actions.onIntent(
+                                AccountManageIntent.UpdateAccountSkinOp(
+                                    AccountSkinOperation.WebSkin(account)
+                                )
+                            )
                         },
                         onRefreshClick = {
                             actions.onIntent(
@@ -801,6 +825,24 @@ private fun AccountSkinOperation(
                 },
                 onApplyCape = { cape ->
                     actions.onIntent(AccountManageIntent.ApplyMicrosoftCape(account, cape))
+                }
+            )
+        }
+        is AccountSkinOperation.WebSkin -> {
+            val account = accountSkinOperation.account
+            WebSkinDialog(
+                account = account,
+                onDismissRequest = {
+                    actions.onIntent(AccountManageIntent.UpdateAccountSkinOp(AccountSkinOperation.None))
+                },
+                onApplySkin = { file, model ->
+                    actions.onIntent(AccountManageIntent.ApplySkin(account, file, model))
+                },
+                onApplyCape = { file ->
+                    actions.onIntent(AccountManageIntent.ApplyLocalCape(account, file))
+                },
+                onRemoveCape = {
+                    actions.onIntent(AccountManageIntent.RemoveLocalCape(account))
                 }
             )
         }

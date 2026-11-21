@@ -13,6 +13,8 @@ Nhánh `zalith-base` đang được chuyển đổi từ mã của ZalithLaunche
 - Khi tạo bố cục điều khiển mới có thể chọn mẫu cảm ứng (dựa trên Cubiq Launcher, GPL-3.0; xem [NOTICE.md](NOTICE.md)).
 - Giao diện mới: sidebar trên màn hình rộng, thanh dưới và trang "Thêm" trên màn hình hẹp; trang chủ có Tổng quan (thao tác nhanh, lịch sử chơi, khám phá chỉ là liên kết) và nút PLAY lớn.
 - Trang mới: Thư viện game, Trung tâm hiệu năng (số liệu thật, phần không đọc được ghi rõ là không khả dụng), Trung tâm máy chủ, Quản lý thế giới, Trung tâm nội dung.
+- Nhóm Nội dung trên sidebar có Trò chơi, Tìm theo ID và Yêu thích. Thanh danh mục bên trái và nút Tải xuống trên thanh trên đã được bỏ.
+- Skin và cape: tìm theo tên người chơi (API công khai của Mojang) hoặc dán link PNG https. Cape tự chọn từ file chỉ áp dụng cho tài khoản offline; tài khoản Microsoft chỉ dùng cape do Mojang cấp.
 - Chưa có: nguồn tin khám phá trực tiếp, FPS và mức dùng GPU trong game (launcher không đọc được), nền động, UUID và chi tiết skin, sao lưu và nhập thế giới, lưu token Microsoft an toàn.
 - Chưa đổi tên toàn bộ package. Chưa kiểm thử trên thiết bị thật.
 

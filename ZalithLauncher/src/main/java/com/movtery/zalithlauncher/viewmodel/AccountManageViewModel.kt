@@ -46,6 +46,8 @@ import com.movtery.zalithlauncher.game.account.wardrobe.SkinType
 import com.movtery.zalithlauncher.game.account.wardrobe.capeLocalRes
 import com.movtery.zalithlauncher.game.account.wardrobe.getLocalUUIDWithSkinModel
 import com.movtery.zalithlauncher.game.account.wardrobe.isSlimModel
+import com.movtery.zalithlauncher.game.account.wardrobe.WebImageKind
+import com.movtery.zalithlauncher.game.account.wardrobe.classifyPngImage
 import com.movtery.zalithlauncher.game.account.wardrobe.isValid
 import com.movtery.zalithlauncher.game.account.wardrobe.validateSkinFile
 import com.movtery.zalithlauncher.game.account.yggdrasil.PlayerProfile
@@ -177,6 +179,15 @@ sealed interface AccountManageIntent {
 
     /** 将账号皮肤重置为默认状态 */
     data class ResetSkin(val account: Account) : AccountManageIntent
+
+    /** XOYO: chọn file PNG từ máy làm cape cho tài khoản offline */
+    data class ApplyLocalCapeFile(val account: Account, val uri: Uri) : AccountManageIntent
+
+    /** XOYO: đặt cape cho tài khoản offline từ file trong cache (dùng cho ảnh tải từ web) */
+    data class ApplyLocalCape(val account: Account, val file: File) : AccountManageIntent
+
+    /** XOYO: gỡ cape tự chọn của tài khoản offline */
+    data class RemoveLocalCape(val account: Account) : AccountManageIntent
 }
 
 /**
@@ -370,6 +381,9 @@ class AccountManageViewModel @AssistedInject constructor(
             is AccountManageIntent.RefreshAccount -> refreshAccount(intent.account)
             is AccountManageIntent.ReloginOtherAccount -> reloginOtherAccount(intent)
             is AccountManageIntent.ResetSkin -> resetSkin(intent.account)
+            is AccountManageIntent.ApplyLocalCapeFile -> applyLocalCapeFile(intent.account, intent.uri)
+            is AccountManageIntent.ApplyLocalCape -> applyLocalCape(intent.account, intent.file)
+            is AccountManageIntent.RemoveLocalCape -> removeLocalCape(intent.account)
         }
     }
 
@@ -845,6 +859,71 @@ class AccountManageViewModel @AssistedInject constructor(
                 )
             )
         }))
+    }
+
+    /** XOYO: sao chép file người dùng chọn vào cache, rồi đặt làm cape */
+    private fun applyLocalCapeFile(account: Account, uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val cacheFile = File(PathManager.DIR_IMAGE_CACHE, "cape_pick_${UUID.randomUUID()}")
+            runCatching {
+                context.copyLocalFile(uri, cacheFile)
+            }.onSuccess {
+                onIntent(AccountManageIntent.ApplyLocalCape(account, cacheFile))
+            }.onFailure { th ->
+                FileUtils.deleteQuietly(cacheFile)
+                emitError(
+                    androidText(R.string.account_cape_file_failed),
+                    androidText(th.getMessageOrToString())
+                )
+            }
+        }
+    }
+
+    /**
+     * XOYO: đặt cape tự chọn cho tài khoản offline.
+     * Tài khoản Microsoft không được đổi cape tự chọn, vì Mojang chỉ cho dùng cape đã được cấp.
+     * File tạm luôn được xoá sau khi xử lý.
+     */
+    private fun applyLocalCape(account: Account, file: File) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                when {
+                    !account.isLocalAccount() -> emitError(
+                        androidText(R.string.generic_warning),
+                        androidText(R.string.account_cape_offline_only)
+                    )
+                    file.classifyPngImage() != WebImageKind.CAPE -> emitError(
+                        androidText(R.string.generic_warning),
+                        androidText(R.string.account_cape_file_invalid)
+                    )
+                    else -> {
+                        account.getCapeFile().parentFile?.mkdirs()
+                        file.copyTo(account.getCapeFile(), overwrite = true)
+                        AccountsManager.refreshWardrobe()
+                        emitToast(androidText(R.string.account_cape_file_applied))
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (th: Throwable) {
+                emitError(
+                    androidText(R.string.account_cape_file_failed),
+                    androidText(th.getMessageOrToString())
+                )
+            } finally {
+                FileUtils.deleteQuietly(file)
+            }
+        }
+    }
+
+    /** XOYO: gỡ cape tự chọn của tài khoản offline */
+    private fun removeLocalCape(account: Account) {
+        if (!account.isLocalAccount()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            FileUtils.deleteQuietly(account.getCapeFile())
+            AccountsManager.refreshWardrobe()
+            emitToast(androidText(R.string.account_cape_file_removed))
+        }
     }
 
     /** 重置皮肤数据 */

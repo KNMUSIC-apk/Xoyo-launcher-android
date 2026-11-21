@@ -50,6 +50,7 @@ import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.ContentKind
+import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
@@ -68,16 +69,19 @@ enum class NavGroup(val titleRes: Int) {
     SYSTEM(R.string.nav_group_system)
 }
 
-/** 12 mục điều hướng chính của XOYO, theo đúng thứ tự trong đặc tả */
+/** Các mục điều hướng của XOYO. Nhóm Nội dung gồm cả các mục tải xuống trước đây nằm trong thanh danh mục */
 enum class NavDestination(val iconRes: Int, val titleRes: Int, val group: NavGroup) {
     HOME(R.drawable.ic_home_filled, R.string.nav_home, NavGroup.MAIN),
     PROFILES(R.drawable.ic_videogame_asset_outlined, R.string.nav_profiles, NavGroup.MAIN),
     VERSIONS(R.drawable.ic_box, R.string.nav_versions, NavGroup.MAIN),
+    GAME_DOWNLOAD(R.drawable.ic_sports_esports_outlined, R.string.download_category_game, NavGroup.CONTENT),
     MODS(R.drawable.ic_extension_outlined, R.string.nav_mods, NavGroup.CONTENT),
     MODPACKS(R.drawable.ic_archive_filled, R.string.nav_modpacks, NavGroup.CONTENT),
     RESOURCE_PACKS(R.drawable.ic_photo_library_outlined, R.string.nav_resource_packs, NavGroup.CONTENT),
     SHADERS(R.drawable.ic_lightbulb, R.string.nav_shaders, NavGroup.CONTENT),
     WORLDS(R.drawable.ic_public, R.string.nav_worlds, NavGroup.CONTENT),
+    SEARCH_ID(R.drawable.ic_card, R.string.download_category_by_id, NavGroup.CONTENT),
+    FAVORITES(R.drawable.ic_favorite_outlined, R.string.download_category_favorites, NavGroup.CONTENT),
     SERVERS(R.drawable.ic_dns_outlined, R.string.nav_servers, NavGroup.SOCIAL),
     ACCOUNTS(R.drawable.ic_person_outlined, R.string.nav_accounts, NavGroup.SOCIAL),
     PERFORMANCE(R.drawable.ic_dashboard_outlined, R.string.nav_performance, NavGroup.SYSTEM),
@@ -128,11 +132,29 @@ fun ScreenBackStackViewModel.navigateToDestination(destination: NavDestination) 
         NavDestination.SERVERS -> mainScreen.clearWith(NormalNavKey.ServerHub)
         NavDestination.ACCOUNTS -> mainScreen.clearWith(NormalNavKey.AccountManager())
         NavDestination.PERFORMANCE -> mainScreen.clearWith(NormalNavKey.PerformanceCenter)
+        NavDestination.GAME_DOWNLOAD -> navigateToDownload(downloadGameScreen)
+        NavDestination.SEARCH_ID -> navigateToDownload(NormalNavKey.SearchId)
+        NavDestination.FAVORITES -> navigateToDownload(downloadFavoritesScreen)
         NavDestination.SETTINGS -> mainScreen.removeAndNavigateTo(
             removes = clearBeforeNavKeys,
             screenKey = settingsScreen
         )
     }
+}
+
+/**
+ * Mục đang được chọn khi đang ở màn Tải xuống: theo danh mục con đang mở.
+ * Trường hợp không khớp danh mục nào thì coi là Trò chơi.
+ */
+fun ScreenBackStackViewModel.downloadDestination(): NavDestination = when (downloadScreen.currentKey) {
+    downloadModScreen -> NavDestination.MODS
+    downloadModPackScreen -> NavDestination.MODPACKS
+    downloadResourcePackScreen -> NavDestination.RESOURCE_PACKS
+    downloadShadersScreen -> NavDestination.SHADERS
+    downloadSavesScreen -> NavDestination.WORLDS
+    downloadFavoritesScreen -> NavDestination.FAVORITES
+    NormalNavKey.SearchId -> NavDestination.SEARCH_ID
+    else -> NavDestination.GAME_DOWNLOAD
 }
 
 /**

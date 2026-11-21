@@ -172,7 +172,9 @@ fun MainScreen(
     val inLauncherScreen = mainScreenKey == null || mainScreenKey is NormalNavKey.LauncherMain
 
     // XOYO: mục đang chọn trên sidebar / thanh dưới, và hàm chuyển trang chung cho cả hai
+    // XOYO: khi đang ở Tải xuống thì mục được chọn trên sidebar theo danh mục con đang mở
     val currentDestination = navDestinationOf(mainScreenKey)
+        ?: if (mainScreenKey is NestedNavKey.Download) screenBackStackModel.downloadDestination() else null
     var showMoreSheet by remember { mutableStateOf(false) }
     val onNavigate: (NavDestination) -> Unit = { destination ->
         screenBackStackModel.navigateToDestination(destination)
@@ -225,9 +227,6 @@ fun MainScreen(
                                 removes = screenBackStackModel.clearBeforeNavKeys,
                                 screenKey = screenBackStackModel.settingsScreen
                             )
-                        },
-                        toDownloadScreen = {
-                            screenBackStackModel.navigateToDownload()
                         },
                         toMultiplayerScreen = {
                             screenBackStackModel.mainScreen.removeAndNavigateTo(
@@ -310,7 +309,6 @@ private fun <E: TitledNavKey> TopBar(
     onScreenBack: () -> Unit,
     toMainScreen: () -> Unit,
     toSettingsScreen: () -> Unit,
-    toDownloadScreen: () -> Unit,
     toMultiplayerScreen: () -> Unit,
     openFileManager: () -> Unit,
     changeExpandedState: () -> Unit,
@@ -318,7 +316,6 @@ private fun <E: TitledNavKey> TopBar(
     val festivals = LocalFestivals.current
 
     val inMultiplayerScreen = mainScreenKey is NormalNavKey.Multiplayer
-    val inDownloadScreen = mainScreenKey is NestedNavKey.Download
     val inSettingsScreen = mainScreenKey is NestedNavKey.Settings
 
     CompositionLocalProvider(
@@ -476,15 +473,6 @@ private fun <E: TitledNavKey> TopBar(
                     text = stringResource(R.string.terracotta),
                     onClick = {
                         if (!inMultiplayerScreen) toMultiplayerScreen()
-                    },
-                )
-
-                TopBarRailItem(
-                    selected = inDownloadScreen,
-                    painter = painterResource(R.drawable.ic_download_2_filled),
-                    text = stringResource(R.string.generic_download),
-                    onClick = {
-                        if (!inDownloadScreen) toDownloadScreen()
                     },
                 )
 

@@ -59,6 +59,18 @@ Các file mới hoặc sửa đổi trong `ZalithLauncher/src/main/java/com/movt
 - `game/performance/DeviceStats.kt`, `PerformancePresets.kt`, `LauncherDiagnostics.kt` (mới): đọc số liệu thiết bị, gợi ý cấu hình và luật chẩn đoán dựa trên log.
 - `res/values/strings.xml`, `res/values-vi/strings.xml`: chuỗi cho các trang mới.
 
+Đợt chỉnh sửa tiếp theo (skin, cape và sidebar):
+
+- `ui/screens/content/DownloadScreen.kt` (sửa): bỏ thanh danh mục bên trái, các danh mục chuyển sang sidebar.
+- `ui/screens/main/AppNavigation.kt`, `MainScreen.kt` (sửa): bỏ nút Tải xuống trên thanh trên; thêm Trò chơi, Tìm theo ID, Yêu thích vào nhóm Nội dung.
+- `ui/screens/content/hub/WorldManagerScreen.kt` (sửa): nút tải thế giới về.
+- `game/account/wardrobe/WebSkinImages.kt`, `WebSkinSource.kt` (mới): tra cứu skin và cape theo tên người chơi qua API công khai của Mojang, tải và kiểm tra ảnh PNG.
+- `ui/screens/content/elements/WebSkinDialog.kt` (mới); `AccountElements.kt`, `AccountManageScreen.kt`, `viewmodel/AccountManageViewModel.kt` (sửa): menu 3 chấm có "Chọn cape từ file" và "Chọn skin hoặc cape từ web".
+- `game/account/offline/OfflineYggdrasilServer.kt`, `game/launch/LaunchArgs.kt` (sửa): gửi cape tự chọn của tài khoản offline cho game.
+- `src/test/.../game/account/wardrobe/MinecraftNameTest.kt` (mới): kiểm tra quy tắc tên người chơi.
+
+Dữ liệu skin và cape lấy từ `api.mojang.com` và `sessionserver.mojang.com` (API công khai, không cần khoá). Link ảnh do người dùng dán chỉ được chấp nhận khi là https và đúng định dạng PNG.
+
 Giao diện được thiết kế theo đặc tả của dự án. Không sao chép mã hay tài nguyên của Dawn Client hoặc FastClient.
 
 ## Mẫu và dữ liệu từ dự án khác

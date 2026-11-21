@@ -3279,4 +3279,27 @@
     <string name="content_empty">No items installed in this version yet.</string>
     <string name="content_folder">Folder</string>
     <string name="content_modpack_note">Modpacks are installed as new versions, so there is no folder to list here. Use Find and install to get one.</string>
+    <!-- XOYO: skin và cape từ web, cape tự chọn từ file -->
+    <string name="account_menu_cape_file">Choose cape from file</string>
+    <string name="account_menu_web_skin">Choose skin or cape from web</string>
+    <string name="account_cape_offline_only">Custom capes only work for offline accounts. Microsoft accounts can only use capes granted by Mojang.</string>
+    <string name="account_cape_file_applied">Cape applied.</string>
+    <string name="account_cape_file_removed">Custom cape removed.</string>
+    <string name="account_cape_file_invalid">Not a valid cape. Use a 2:1 PNG, for example 64×32.</string>
+    <string name="account_cape_file_failed">Could not apply the cape.</string>
+    <string name="web_skin_title">Find skin or cape on the web</string>
+    <string name="web_skin_name_hint">Minecraft username</string>
+    <string name="web_skin_search">Search</string>
+    <string name="web_skin_url_hint">Or paste a PNG link (https)</string>
+    <string name="web_skin_load_url">Load link</string>
+    <string name="web_skin_apply_skin">Use as skin</string>
+    <string name="web_skin_apply_cape">Use as cape</string>
+    <string name="web_skin_remove_cape">Remove custom cape</string>
+    <string name="web_skin_no_textures">This player has no skin or cape.</string>
+    <string name="web_skin_not_found">Player not found.</string>
+    <string name="web_skin_invalid_name">Use 3–16 letters, digits or underscores.</string>
+    <string name="web_skin_invalid_url">The link must start with https://</string>
+    <string name="web_skin_invalid_image">The image is not a 64×64 skin or a 2:1 PNG cape.</string>
+    <string name="web_skin_network_error">Could not load data. Check your connection and try again.</string>
+    <string name="world_download_action">Download worlds</string>
 </resources>

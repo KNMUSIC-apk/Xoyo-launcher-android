@@ -244,6 +244,9 @@ sealed interface AccountSkinOperation {
 
     /** 修改皮肤主对话框 */
     data class ChangeSkin(val account: Account) : AccountSkinOperation
+
+    /** XOYO: tìm và cài skin hoặc cape từ web */
+    data class WebSkin(val account: Account) : AccountSkinOperation
 }
 
 /**
@@ -312,7 +315,9 @@ fun AccountItem(
     openChangeSkinDialog: () -> Unit = {},
     onRefreshClick: () -> Unit = {},
     onCopyUUID: () -> Unit = {},
-    onDeleteClick: () -> Unit = {}
+    onDeleteClick: () -> Unit = {},
+    onPickCapeFile: () -> Unit = {},
+    onWebSkinClick: () -> Unit = {}
 ) {
     val selected = currentAccount?.uniqueUUID == account.uniqueUUID
     val scale = remember { Animatable(initialValue = 0.95f) }
@@ -402,6 +407,36 @@ fun AccountItem(
                             onClick = {
                                 menuExpanded = false
                                 openChangeSkinDialog()
+                            }
+                        )
+                        // XOYO: chọn cape từ file, chỉ dùng được cho tài khoản offline
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.account_menu_cape_file)) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_upload),
+                                    contentDescription = null
+                                )
+                            },
+                            enabled = account.isLocalAccount(),
+                            onClick = {
+                                menuExpanded = false
+                                onPickCapeFile()
+                            }
+                        )
+                        // XOYO: tìm và cài skin hoặc cape từ web
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.account_menu_web_skin)) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_public),
+                                    contentDescription = null
+                                )
+                            },
+                            enabled = account.isSkinChangeAllowed(),
+                            onClick = {
+                                menuExpanded = false
+                                onWebSkinClick()
                             }
                         )
                         DropdownMenuItem(

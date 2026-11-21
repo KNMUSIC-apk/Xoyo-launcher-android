@@ -1440,4 +1440,27 @@
     <string name="content_empty">Phiên bản này chưa có mục nào.</string>
     <string name="content_folder">Thư mục</string>
     <string name="content_modpack_note">Modpack được cài thành phiên bản mới nên không có thư mục để liệt kê ở đây. Dùng Tìm và tải về để lấy modpack.</string>
+    <!-- XOYO: skin và cape từ web, cape tự chọn từ file -->
+    <string name="account_menu_cape_file">Chọn cape từ file</string>
+    <string name="account_menu_web_skin">Chọn skin hoặc cape từ web</string>
+    <string name="account_cape_offline_only">Cape tự chọn chỉ dùng được cho tài khoản offline. Tài khoản Microsoft chỉ dùng được cape do Mojang cấp.</string>
+    <string name="account_cape_file_applied">Đã áp dụng cape.</string>
+    <string name="account_cape_file_removed">Đã gỡ cape tự chọn.</string>
+    <string name="account_cape_file_invalid">Ảnh không phải cape hợp lệ. Dùng PNG tỉ lệ 2:1, ví dụ 64×32.</string>
+    <string name="account_cape_file_failed">Không thể áp dụng cape.</string>
+    <string name="web_skin_title">Tìm skin hoặc cape trên web</string>
+    <string name="web_skin_name_hint">Tên người chơi Minecraft</string>
+    <string name="web_skin_search">Tìm</string>
+    <string name="web_skin_url_hint">Hoặc dán link ảnh PNG (https)</string>
+    <string name="web_skin_load_url">Tải link</string>
+    <string name="web_skin_apply_skin">Dùng làm skin</string>
+    <string name="web_skin_apply_cape">Dùng làm cape</string>
+    <string name="web_skin_remove_cape">Gỡ cape tự chọn</string>
+    <string name="web_skin_no_textures">Người chơi này chưa có skin hoặc cape.</string>
+    <string name="web_skin_not_found">Không tìm thấy người chơi này.</string>
+    <string name="web_skin_invalid_name">Dùng 3–16 ký tự: chữ, số hoặc dấu gạch dưới.</string>
+    <string name="web_skin_invalid_url">Link phải bắt đầu bằng https://</string>
+    <string name="web_skin_invalid_image">Ảnh không phải skin 64×64 hoặc cape PNG tỉ lệ 2:1.</string>
+    <string name="web_skin_network_error">Không tải được dữ liệu. Kiểm tra mạng rồi thử lại.</string>
+    <string name="world_download_action">Tải thế giới về</string>
 </resources>

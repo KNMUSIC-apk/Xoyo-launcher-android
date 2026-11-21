@@ -184,7 +184,8 @@ class LaunchArgs(
         val argsList: MutableList<String> = ArrayList()
 
         if (account.isLocalAccount()) {
-            if (account.hasSkinFile) {
+            // XOYO: có skin hoặc cape tự chọn thì cần máy chủ Yggdrasil cục bộ
+            if (account.hasSkinFile || account.getCapeFile().exists()) {
                 //该离线账号拥有本地皮肤，启用离线yggdrasil服务器
                 offlineServer.start()
                 offlineServer.addCharacter(account)
