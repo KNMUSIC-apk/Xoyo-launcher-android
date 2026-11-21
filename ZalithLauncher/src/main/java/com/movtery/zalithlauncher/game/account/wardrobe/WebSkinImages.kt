@@ -23,6 +23,19 @@ fun File.isPngFile(): Boolean = runCatching {
 }.getOrDefault(false)
 
 /**
+ * Kiểm tra ảnh có phải cape không: tỉ lệ 2:1 (64x32, 128x64, ...).
+ * Cape hiện đại cũng là 64x32 nên không thể dựa vào [classifyPngImage].
+ */
+fun File.isCapeImage(): Boolean {
+    if (!isPngFile()) return false
+    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeFile(absolutePath, options)
+    val width = options.outWidth
+    val height = options.outHeight
+    return width >= 64 && height > 0 && width == height * 2
+}
+
+/**
  * Phân loại ảnh PNG theo kích thước.
  * Skin: 64x64 hoặc 64x32. Cape: tỉ lệ 2:1 (64x32, 128x64, ...).
  */
