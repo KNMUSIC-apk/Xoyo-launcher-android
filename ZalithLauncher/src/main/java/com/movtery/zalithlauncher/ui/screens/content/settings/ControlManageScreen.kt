@@ -18,7 +18,9 @@
 
 package com.movtery.zalithlauncher.ui.screens.content.settings
 
+import android.content.Context
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -85,7 +87,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.movtery.layer_controller.data.lang.createTranslatable
 import com.movtery.layer_controller.layout.ControlLayout
 import com.movtery.layer_controller.layout.EmptyControlLayout
-import com.movtery.layer_controller.layout.EmptyLayoutInfo
+import com.movtery.layer_controller.layout.loadLayoutFromString
 import com.movtery.layer_controller.observable.ObservableControlLayout
 import com.movtery.layer_controller.observable.ObservableTranslatableString
 import com.movtery.layer_controller.utils.AUTHOR_NAME_LENGTH
@@ -165,17 +167,20 @@ private enum class EditTextType(val length: Int, val titleRes: Int, val allowEmp
     AUTHOR(length = AUTHOR_NAME_LENGTH, titleRes = R.string.control_manage_create_new_author, true)
 }
 
+/**
+ * Mẫu có thể chọn khi tạo bố cục mới
+ */
+private enum class ControlTemplate(
+    /** Đường dẫn mẫu trong assets; null nghĩa là bố cục trống */
+    val assetPath: String?,
+    val titleRes: Int
+) {
+    BLANK(assetPath = null, titleRes = R.string.control_manage_template_blank),
+    TOUCH(assetPath = "control_templates/touch_template.json", titleRes = R.string.control_manage_template_touch)
+}
+
 private class ControlViewModel : ViewModel() {
     var operation by mutableStateOf<ControlOperation>(ControlOperation.None)
-
-    fun createNew(
-        layout: ControlLayout,
-        submitError: (Exception) -> Unit
-    ) {
-        viewModelScope.launch {
-            saveToNew(layout, submitError)
-        }
-    }
 
     fun copyNew(
         layout: ObservableControlLayout,
@@ -184,6 +189,45 @@ private class ControlViewModel : ViewModel() {
         viewModelScope.launch {
             saveToNew(layout.pack(), submitError)
         }
+    }
+
+    /**
+     * Tạo bố cục mới từ mẫu đã chọn. Mẫu được đọc trên IO thread.
+     * Nếu đọc lỗi thì báo lỗi qua [submitError], không tạo bố cục trống thay thế.
+     */
+    fun createFromTemplate(
+        context: Context,
+        template: ControlTemplate,
+        name: String,
+        author: String,
+        versionName: String,
+        submitError: (Exception) -> Unit
+    ) {
+        viewModelScope.launch {
+            val base = try {
+                withContext(Dispatchers.IO) { readTemplate(context.applicationContext, template) }
+            } catch (e: Exception) {
+                submitError(e)
+                return@launch
+            }
+            val layout = base.copy(
+                info = base.info.copy(
+                    name = createTranslatable(default = name),
+                    author = createTranslatable(default = author),
+                    versionName = versionName
+                )
+            )
+            saveToNew(layout, submitError)
+        }
+    }
+
+    /**
+     * Đọc mẫu bố cục. Mẫu trống trả về [EmptyControlLayout].
+     */
+    private fun readTemplate(context: Context, template: ControlTemplate): ControlLayout {
+        val assetPath = template.assetPath ?: return EmptyControlLayout
+        val json = context.assets.open(assetPath).bufferedReader().use { it.readText() }
+        return loadLayoutFromString(json)
     }
 
     private suspend fun saveToNew(
@@ -232,15 +276,14 @@ fun ControlManageScreen(
     ControlOperation(
         operation = viewModel.operation,
         changeOperation = { viewModel.operation = it },
-        onCreate = { name, author, versionName ->
-            val layout = EmptyControlLayout.copy(
-                info = EmptyLayoutInfo.copy(
-                    name = createTranslatable(default = name),
-                    author = createTranslatable(default = author),
-                    versionName = versionName
-                )
-            )
-            viewModel.createNew(layout) { e ->
+        onCreate = { name, author, versionName, template ->
+            viewModel.createFromTemplate(
+                context = context,
+                template = template,
+                name = name,
+                author = author,
+                versionName = versionName
+            ) { e ->
                 submitError(
                     ErrorViewModel.ThrowableMessage(
                         title = androidText(R.string.control_manage_failed_to_save),
@@ -342,7 +385,7 @@ fun ControlManageScreen(
 private fun ControlOperation(
     operation: ControlOperation,
     changeOperation: (ControlOperation) -> Unit,
-    onCreate: (name: String, author: String, versionName: String) -> Unit,
+    onCreate: (name: String, author: String, versionName: String, template: ControlTemplate) -> Unit,
     onDelete: (ControlData) -> Unit,
     onSave: (ControlData) -> Unit
 ) {
@@ -877,11 +920,12 @@ private fun ControlInfoItem(
 @Composable
 private fun CreateNewLayoutDialog(
     onDismissRequest: () -> Unit,
-    onCreate: (name: String, author: String, versionName: String) -> Unit
+    onCreate: (name: String, author: String, versionName: String, template: ControlTemplate) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var author by remember { mutableStateOf("") }
     var versionName by remember { mutableStateOf("1.0") }
+    var template by remember { mutableStateOf(ControlTemplate.BLANK) }
 
     val blankError = stringResource(R.string.control_manage_create_new_field_blank)
     val longError = stringResource(R.string.control_manage_create_new_field_long)
@@ -1060,6 +1104,24 @@ private fun CreateNewLayoutDialog(
                         )
                     }
 
+                    // Chọn mẫu bố cục: trống hoặc mẫu cảm ứng
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.control_manage_create_new_template),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        ControlTemplate.entries.forEach { item ->
+                            TemplateOption(
+                                text = stringResource(item.titleRes),
+                                selected = template == item,
+                                onClick = { template = item }
+                            )
+                        }
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -1075,7 +1137,7 @@ private fun CreateNewLayoutDialog(
                             onClick = onClick@{
                                 if (isNameError || isAuthorNameError || isVersionNameError) return@onClick
                                 onDismissRequest()
-                                onCreate(name, author, versionName)
+                                onCreate(name, author, versionName, template)
                             }
                         ) {
                             MarqueeText(text = stringResource(R.string.control_manage_create_new))
@@ -1087,11 +1149,32 @@ private fun CreateNewLayoutDialog(
     }
 }
 
+/**
+ * Một lựa chọn mẫu: nút radio và chữ, cả hàng bấm được
+ */
+@Composable
+private fun TemplateOption(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Text(text = text, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
 @Composable
 @Preview(showBackground = true)
 private fun PreviewCreateNewLayoutDialog() {
     CreateNewLayoutDialog(
         onDismissRequest = {},
-        onCreate = { _, _, _ -> }
+        onCreate = { _, _, _, _ -> }
     )
 }

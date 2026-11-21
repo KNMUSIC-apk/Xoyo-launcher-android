@@ -317,9 +317,14 @@ android {
 }
 
 //单测 classpath 需要 /assets/game/versions.txt 这样的路径, 因此复制到 assets/ 前缀下
+//control_templates/touch_template.json: mẫu bố cục cảm ứng, unit test kiểm tra LayerController đọc được file này
 val copyUnitTestAssets by tasks.registering(Copy::class) {
     from("src/main/assets") {
-        include("game/versions.txt", "game/version-alias.csv")
+        include(
+            "game/versions.txt",
+            "game/version-alias.csv",
+            "control_templates/touch_template.json"
+        )
     }
     into("build/generated/unitTestResources/assets")
 }

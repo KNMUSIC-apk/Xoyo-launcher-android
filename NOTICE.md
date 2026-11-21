@@ -29,7 +29,10 @@ XOYO Launcher là bản chỉnh sửa của **ZalithLauncher2**:
 
 - `ZalithLauncher/gradle.properties`: đổi tên, URL, phiên bản; bỏ mật khẩu keystore và `legal_docs_ref`.
 - `ZalithLauncher/build.gradle.kts`: đổi application ID thành `com.xoyo.launcher`; cấu hình ký chuyển sang `xoyo_release.jks` (không bắt buộc); bản debug dùng khóa debug mặc định.
-- `ZalithLauncher/build.gradle.kts`: thêm task copy `assets/game/versions.txt` và `version-alias.csv` vào test resources, để test đọc được `/assets/game/*`.
+- `ZalithLauncher/build.gradle.kts`: thêm task copy `assets/game/versions.txt`, `version-alias.csv` và `control_templates/touch_template.json` vào test resources, để test đọc được `/assets/...`.
+- `ZalithLauncher/src/main/java/.../ui/screens/content/settings/ControlManageScreen.kt`: thêm ô chọn mẫu (bố cục trống hoặc bố cục cảm ứng) khi tạo bố cục mới; bỏ hàm `createNew` không còn dùng. Mẫu được nạp trên IO thread, lỗi nạp thì báo lỗi, không tạo bố cục trống thay thế.
+- `ZalithLauncher/src/main/res/values/strings.xml`, `values-vi/strings.xml`: chuỗi cho ô chọn mẫu.
+- `ZalithLauncher/src/test/.../game/control/ControlTemplateTest.kt` (mới): kiểm tra mẫu cảm ứng được LayerController đọc, và uuid của nút không trùng.
 - `ZalithLauncher/src/test/.../FileTest.kt`, `MurmurHash2IncrementalTest.kt`: đánh dấu `@Ignore`, vì hai test này đọc file trên máy Windows của upstream.
 - `VersionCompareTest.kt`: đánh dấu `@Ignore` cho `testCompareLegacySnapshots` và `testCompareNewSnapshots`. Kỳ vọng của hai test này chưa được xác nhận (dùng alias placeholder và hai assert mâu thuẫn). Cần kiểm tra lại với upstream trước khi bỏ `@Ignore`.
 - `ZalithLauncher/src/main/java/.../ui/theme/XoyoPalettes.kt` (mới): bảng màu XOYO (mặc định) và Monochrome. Monochrome lấy ý tưởng nền đen OLED từ Hyper Launcher 3 (LGPL-3.0), không sao chép mã.
@@ -37,6 +40,14 @@ XOYO Launcher là bản chỉnh sửa của **ZalithLauncher2**:
 - `ZalithLauncher/src/main/res/drawable/ic_launcher_foreground.xml`, `ic_launcher_monochrome.xml`, `values/ic_launcher_background.xml`: icon mới (chữ X hai màu trên nền mực). Icon khối của upstream đã bị thay thế.
 - `ZalithLauncher/src/main/java/.../ui/screens/content/LauncherScreen.kt`: thêm nhãn "Unofficial Modified Version" trên màn hình chính.
 - `.github/workflows/xoyo-ci.yml`: CI riêng của XOYO; build với `-Darch=arm64` và in thống kê APK.
+
+## Mẫu và dữ liệu từ dự án khác
+
+- `ZalithLauncher/src/main/assets/control_templates/touch_template.json`: bố cục điều khiển cảm ứng, lấy từ [Cubiq Launcher](https://github.com/VivxKumar07/Cubiq-Launcher). Cubiq Launcher cũng là bản fork GPL-3.0 của ZalithLauncher2.
+  - Giữ nguyên dữ liệu bố cục: vị trí, kích thước, nút và phím.
+  - Đổi phần thông tin hiển thị (tên, tác giả, mô tả) để không dùng tên dự án gốc trong XOYO. Khi tạo bố cục mới, tên và tác giả còn bị thay bằng giá trị người dùng nhập.
+  - Không sao chép giao diện, biểu tượng hay tài nguyên đồ họa nào của Cubiq.
+  - Việc ghi nguồn này là điều kiện GPL-3.0 đối với mẫu.
 
 ## Thư viện bên thứ ba
 

@@ -10,6 +10,7 @@ Nhánh `zalith-base` đang được chuyển đổi từ mã của ZalithLaunche
 - Đã bỏ keystore, mật khẩu ký và legal docs của upstream.
 - Đã đổi application ID thành `com.xoyo.launcher`.
 - Đã có bảng màu XOYO (mặc định) và Monochrome, icon mới, nhãn "Unofficial Modified Version" trên màn hình chính.
+- Khi tạo bố cục điều khiển mới có thể chọn mẫu cảm ứng (dựa trên Cubiq Launcher, GPL-3.0; xem [NOTICE.md](NOTICE.md)).
 - Chưa đổi tên toàn bộ package. Chưa kiểm thử trên thiết bị thật.
 
 ## Cài đặt từ GitHub Actions

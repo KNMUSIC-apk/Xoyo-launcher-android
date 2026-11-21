@@ -1261,4 +1261,7 @@
     <string name="favorite_add">Yêu thích</string>
     <string name="favorite_added">Được yêu thích</string>
     <string name="favorites_empty">Bạn chưa yêu thích. Hãy đi tìm và yêu thích những tài nguyên bạn thích!</string>
+    <string name="control_manage_create_new_template">Mẫu</string>
+    <string name="control_manage_template_blank">Bố cục trống</string>
+    <string name="control_manage_template_touch">Bố cục cảm ứng</string>
 </resources>

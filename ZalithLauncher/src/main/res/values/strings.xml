@@ -3097,4 +3097,10 @@
     <string name="guide_joystick_events_events_text1">The triggerable events are the same as those of regular buttons, so you have plenty of freedom here</string>
     <!-- Closing line of the guide card about editing actual key bindings in the Key section -->
     <string name="guide_joystick_events_events_text2">If you only want to control the game, just edit the actual key bindings in the \"Key\" section</string>
+    <!-- Label of the layout template selector in the "create new control layout" dialog -->
+    <string name="control_manage_create_new_template">Template</string>
+    <!-- Template option: start from an empty layout -->
+    <string name="control_manage_template_blank">Blank layout</string>
+    <!-- Template option: a ready-made touch layout (derived from Cubiq Launcher, GPL-3.0) -->
+    <string name="control_manage_template_touch">Touch controls</string>
 </resources>
