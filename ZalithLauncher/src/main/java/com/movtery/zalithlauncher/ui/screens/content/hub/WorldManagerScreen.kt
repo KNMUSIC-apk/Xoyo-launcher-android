@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,7 +53,6 @@ import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.content.home.formatPlayDuration
-import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
 import com.movtery.zalithlauncher.ui.screens.content.home.relativeTime
 import com.movtery.zalithlauncher.viewmodel.EventViewModel
 import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
@@ -140,15 +138,6 @@ fun WorldManagerScreen(
                     singleLine = true,
                     placeholder = { Text(stringResource(R.string.world_search_hint)) }
                 )
-            }
-
-            // XOYO: lối vào tải thế giới, thay cho mục Thế giới trong thanh danh mục đã bỏ
-            item {
-                Button(
-                    onClick = { backStackViewModel.navigateToDownload(backStackViewModel.downloadSavesScreen) }
-                ) {
-                    Text(stringResource(R.string.world_download_action))
-                }
             }
 
             when {

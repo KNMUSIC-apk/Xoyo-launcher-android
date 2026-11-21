@@ -4,12 +4,22 @@
 
 package com.movtery.zalithlauncher.ui.screens.main
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -35,9 +45,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -61,13 +74,20 @@ val CompactWidthThreshold = 720.dp
 private val SidebarExpandedWidth = 232.dp
 private val SidebarCollapsedWidth = 72.dp
 
-/** Nhóm chức năng trên sidebar */
-enum class NavGroup(val titleRes: Int) {
-    MAIN(R.string.nav_group_main),
-    CONTENT(R.string.nav_group_content),
-    SOCIAL(R.string.nav_group_social),
-    SYSTEM(R.string.nav_group_system)
+/**
+ * Nhóm chức năng trên sidebar.
+ * Các nhóm trong [CollapsibleNavGroups] chỉ hiện một nút, bấm vào mới mở các mục bên trong.
+ */
+enum class NavGroup(val titleRes: Int, val iconRes: Int) {
+    MAIN(R.string.nav_group_main, R.drawable.ic_home_filled),
+    CONTENT(R.string.nav_group_content, R.drawable.ic_folder_filled),
+    DOWNLOAD(R.string.nav_group_download, R.drawable.ic_download_2_filled),
+    SOCIAL(R.string.nav_group_social, R.drawable.ic_group_filled),
+    SYSTEM(R.string.nav_group_system, R.drawable.ic_build_filled)
 }
+
+/** Các nhóm thu gọn được trên sidebar và trong sheet "Thêm". Nhóm Chính luôn hiện đầy đủ. */
+private val CollapsibleNavGroups = setOf(NavGroup.CONTENT, NavGroup.DOWNLOAD, NavGroup.SOCIAL, NavGroup.SYSTEM)
 
 /** Các mục điều hướng của XOYO. Nhóm Nội dung gồm cả các mục tải xuống trước đây nằm trong thanh danh mục */
 enum class NavDestination(val iconRes: Int, val titleRes: Int, val group: NavGroup) {
@@ -82,6 +102,11 @@ enum class NavDestination(val iconRes: Int, val titleRes: Int, val group: NavGro
     WORLDS(R.drawable.ic_public, R.string.nav_worlds, NavGroup.CONTENT),
     SEARCH_ID(R.drawable.ic_card, R.string.download_category_by_id, NavGroup.CONTENT),
     FAVORITES(R.drawable.ic_favorite_outlined, R.string.download_category_favorites, NavGroup.CONTENT),
+    DOWNLOAD_MODS(R.drawable.ic_extension_outlined, R.string.nav_download_mods, NavGroup.DOWNLOAD),
+    DOWNLOAD_MODPACKS(R.drawable.ic_archive_filled, R.string.nav_download_modpacks, NavGroup.DOWNLOAD),
+    DOWNLOAD_RESOURCE_PACKS(R.drawable.ic_photo_library_outlined, R.string.nav_download_resource_packs, NavGroup.DOWNLOAD),
+    DOWNLOAD_SHADERS(R.drawable.ic_lightbulb, R.string.nav_download_shaders, NavGroup.DOWNLOAD),
+    DOWNLOAD_WORLDS(R.drawable.ic_public, R.string.nav_download_worlds, NavGroup.DOWNLOAD),
     SERVERS(R.drawable.ic_dns_outlined, R.string.nav_servers, NavGroup.SOCIAL),
     ACCOUNTS(R.drawable.ic_person_outlined, R.string.nav_accounts, NavGroup.SOCIAL),
     PERFORMANCE(R.drawable.ic_dashboard_outlined, R.string.nav_performance, NavGroup.SYSTEM),
@@ -135,6 +160,11 @@ fun ScreenBackStackViewModel.navigateToDestination(destination: NavDestination) 
         NavDestination.GAME_DOWNLOAD -> navigateToDownload(downloadGameScreen)
         NavDestination.SEARCH_ID -> navigateToDownload(NormalNavKey.SearchId)
         NavDestination.FAVORITES -> navigateToDownload(downloadFavoritesScreen)
+        NavDestination.DOWNLOAD_MODS -> navigateToDownload(downloadModScreen)
+        NavDestination.DOWNLOAD_MODPACKS -> navigateToDownload(downloadModPackScreen)
+        NavDestination.DOWNLOAD_RESOURCE_PACKS -> navigateToDownload(downloadResourcePackScreen)
+        NavDestination.DOWNLOAD_SHADERS -> navigateToDownload(downloadShadersScreen)
+        NavDestination.DOWNLOAD_WORLDS -> navigateToDownload(downloadSavesScreen)
         NavDestination.SETTINGS -> mainScreen.removeAndNavigateTo(
             removes = clearBeforeNavKeys,
             screenKey = settingsScreen
@@ -147,11 +177,11 @@ fun ScreenBackStackViewModel.navigateToDestination(destination: NavDestination) 
  * Trường hợp không khớp danh mục nào thì coi là Trò chơi.
  */
 fun ScreenBackStackViewModel.downloadDestination(): NavDestination = when (downloadScreen.currentKey) {
-    downloadModScreen -> NavDestination.MODS
-    downloadModPackScreen -> NavDestination.MODPACKS
-    downloadResourcePackScreen -> NavDestination.RESOURCE_PACKS
-    downloadShadersScreen -> NavDestination.SHADERS
-    downloadSavesScreen -> NavDestination.WORLDS
+    downloadModScreen -> NavDestination.DOWNLOAD_MODS
+    downloadModPackScreen -> NavDestination.DOWNLOAD_MODPACKS
+    downloadResourcePackScreen -> NavDestination.DOWNLOAD_RESOURCE_PACKS
+    downloadShadersScreen -> NavDestination.DOWNLOAD_SHADERS
+    downloadSavesScreen -> NavDestination.DOWNLOAD_WORLDS
     downloadFavoritesScreen -> NavDestination.FAVORITES
     NormalNavKey.SearchId -> NavDestination.SEARCH_ID
     else -> NavDestination.GAME_DOWNLOAD
@@ -169,6 +199,9 @@ fun AppSidebar(
 ) {
     val expanded = LauncherSettings.launcherSidebarExpanded.state
     val reducedMotion = LauncherSettings.launcherReducedMotion.state
+
+    //Trạng thái mở của từng nhóm thu gọn. Mặc định đều đóng.
+    val openGroups = remember { mutableStateListOf<NavGroup>() }
 
     val width by animateDpAsState(
         targetValue = if (expanded) SidebarExpandedWidth else SidebarCollapsedWidth,
@@ -222,28 +255,127 @@ fun AppSidebar(
                 }
             }
 
-            NavDestination.entries.groupBy { it.group }.forEach { (group, items) ->
-                if (expanded) {
-                    Text(
-                        modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 2.dp),
-                        text = stringResource(group.titleRes),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
-                    )
-                } else {
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-                items.forEach { destination ->
-                    SidebarItem(
-                        destination = destination,
-                        selected = destination == selected,
-                        expanded = expanded,
-                        reducedMotion = reducedMotion,
-                        onClick = { onNavigate(destination) }
-                    )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                NavDestination.entries.groupBy { it.group }.forEach { (group, items) ->
+                    if (group in CollapsibleNavGroups) {
+                        //Mỗi nhóm chỉ hiện một nút. Bấm vào để mở hoặc đóng các mục bên trong.
+                        val open = group in openGroups
+                        SidebarGroupHeader(
+                            group = group,
+                            containsSelected = items.any { it == selected },
+                            expanded = expanded,
+                            open = open,
+                            reducedMotion = reducedMotion,
+                            onClick = { if (open) openGroups.remove(group) else openGroups.add(group) }
+                        )
+                        AnimatedVisibility(
+                            visible = open,
+                            enter = if (reducedMotion) EnterTransition.None else expandVertically() + fadeIn(),
+                            exit = if (reducedMotion) ExitTransition.None else shrinkVertically() + fadeOut()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(start = if (expanded) 12.dp else 0.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                items.forEach { destination ->
+                                    SidebarItem(
+                                        destination = destination,
+                                        selected = destination == selected,
+                                        expanded = expanded,
+                                        reducedMotion = reducedMotion,
+                                        onClick = { onNavigate(destination) }
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        if (expanded) {
+                            Text(
+                                modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 2.dp),
+                                text = stringResource(group.titleRes),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        items.forEach { destination ->
+                            SidebarItem(
+                                destination = destination,
+                                selected = destination == selected,
+                                expanded = expanded,
+                                reducedMotion = reducedMotion,
+                                onClick = { onNavigate(destination) }
+                            )
+                        }
+                    }
                 }
             }
+        }
+    }
+}
+
+/** Nút đại diện cho một nhóm thu gọn trên sidebar */
+@Composable
+private fun SidebarGroupHeader(
+    group: NavGroup,
+    containsSelected: Boolean,
+    expanded: Boolean,
+    open: Boolean,
+    reducedMotion: Boolean,
+    onClick: () -> Unit,
+) {
+    val title = stringResource(group.titleRes)
+    val contentColor = if (containsSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (open) 180f else 0f,
+        animationSpec = if (reducedMotion) snap() else tween(durationMillis = 180),
+        label = "sidebarGroupChevron"
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(44.dp)
+            .clip(MaterialTheme.shapes.large)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Icon(
+            modifier = Modifier.size(24.dp),
+            painter = painterResource(group.iconRes),
+            contentDescription = if (expanded) null else title,
+            tint = contentColor
+        )
+        if (expanded) {
+            Text(
+                modifier = Modifier.weight(1f),
+                text = title,
+                color = contentColor,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Icon(
+                modifier = Modifier
+                    .size(20.dp)
+                    .rotate(chevronRotation),
+                painter = painterResource(R.drawable.ic_keyboard_arrow_down),
+                contentDescription = null,
+                tint = contentColor
+            )
         }
     }
 }
@@ -358,6 +490,7 @@ fun AppBottomBar(
 
 /**
  * Danh sách các mục còn lại, mở từ nút "Thêm" trên thanh dưới.
+ * Các nhóm thu gọn giống sidebar: mỗi nhóm một nút, bấm vào để mở.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -367,6 +500,8 @@ fun MoreDestinationsSheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState()
+    val reducedMotion = LauncherSettings.launcherReducedMotion.state
+    val openGroups = remember { mutableStateListOf<NavGroup>() }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
@@ -374,45 +509,146 @@ fun MoreDestinationsSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp))
+                .padding(PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp)),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             NavDestination.entries
                 .filter { it !in CompactPrimaryDestinations }
-                .forEach { destination ->
-                    val isSelected = destination == selected
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp)
-                            .clip(MaterialTheme.shapes.large)
-                            .clickable(role = Role.Button) {
-                                onNavigate(destination)
-                                onDismiss()
-                            }
-                            .padding(horizontal = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(destination.iconRes),
-                            contentDescription = null,
-                            tint = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            }
+                .groupBy { it.group }
+                .forEach { (group, items) ->
+                    if (group in CollapsibleNavGroups) {
+                        val open = group in openGroups
+                        SheetGroupHeader(
+                            group = group,
+                            containsSelected = items.any { it == selected },
+                            open = open,
+                            reducedMotion = reducedMotion,
+                            onClick = { if (open) openGroups.remove(group) else openGroups.add(group) }
                         )
-                        Text(
-                            text = stringResource(destination.titleRes),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
+                        AnimatedVisibility(
+                            visible = open,
+                            enter = if (reducedMotion) EnterTransition.None else expandVertically() + fadeIn(),
+                            exit = if (reducedMotion) ExitTransition.None else shrinkVertically() + fadeOut()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(start = 12.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                items.forEach { destination ->
+                                    SheetDestinationRow(
+                                        destination = destination,
+                                        isSelected = destination == selected,
+                                        onNavigate = onNavigate,
+                                        onDismiss = onDismiss
+                                    )
+                                }
                             }
-                        )
+                        }
+                    } else {
+                        items.forEach { destination ->
+                            SheetDestinationRow(
+                                destination = destination,
+                                isSelected = destination == selected,
+                                onNavigate = onNavigate,
+                                onDismiss = onDismiss
+                            )
+                        }
                     }
                 }
         }
+    }
+}
+
+@Composable
+private fun SheetGroupHeader(
+    group: NavGroup,
+    containsSelected: Boolean,
+    open: Boolean,
+    reducedMotion: Boolean,
+    onClick: () -> Unit,
+) {
+    val tint = if (containsSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (open) 180f else 0f,
+        animationSpec = if (reducedMotion) snap() else tween(durationMillis = 180),
+        label = "sheetGroupChevron"
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(MaterialTheme.shapes.large)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Icon(
+            modifier = Modifier.size(24.dp),
+            painter = painterResource(group.iconRes),
+            contentDescription = null,
+            tint = tint
+        )
+        Text(
+            modifier = Modifier.weight(1f),
+            text = stringResource(group.titleRes),
+            style = MaterialTheme.typography.titleSmall,
+            color = tint,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Icon(
+            modifier = Modifier
+                .size(20.dp)
+                .rotate(chevronRotation),
+            painter = painterResource(R.drawable.ic_keyboard_arrow_down),
+            contentDescription = null,
+            tint = tint
+        )
+    }
+}
+
+@Composable
+private fun SheetDestinationRow(
+    destination: NavDestination,
+    isSelected: Boolean,
+    onNavigate: (NavDestination) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clip(MaterialTheme.shapes.large)
+            .clickable(role = Role.Button) {
+                onNavigate(destination)
+                onDismiss()
+            }
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Icon(
+            painter = painterResource(destination.iconRes),
+            contentDescription = null,
+            tint = if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+        )
+        Text(
+            text = stringResource(destination.titleRes),
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+        )
     }
 }

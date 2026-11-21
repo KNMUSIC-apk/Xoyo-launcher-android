@@ -1270,6 +1270,13 @@
     <string name="nav_group_content">Nội dung</string>
     <string name="nav_group_social">Kết nối</string>
     <string name="nav_group_system">Hệ thống</string>
+    <!-- XOYO: nhóm Tải về trên sidebar và các mục tải theo loại -->
+    <string name="nav_group_download">Tải về</string>
+    <string name="nav_download_mods">Tải mod</string>
+    <string name="nav_download_modpacks">Tải modpack</string>
+    <string name="nav_download_resource_packs">Tải gói tài nguyên</string>
+    <string name="nav_download_shaders">Tải shader</string>
+    <string name="nav_download_worlds">Tải thế giới</string>
     <string name="nav_home">Trang chủ</string>
     <string name="nav_profiles">Thư viện</string>
     <string name="nav_versions">Phiên bản</string>
@@ -1439,7 +1446,7 @@
     <string name="content_open_folder">Mở thư mục</string>
     <string name="content_empty">Phiên bản này chưa có mục nào.</string>
     <string name="content_folder">Thư mục</string>
-    <string name="content_modpack_note">Modpack được cài thành phiên bản mới nên không có thư mục để liệt kê ở đây. Dùng Tìm và tải về để lấy modpack.</string>
+    <string name="content_modpack_note">Modpack được cài thành phiên bản mới nên không có thư mục để liệt kê ở đây. Dùng mục Tải modpack trong menu để lấy modpack.</string>
     <!-- XOYO: skin và cape từ web, cape tự chọn từ file -->
     <string name="account_menu_cape_file">Chọn cape từ file</string>
     <string name="account_menu_web_skin">Chọn skin hoặc cape từ web</string>

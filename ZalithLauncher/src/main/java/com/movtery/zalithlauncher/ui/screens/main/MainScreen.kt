@@ -18,7 +18,6 @@
 
 package com.movtery.zalithlauncher.ui.screens.main
 
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
@@ -219,7 +218,8 @@ fun MainScreen(
                         isTasksExpanded = isTaskMenuExpanded,
                         contentColor = onBackgroundColor(),
                         onScreenBack = {
-                            screenBackStackModel.mainScreen.backStack.removeFirstOrNull()
+                            //XOYO: dùng cùng logic với nút Back hệ thống (kể cả ngăn xếp lồng nhau), không xoá màn hình gốc
+                            onBack(screenBackStackModel.mainScreen.backStack)
                         },
                         toMainScreen = toMainScreen,
                         toSettingsScreen = {
@@ -324,8 +324,6 @@ private fun <E: TitledNavKey> TopBar(
         ConstraintLayout(modifier = modifier) {
             val (backCenter, title, endButtons) = createRefs()
 
-            val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-
             Row(
                 modifier = Modifier
                     .constrainAs(backCenter) {
@@ -345,10 +343,9 @@ private fun <E: TitledNavKey> TopBar(
                             modifier = Modifier.fillMaxHeight(),
                             onClick = {
                                 if (!inLauncherScreen) {
-                                    //不在主屏幕时才允许返回
-                                    backDispatcher?.onBackPressed() ?: run {
-                                        onScreenBack()
-                                    }
+                                    //不在主屏幕时才允许返回.
+                                    //XOYO: không gọi Activity.onBackPressed() vì khi không có callback nào bật thì Activity đóng, làm thoát launcher.
+                                    onScreenBack()
                                 }
                             }
                         ) {

@@ -3109,6 +3109,13 @@
     <string name="nav_group_content">Content</string>
     <string name="nav_group_social">Social</string>
     <string name="nav_group_system">System</string>
+    <!-- XOYO: nhóm Tải về trên sidebar và các mục tải theo loại -->
+    <string name="nav_group_download">Download</string>
+    <string name="nav_download_mods">Download mods</string>
+    <string name="nav_download_modpacks">Download modpacks</string>
+    <string name="nav_download_resource_packs">Download resource packs</string>
+    <string name="nav_download_shaders">Download shaders</string>
+    <string name="nav_download_worlds">Download worlds</string>
     <string name="nav_home">Home</string>
     <string name="nav_profiles">Library</string>
     <string name="nav_versions">Versions</string>
@@ -3278,7 +3285,7 @@
     <string name="content_open_folder">Open folder</string>
     <string name="content_empty">No items installed in this version yet.</string>
     <string name="content_folder">Folder</string>
-    <string name="content_modpack_note">Modpacks are installed as new versions, so there is no folder to list here. Use Find and install to get one.</string>
+    <string name="content_modpack_note">Modpacks are installed as new versions, so there is no folder to list here. Use Download modpacks in the menu to get one.</string>
     <!-- XOYO: skin và cape từ web, cape tự chọn từ file -->
     <string name="account_menu_cape_file">Choose cape from file</string>
     <string name="account_menu_web_skin">Choose skin or cape from web</string>

@@ -14,6 +14,9 @@ Nhánh `zalith-base` đang được chuyển đổi từ mã của ZalithLaunche
 - Giao diện mới: sidebar trên màn hình rộng, thanh dưới và trang "Thêm" trên màn hình hẹp; trang chủ có Tổng quan (thao tác nhanh, lịch sử chơi, khám phá chỉ là liên kết) và nút PLAY lớn.
 - Trang mới: Thư viện game, Trung tâm hiệu năng (số liệu thật, phần không đọc được ghi rõ là không khả dụng), Trung tâm máy chủ, Quản lý thế giới, Trung tâm nội dung.
 - Nhóm Nội dung trên sidebar có Trò chơi, Tìm theo ID và Yêu thích. Thanh danh mục bên trái và nút Tải xuống trên thanh trên đã được bỏ.
+- Nhóm Tải về trên sidebar gồm Tải mod, Tải modpack, Tải gói tài nguyên, Tải shader và Tải thế giới. Nút "Tìm và tải về" trong Trung tâm nội dung và nút "Tải thế giới về" trong Quản lý thế giới đã được bỏ.
+- Các nhóm Nội dung, Tải về, Kết nối và Hệ thống thu gọn thành một nút. Bấm vào để mở các mục bên trong, trên sidebar và trong trang "Thêm" của màn hình hẹp.
+- Nút quay lại trên thanh trên dùng cùng logic với nút Back của hệ thống, nên không thoát khỏi launcher khi đang ở trang con.
 - Ghi hình màn hình trong game: nút trong menu game. Chỉ có hình, không có âm thanh của game. Trên Android 10 trở lên, video nằm ở `Movies/XOYO`.
 - Theo dõi giật hình: đếm số đợt FPS tụt đột ngột trong phiên chơi (cần bật hiển thị FPS). Khi giật nhiều lần, launcher gợi ý cách giảm khựng hình.
 - Sao lưu thế giới: nén thế giới thành file zip trong thư mục `world_backups` của phiên bản.

@@ -92,6 +92,13 @@ Giao diện được thiết kế theo đặc tả của dự án. Không sao ch
   - Không sao chép giao diện, biểu tượng hay tài nguyên đồ họa nào của Cubiq.
   - Việc ghi nguồn này là điều kiện GPL-3.0 đối với mẫu.
 
+## Sửa nút quay lại, nhóm Tải về và sidebar thu gọn
+
+- `ui/screens/main/MainScreen.kt` (sửa): nút quay lại trên thanh trên dùng cùng logic với nút Back của hệ thống. Trước đây nó gọi `onBackPressed()` của Activity và xoá màn hình gốc, làm người dùng thoát khỏi launcher.
+- `ui/screens/main/AppNavigation.kt` (sửa): thêm nhóm "Tải về" với năm mục tải theo loại; các nhóm Nội dung, Tải về, Kết nối, Hệ thống thu gọn được trên sidebar và trang "Thêm".
+- `ui/screens/content/hub/ContentCenterScreen.kt`, `WorldManagerScreen.kt` (sửa): bỏ các nút "Tìm và tải về" và "Tải thế giới về".
+- `ZalithLauncher/src/main/res/values/strings.xml`, `values-vi/strings.xml` (sửa): chuỗi cho nhóm Tải về.
+
 ## Thư viện bên thứ ba
 
 Các thư viện và thành phần native đi kèm (thư mục `libs/`, `ZalithLauncher/src/main/jni/`, `LWJGL/`) giữ nguyên giấy phép và thông báo bản quyền của chúng. Cần rà soát lại danh sách này trước khi phát hành.

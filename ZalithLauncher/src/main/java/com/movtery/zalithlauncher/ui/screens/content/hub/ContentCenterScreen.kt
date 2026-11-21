@@ -41,7 +41,6 @@ import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.screens.ContentKind
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.content.home.relativeTime
-import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
 import com.movtery.zalithlauncher.utils.file.formatFileSize
 import com.movtery.zalithlauncher.viewmodel.EventViewModel
 import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
@@ -84,7 +83,7 @@ private fun scanInstalled(version: Version, kind: ContentKind): List<InstalledIt
 
 /**
  * Trung tâm nội dung: mod, modpack, resource pack, shader.
- * Liệt kê những gì đã cài trong phiên bản đang chọn. Nút tải đưa đến trang tải tương ứng.
+ * Liệt kê những gì đã cài trong phiên bản đang chọn. Việc tải nội dung mới nằm ở mục Tải về trên sidebar.
  */
 @Composable
 fun ContentCenterScreen(
@@ -110,12 +109,6 @@ fun ContentCenterScreen(
         }
 
         val folder = key.kind.folder()
-        val installTarget = when (key.kind) {
-            ContentKind.MODS -> backScreenViewModel.downloadModScreen
-            ContentKind.MODPACKS -> backScreenViewModel.downloadModPackScreen
-            ContentKind.RESOURCE_PACKS -> backScreenViewModel.downloadResourcePackScreen
-            ContentKind.SHADERS -> backScreenViewModel.downloadShadersScreen
-        }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -150,9 +143,6 @@ fun ContentCenterScreen(
                             }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { backScreenViewModel.navigateToDownload(installTarget) }) {
-                                Text(stringResource(R.string.content_install))
-                            }
                             if (version != null && folder != null) {
                                 Button(onClick = {
                                     val dir = File(version.getGameDir(), folder.folderName)
