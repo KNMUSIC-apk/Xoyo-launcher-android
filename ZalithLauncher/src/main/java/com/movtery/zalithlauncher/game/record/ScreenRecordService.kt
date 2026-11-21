@@ -69,7 +69,8 @@ class ScreenRecordService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
+        if (intent == null) return START_NOT_STICKY
+        when (intent.action) {
             ACTION_START -> {
                 if (!enterForeground()) {
                     stopSelf()
@@ -299,11 +300,11 @@ class ScreenRecordService : Service() {
         super.onDestroy()
     }
 
+    @Suppress("DEPRECATION")
     private fun Intent.projectionData(): Intent? =
         if (Build.VERSION.SDK_INT >= 33) {
             getParcelableExtra(EXTRA_PROJECTION_DATA, Intent::class.java)
         } else {
-            @Suppress("DEPRECATION")
             getParcelableExtra(EXTRA_PROJECTION_DATA)
         }
 

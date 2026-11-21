@@ -356,9 +356,9 @@ private fun GameActionContent(
                 enabled = GameUiSettings.showMenuBall.state && GameUiSettings.showFPS.state
             )
         }
-        //XOYO: số lần FPS tụt đột ngột trong lần chơi này
-        if (GameUiSettings.showFPS.state) {
-            item {
+        //XOYO: số lần FPS tụt đột ngột trong lần chơi này (chỉ hiện khi bật hiển thị FPS)
+        item {
+            if (GameUiSettings.showFPS.state) {
                 Text(
                     modifier = Modifier
                         .fillMaxWidth()
