@@ -10,6 +10,7 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -50,6 +51,7 @@ import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.ContentKind
+import com.movtery.zalithlauncher.ui.components.verticalScrollWithBar
 import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
@@ -124,7 +126,8 @@ fun ScreenBackStackViewModel.navigateToDestination(destination: NavDestination) 
         NavDestination.HOME -> mainScreen.clearWith(NormalNavKey.LauncherMain)
         NavDestination.PROFILES -> mainScreen.clearWith(NormalNavKey.GameLibrary)
         NavDestination.VERSIONS -> mainScreen.clearWith(NormalNavKey.VersionsManager)
-        NavDestination.MODS -> mainScreen.clearWith(NormalNavKey.ContentCenter(ContentKind.MODS))
+        // Vào thẳng nơi tải mod, bỏ bước trung gian "Tìm và tải về"
+        NavDestination.MODS -> navigateToDownload(downloadModScreen)
         NavDestination.MODPACKS -> mainScreen.clearWith(NormalNavKey.ContentCenter(ContentKind.MODPACKS))
         NavDestination.RESOURCE_PACKS -> mainScreen.clearWith(NormalNavKey.ContentCenter(ContentKind.RESOURCE_PACKS))
         NavDestination.SHADERS -> mainScreen.clearWith(NormalNavKey.ContentCenter(ContentKind.SHADERS))
@@ -186,11 +189,12 @@ fun AppSidebar(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(vertical = 12.dp, horizontal = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(vertical = 12.dp, horizontal = 8.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (expanded) {
@@ -222,26 +226,36 @@ fun AppSidebar(
                 }
             }
 
-            NavDestination.entries.groupBy { it.group }.forEach { (group, items) ->
-                if (expanded) {
-                    Text(
-                        modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 2.dp),
-                        text = stringResource(group.titleRes),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
-                    )
-                } else {
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-                items.forEach { destination ->
-                    SidebarItem(
-                        destination = destination,
-                        selected = destination == selected,
-                        expanded = expanded,
-                        reducedMotion = reducedMotion,
-                        onClick = { onNavigate(destination) }
-                    )
+            // Danh sách mục điều hướng dài hơn màn hình: cho phép cuộn và hiện thanh cuộn
+            val listScrollState = rememberScrollState()
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScrollWithBar(state = listScrollState),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                NavDestination.entries.groupBy { it.group }.forEach { (group, items) ->
+                    if (expanded) {
+                        Text(
+                            modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 2.dp),
+                            text = stringResource(group.titleRes),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    items.forEach { destination ->
+                        SidebarItem(
+                            destination = destination,
+                            selected = destination == selected,
+                            expanded = expanded,
+                            reducedMotion = reducedMotion,
+                            onClick = { onNavigate(destination) }
+                        )
+                    }
                 }
             }
         }
