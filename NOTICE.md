@@ -41,6 +41,26 @@ XOYO Launcher là bản chỉnh sửa của **ZalithLauncher2**:
 - `ZalithLauncher/src/main/java/.../ui/screens/content/LauncherScreen.kt`: thêm nhãn "Unofficial Modified Version" trên màn hình chính.
 - `.github/workflows/xoyo-ci.yml`: CI riêng của XOYO; build với `-Darch=arm64` và in thống kê APK.
 
+## Giao diện XOYO (đợt chỉnh sửa lớn)
+
+Các file mới hoặc sửa đổi trong `ZalithLauncher/src/main/java/com/movtery/zalithlauncher/`:
+
+- `ui/screens/main/AppNavigation.kt` (mới): sidebar 12 mục, thanh điều hướng dưới và trang "Thêm" cho màn hình hẹp.
+- `ui/screens/main/MainScreen.kt` (sửa): bố cục sidebar/thanh dưới, nối các trang mới, xử lý thao tác nhanh.
+- `ui/screens/content/LauncherScreen.kt` (sửa): hai chế độ trang chủ (Tổng quan và Thẻ), nút PLAY lớn, nút xoay mô hình, RAM và tần số màn hình trong Hero.
+- `ui/screens/content/home/DashboardElements.kt` (mới): thống kê, thao tác nhanh có thể sắp xếp, hoạt động gần đây, khám phá (chỉ liên kết).
+- `ui/screens/content/library/GameLibraryScreen.kt` (mới): thư viện game dạng thẻ/danh sách, tìm kiếm, sắp xếp.
+- `ui/screens/content/performance/PerformanceCenterScreen.kt` (mới): số liệu thiết bị, cấu hình sẵn và tuỳ chỉnh, chẩn đoán.
+- `ui/screens/content/hub/ServerHubScreen.kt`, `WorldManagerScreen.kt`, `ContentCenterScreen.kt` (mới).
+- `ui/screens/NormalNavKey.kt` (sửa): thêm các khoá màn hình mới và `ContentKind`.
+- `ui/screens/content/settings/LauncherSettingsScreen.kt` (sửa): công tắc "Giảm chuyển động".
+- `setting/LauncherSettings.kt` (sửa): thêm `launcherSidebarExpanded`, `launcherReducedMotion`, `launcherQuickActions`, `performanceCustomPresets`.
+- `game/playhistory/PlayHistory.kt` (mới) và `ui/activities/VMActivity.kt` (sửa): ghi nhận thời gian chơi khi game chạy và thoát.
+- `game/performance/DeviceStats.kt`, `PerformancePresets.kt`, `LauncherDiagnostics.kt` (mới): đọc số liệu thiết bị, gợi ý cấu hình và luật chẩn đoán dựa trên log.
+- `res/values/strings.xml`, `res/values-vi/strings.xml`: chuỗi cho các trang mới.
+
+Giao diện được thiết kế theo đặc tả của dự án. Không sao chép mã hay tài nguyên của Dawn Client hoặc FastClient.
+
 ## Mẫu và dữ liệu từ dự án khác
 
 - `ZalithLauncher/src/main/assets/control_templates/touch_template.json`: bố cục điều khiển cảm ứng, lấy từ [Cubiq Launcher](https://github.com/VivxKumar07/Cubiq-Launcher). Cubiq Launcher cũng là bản fork GPL-3.0 của ZalithLauncher2.

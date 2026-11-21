@@ -1264,4 +1264,180 @@
     <string name="control_manage_create_new_template">Mẫu</string>
     <string name="control_manage_template_blank">Bố cục trống</string>
     <string name="control_manage_template_touch">Bố cục cảm ứng</string>
+
+    <!-- XOYO: sidebar and bottom navigation -->
+    <string name="nav_group_main">Chính</string>
+    <string name="nav_group_content">Nội dung</string>
+    <string name="nav_group_social">Kết nối</string>
+    <string name="nav_group_system">Hệ thống</string>
+    <string name="nav_home">Trang chủ</string>
+    <string name="nav_profiles">Thư viện</string>
+    <string name="nav_versions">Phiên bản</string>
+    <string name="nav_mods">Mod</string>
+    <string name="nav_modpacks">Modpack</string>
+    <string name="nav_resource_packs">Gói tài nguyên</string>
+    <string name="nav_shaders">Shader</string>
+    <string name="nav_worlds">Thế giới</string>
+    <string name="nav_servers">Máy chủ</string>
+    <string name="nav_accounts">Tài khoản</string>
+    <string name="nav_performance">Hiệu năng</string>
+    <string name="nav_settings">Cài đặt</string>
+    <string name="nav_collapse">Thu gọn menu</string>
+    <string name="nav_expand">Mở rộng menu</string>
+    <string name="nav_more">Thêm</string>
+
+    <!-- XOYO: home overview, quick actions, activity and discovery -->
+    <string name="home_tab_overview">Tổng quan</string>
+    <string name="home_tab_cards">Thẻ</string>
+    <string name="dash_stats_title">Tổng quan</string>
+    <string name="dash_stats_profiles">Hồ sơ</string>
+    <string name="dash_stats_playtime">Thời gian chơi</string>
+    <string name="dash_stats_last_played">Chơi gần nhất</string>
+    <string name="dash_quick_actions">Thao tác nhanh</string>
+    <string name="dash_quick_actions_edit">Sửa thao tác nhanh</string>
+    <string name="dash_quick_actions_empty">Chưa có thao tác nhanh. Bấm nút sửa để thêm.</string>
+    <string name="dash_recent">Hoạt động gần đây</string>
+    <string name="dash_recent_empty">Chưa chơi game nào. Khi bạn chạy một phiên bản, nó sẽ hiện ở đây.</string>
+    <string name="dash_last_played">Chơi gần nhất %1$s</string>
+    <string name="dash_play_time">Đã chơi %1$s</string>
+    <string name="dash_sessions">%1$d lần</string>
+    <string name="dash_open_settings">Mở cài đặt</string>
+    <string name="dash_discovery">Khám phá</string>
+    <string name="dash_discovery_content">Duyệt mod và nội dung</string>
+    <string name="dash_discovery_news">Tin tức Minecraft (mở bằng trình duyệt)</string>
+    <string name="dash_discovery_updates">Bản phát hành XOYO (mở bằng trình duyệt)</string>
+    <string name="dash_discovery_note">Chỉ là liên kết. Launcher chưa có nguồn tin trực tiếp.</string>
+    <string name="qa_create_profile">Tạo hồ sơ</string>
+    <string name="qa_manage_versions">Quản lý phiên bản</string>
+    <string name="qa_install_mods">Cài mod</string>
+    <string name="qa_install_shaders">Cài shader</string>
+    <string name="qa_install_resource_packs">Gói tài nguyên</string>
+    <string name="qa_manage_worlds">Thế giới</string>
+    <string name="qa_performance">Hiệu năng</string>
+    <string name="qa_open_folder">Mở thư mục game</string>
+    <string name="duration_hours_minutes">%1$d giờ %2$d phút</string>
+    <string name="duration_minutes">%1$d phút</string>
+
+    <!-- XOYO: hero on the home screen -->
+    <string name="hero_play">CHƠI</string>
+    <string name="hero_rotate_model">Xoay mô hình</string>
+    <string name="hero_stat_ram">RAM %1$d MB</string>
+    <string name="hero_stat_fps_target">Mục tiêu %1$d Hz</string>
+    <string name="hero_stat_fps_unknown">Không rõ tần số màn hình</string>
+
+    <!-- XOYO: game library -->
+    <string name="library_sort_last_played">Chơi gần đây</string>
+    <string name="library_sort_playtime">Thời gian chơi</string>
+    <string name="library_sort_name">Tên</string>
+    <string name="library_search_hint">Tìm phiên bản</string>
+    <string name="library_view_grid">Lưới</string>
+    <string name="library_view_list">Danh sách</string>
+    <string name="library_stat_sessions">Lần khởi chạy</string>
+    <string name="library_never_played">Chưa chơi lần nào</string>
+    <string name="library_empty">Chưa có phiên bản nào. Tạo một phiên bản để thấy nó trong thư viện.</string>
+    <string name="library_no_match">Không có phiên bản nào khớp với tìm kiếm.</string>
+    <string name="library_open_versions">Đến trang phiên bản</string>
+
+    <!-- XOYO: performance center -->
+    <string name="perf_notice">Số liệu thiết bị được đo trực tiếp trên máy này. Mục nào Android không cho đọc sẽ hiện là không khả dụng. Gợi ý RAM và cấu hình chỉ là ước tính, không phải kết quả benchmark.</string>
+    <string name="perf_device_title">Thiết bị này</string>
+    <string name="perf_device_ram">Bộ nhớ đang dùng</string>
+    <string name="perf_device_cpu">Mức dùng CPU</string>
+    <string name="perf_device_battery">Nhiệt độ pin</string>
+    <string name="perf_device_thermal">Cảm biến nóng nhất</string>
+    <string name="perf_device_measuring">Đang đo...</string>
+    <string name="perf_unavailable">Không khả dụng</string>
+    <string name="perf_ingame_title">Trong game</string>
+    <string name="perf_gpu_title">Mức dùng GPU</string>
+    <string name="perf_gpu_note">Launcher không đọc được mức dùng GPU trên Android.</string>
+    <string name="perf_fps_title">FPS trong game</string>
+    <string name="perf_fps_note">Launcher không đọc được FPS trong game. Tần số màn hình được hiện làm mục tiêu ở trang chủ.</string>
+    <string name="perf_profile_title">Phiên bản đang chọn</string>
+    <string name="perf_profile_none">Chưa chọn phiên bản.</string>
+    <string name="perf_profile_open_versions">Chọn phiên bản</string>
+    <string name="perf_profile_ram">RAM đã cấp</string>
+    <string name="perf_profile_java">Java runtime</string>
+    <string name="perf_profile_jvm">Tham số JVM</string>
+    <string name="perf_profile_renderer">Renderer</string>
+    <string name="perf_default_value">Mặc định</string>
+    <string name="perf_presets_title">Cấu hình sẵn</string>
+    <string name="perf_preset_low">Nhẹ</string>
+    <string name="perf_preset_balanced">Cân bằng</string>
+    <string name="perf_preset_high">Cao</string>
+    <string name="perf_preset_extreme">Tối đa</string>
+    <string name="perf_preset_suggested">Gợi ý cho máy này</string>
+    <string name="perf_preset_ram_estimate">RAM ước tính: khoảng %1$d MB</string>
+    <string name="perf_preset_need_device_ram">Không đọc được RAM máy nên không có ước tính.</string>
+    <string name="perf_preset_apply">Áp dụng cho phiên bản này</string>
+    <string name="perf_applied">Đã áp dụng cấu hình cho phiên bản</string>
+    <string name="perf_custom_title">Cấu hình tuỳ chỉnh</string>
+    <string name="perf_custom_add">Thêm</string>
+    <string name="perf_custom_empty">Chưa có cấu hình tuỳ chỉnh nào.</string>
+    <string name="perf_custom_dialog_title">Cấu hình mới</string>
+    <string name="perf_custom_name">Tên</string>
+    <string name="perf_custom_ram">RAM (MB)</string>
+    <string name="perf_custom_jvm">Tham số JVM (không bắt buộc)</string>
+    <string name="perf_custom_ram_value">RAM %1$d MB</string>
+    <string name="perf_custom_invalid">Nhập tên và RAM tối thiểu %1$d MB.</string>
+    <string name="perf_diag_title">Chẩn đoán</string>
+    <string name="perf_diag_note">Dựa trên log game gần nhất và các file mod. Đây không phải chẩn đoán đầy đủ.</string>
+    <string name="perf_diag_run">Chạy chẩn đoán</string>
+    <string name="perf_diag_running">Đang kiểm tra...</string>
+    <string name="diag_out_of_memory">Game hết bộ nhớ Java. Hãy tăng RAM trong cài đặt phiên bản hoặc gỡ bớt mod nặng.</string>
+    <string name="diag_java_version">Game cần phiên bản Java khác. Hãy chọn runtime phù hợp trong cài đặt phiên bản.</string>
+    <string name="diag_missing_class">Thiếu một lớp. Có thể mod không tương thích hoặc thiếu thư viện phụ thuộc.</string>
+    <string name="diag_duplicate_mod">Có hai bản trùng của cùng một mod. Chỉ giữ lại một bản.</string>
+    <string name="diag_mixin_failure">Một mod không chèn code được. Thường do mod không tương thích hoặc sai phiên bản game.</string>
+    <string name="diag_corrupted_file">Log gần nhất có file bị hỏng. Hãy cài lại phiên bản hoặc file bị ảnh hưởng.</string>
+    <string name="diag_native_library">Một thư viện native không tải được. Hãy kiểm tra renderer và kiến trúc máy.</string>
+    <string name="diag_missing_dependency">Thiếu một mod hoặc thư viện bắt buộc.</string>
+    <string name="diag_low_disk">Bộ nhớ trống rất ít. Hãy giải phóng dung lượng trước khi chơi.</string>
+    <string name="diag_high_ram">RAM cấp cho game vượt 80% bộ nhớ máy. Android có thể đóng game. Hãy giảm bớt.</string>
+    <string name="diag_corrupted_mod_jar">Một số file mod không mở được, có thể bị hỏng hoặc tải dở. Hãy tải lại.</string>
+    <string name="diag_no_issues">Không phát hiện vấn đề đã biết trong log gần nhất.</string>
+    <string name="settings_launcher_reduced_motion_title">Giảm chuyển động</string>
+    <string name="settings_launcher_reduced_motion_summary">Tắt hoạt ảnh sidebar và số liệu. Hữu ích trên máy yếu.</string>
+
+    <!-- XOYO: server hub -->
+    <string name="hub_server_intro">Chỉ hiện các máy chủ bạn đã thêm. Trạng thái lấy từ ping thật tới từng máy chủ, không có dữ liệu mẫu.</string>
+    <string name="hub_server_add">Thêm máy chủ</string>
+    <string name="hub_server_add_title">Thêm máy chủ</string>
+    <string name="hub_server_name">Tên (không bắt buộc)</string>
+    <string name="hub_server_address">Địa chỉ</string>
+    <string name="hub_server_add_failed">Không thêm được: địa chỉ trống hoặc đã có trong danh sách.</string>
+    <string name="hub_server_empty">Chưa có máy chủ nào. Thêm một máy chủ để xem trạng thái và vào nhanh.</string>
+    <string name="hub_server_ping_loading">Đang kiểm tra...</string>
+    <string name="hub_server_ping_failed">Không kết nối được</string>
+    <string name="hub_server_ping_ms">%1$d ms</string>
+    <string name="hub_server_quick_launch">Mở nhanh</string>
+    <string name="hub_server_refresh">Kiểm tra lại</string>
+    <string name="hub_server_play">Vào máy chủ này</string>
+    <string name="hub_server_delete">Xoá</string>
+    <string name="hub_server_delete_title">Xoá máy chủ</string>
+    <string name="hub_server_delete_message">Xoá %1$s khỏi danh sách?</string>
+
+    <!-- XOYO: world manager -->
+    <string name="world_search_hint">Tìm thế giới</string>
+    <string name="world_loading">Đang đọc thế giới...</string>
+    <string name="world_empty">Chưa tìm thấy thế giới nào trong các phiên bản.</string>
+    <string name="world_no_match">Không có thế giới nào khớp với tìm kiếm.</string>
+    <string name="world_version">Phiên bản: %1$s</string>
+    <string name="world_mc_version">MC %1$s</string>
+    <string name="world_playtime">Thời gian chơi: %1$s</string>
+    <string name="world_no_details">Không có chi tiết</string>
+    <string name="world_invalid">Không đọc được level.dat của thế giới này.</string>
+    <string name="world_open_folder">Mở thư mục</string>
+    <string name="world_delete">Xoá</string>
+    <string name="world_delete_title">Xoá thế giới</string>
+    <string name="world_delete_message">Xoá %1$s? Không thể hoàn tác. Hãy chắc game không đang chạy.</string>
+
+    <!-- XOYO: content center -->
+    <string name="content_select_version">Hãy chọn một phiên bản trước. Nội dung của phiên bản sẽ hiện ở đây.</string>
+    <string name="content_for_version">Phiên bản: %1$s</string>
+    <string name="content_items_count">Đã cài %1$d mục</string>
+    <string name="content_install">Tìm và tải về</string>
+    <string name="content_open_folder">Mở thư mục</string>
+    <string name="content_empty">Phiên bản này chưa có mục nào.</string>
+    <string name="content_folder">Thư mục</string>
+    <string name="content_modpack_note">Modpack được cài thành phiên bản mới nên không có thư mục để liệt kê ở đây. Dùng Tìm và tải về để lấy modpack.</string>
 </resources>

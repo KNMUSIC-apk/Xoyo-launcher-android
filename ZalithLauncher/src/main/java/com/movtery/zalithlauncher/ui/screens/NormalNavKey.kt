@@ -29,6 +29,17 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
 /**
+ * Loại nội dung được quản lý ở Content Center (XOYO)
+ */
+@Serializable
+enum class ContentKind(val titleRes: Int) {
+    MODS(R.string.nav_mods),
+    MODPACKS(R.string.nav_modpacks),
+    RESOURCE_PACKS(R.string.nav_resource_packs),
+    SHADERS(R.string.nav_shaders)
+}
+
+/**
  * 普通的屏幕
  */
 sealed interface NormalNavKey : TitledNavKey {
@@ -62,6 +73,27 @@ sealed interface NormalNavKey : TitledNavKey {
     /** 多人联机屏幕 */
     @Serializable data object Multiplayer: NormalNavKey {
         @Contextual override val title: AndroidStringText = androidText(R.string.terracotta_terracotta)
+    }
+
+    /** XOYO：游戏库（Profiles），hiển thị các phiên bản dạng thẻ */
+    @Serializable data object GameLibrary : NormalNavKey {
+        @Contextual override val title: AndroidStringText = androidText(R.string.nav_profiles)
+    }
+    /** XOYO：trung tâm hiệu năng */
+    @Serializable data object PerformanceCenter : NormalNavKey {
+        @Contextual override val title: AndroidStringText = androidText(R.string.nav_performance)
+    }
+    /** XOYO：trung tâm máy chủ */
+    @Serializable data object ServerHub : NormalNavKey {
+        @Contextual override val title: AndroidStringText = androidText(R.string.nav_servers)
+    }
+    /** XOYO：quản lý thế giới của mọi phiên bản */
+    @Serializable data object WorldManager : NormalNavKey {
+        @Contextual override val title: AndroidStringText = androidText(R.string.nav_worlds)
+    }
+    /** XOYO：trung tâm nội dung (mod, modpack, resource pack, shader) */
+    @Serializable data class ContentCenter(val kind: ContentKind) : NormalNavKey {
+        @Contextual override val title: AndroidStringText = androidText(kind.titleRes)
     }
 
     /** 查看日志屏幕 */

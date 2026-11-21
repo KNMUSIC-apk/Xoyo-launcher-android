@@ -30,6 +30,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -76,6 +77,7 @@ import androidx.navigation3.runtime.entryProvider
 import com.movtery.zalithlauncher.BuildKeys
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.coroutine.TaskSystem
+import com.movtery.zalithlauncher.game.playhistory.PlayHistory
 import com.movtery.zalithlauncher.game.version.installed.Version
 import com.movtery.zalithlauncher.game.version.installed.VersionsManager
 import com.movtery.zalithlauncher.path.PathManager
@@ -105,7 +107,13 @@ import com.movtery.zalithlauncher.ui.screens.content.VersionSettingsScreen
 import com.movtery.zalithlauncher.ui.screens.content.VersionsManageScreen
 import com.movtery.zalithlauncher.ui.screens.content.WebViewScreen
 import com.movtery.zalithlauncher.ui.screens.content.addoninfo.AddonInfoScreen
+import com.movtery.zalithlauncher.ui.screens.content.home.QuickAction
+import com.movtery.zalithlauncher.ui.screens.content.hub.ContentCenterScreen
+import com.movtery.zalithlauncher.ui.screens.content.hub.ServerHubScreen
+import com.movtery.zalithlauncher.ui.screens.content.hub.WorldManagerScreen
+import com.movtery.zalithlauncher.ui.screens.content.library.GameLibraryScreen
 import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
+import com.movtery.zalithlauncher.ui.screens.content.performance.PerformanceCenterScreen
 import com.movtery.zalithlauncher.ui.screens.navigateTo
 import com.movtery.zalithlauncher.ui.screens.onBack
 import com.movtery.zalithlauncher.ui.screens.rememberTransitionSpec
@@ -144,6 +152,11 @@ fun MainScreen(
         }
     }
 
+    // XOYO: đọc lịch sử chơi ở nền để Tổng quan và Thư viện có dữ liệu ngay khi mở
+    LaunchedEffect(Unit) {
+        PlayHistory.ensureLoaded()
+    }
+
     val isTaskMenuExpanded = LauncherSettings.launcherTaskMenuExpanded.state
 
     fun changeTasksExpandedState() {
@@ -158,6 +171,13 @@ fun MainScreen(
     val mainScreenKey = screenBackStackModel.mainScreen.currentKey
     val inLauncherScreen = mainScreenKey == null || mainScreenKey is NormalNavKey.LauncherMain
 
+    // XOYO: mục đang chọn trên sidebar / thanh dưới, và hàm chuyển trang chung cho cả hai
+    val currentDestination = navDestinationOf(mainScreenKey)
+    var showMoreSheet by remember { mutableStateOf(false) }
+    val onNavigate: (NavDestination) -> Unit = { destination ->
+        screenBackStackModel.navigateToDestination(destination)
+    }
+
     val isBackgroundValid = LocalBackgroundViewModel.current?.isValid == true
     val launcherBackgroundOpacity = LauncherSettings.launcherBackgroundOpacity.state.toFloat() / 100f
 
@@ -170,77 +190,110 @@ fun MainScreen(
         color = backgroundColor,
         contentColor = onBackgroundColor()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            TopBar(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp),
-                mainScreenKey = mainScreenKey,
-                inLauncherScreen = inLauncherScreen,
-                taskRunning = taskRunning,
-                isTasksExpanded = isTaskMenuExpanded,
-                contentColor = onBackgroundColor(),
-                onScreenBack = {
-                    screenBackStackModel.mainScreen.backStack.removeFirstOrNull()
-                },
-                toMainScreen = toMainScreen,
-                toSettingsScreen = {
-                    screenBackStackModel.mainScreen.removeAndNavigateTo(
-                        removes = screenBackStackModel.clearBeforeNavKeys,
-                        screenKey = screenBackStackModel.settingsScreen
-                    )
-                },
-                toDownloadScreen = {
-                    screenBackStackModel.navigateToDownload()
-                },
-                toMultiplayerScreen = {
-                    screenBackStackModel.mainScreen.removeAndNavigateTo(
-                        removes = screenBackStackModel.clearBeforeNavKeys,
-                        screenKey = NormalNavKey.Multiplayer
-                    )
-                },
-                openFileManager = {
-                    eventViewModel.sendEvent(
-                        EventViewModel.Event.OpenFileManager(
-                            rootPath = PathManager.DIR_FILES_EXTERNAL.absolutePath
-                        )
-                    )
-                },
-                changeExpandedState = {
-                    changeTasksExpandedState()
-                },
-            )
+        // XOYO: màn hình rộng dùng sidebar, màn hình hẹp dùng thanh dưới + "Thêm"
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val compact = maxWidth < CompactWidthThreshold
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-                NavStateHost(rootKey = screenBackStackModel.mainScreen) {
-                    NavigationUI(
-                        modifier = Modifier.fillMaxSize(),
-                        screenBackStackModel = screenBackStackModel,
-                        toMainScreen = toMainScreen,
-                        eventViewModel = eventViewModel,
-                        modpackImportViewModel = modpackImportViewModel,
-                        modifyVersionViewModel = modifyVersionViewModel,
-                        submitError = submitError
+            Row(modifier = Modifier.fillMaxSize()) {
+                if (!compact) {
+                    AppSidebar(
+                        selected = currentDestination,
+                        onNavigate = onNavigate
                     )
                 }
 
-                TaskMenu(
-                    isExpanded = isTaskMenuExpanded,
+                Column(
                     modifier = Modifier
+                        .weight(1f)
                         .fillMaxHeight()
-                        .fillMaxWidth(0.3f)
-                        .align(Alignment.CenterStart)
-                        .padding(all = 6.dp)
                 ) {
-                    changeTasksExpandedState()
+                    TopBar(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(40.dp),
+                        mainScreenKey = mainScreenKey,
+                        inLauncherScreen = inLauncherScreen,
+                        taskRunning = taskRunning,
+                        isTasksExpanded = isTaskMenuExpanded,
+                        contentColor = onBackgroundColor(),
+                        onScreenBack = {
+                            screenBackStackModel.mainScreen.backStack.removeFirstOrNull()
+                        },
+                        toMainScreen = toMainScreen,
+                        toSettingsScreen = {
+                            screenBackStackModel.mainScreen.removeAndNavigateTo(
+                                removes = screenBackStackModel.clearBeforeNavKeys,
+                                screenKey = screenBackStackModel.settingsScreen
+                            )
+                        },
+                        toDownloadScreen = {
+                            screenBackStackModel.navigateToDownload()
+                        },
+                        toMultiplayerScreen = {
+                            screenBackStackModel.mainScreen.removeAndNavigateTo(
+                                removes = screenBackStackModel.clearBeforeNavKeys,
+                                screenKey = NormalNavKey.Multiplayer
+                            )
+                        },
+                        openFileManager = {
+                            eventViewModel.sendEvent(
+                                EventViewModel.Event.OpenFileManager(
+                                    rootPath = PathManager.DIR_FILES_EXTERNAL.absolutePath
+                                )
+                            )
+                        },
+                        changeExpandedState = {
+                            changeTasksExpandedState()
+                        },
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
+                        NavStateHost(rootKey = screenBackStackModel.mainScreen) {
+                            NavigationUI(
+                                modifier = Modifier.fillMaxSize(),
+                                screenBackStackModel = screenBackStackModel,
+                                toMainScreen = toMainScreen,
+                                eventViewModel = eventViewModel,
+                                modpackImportViewModel = modpackImportViewModel,
+                                modifyVersionViewModel = modifyVersionViewModel,
+                                submitError = submitError
+                            )
+                        }
+
+                        TaskMenu(
+                            isExpanded = isTaskMenuExpanded,
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(0.3f)
+                                .align(Alignment.CenterStart)
+                                .padding(all = 6.dp)
+                        ) {
+                            changeTasksExpandedState()
+                        }
+                    }
+
+                    if (compact) {
+                        AppBottomBar(
+                            selected = currentDestination,
+                            onNavigate = onNavigate,
+                            onMore = { showMoreSheet = true },
+                            moreSelected = currentDestination != null &&
+                                    currentDestination !in CompactPrimaryDestinations
+                        )
+                    }
                 }
+            }
+
+            if (compact && showMoreSheet) {
+                MoreDestinationsSheet(
+                    selected = currentDestination,
+                    onNavigate = onNavigate,
+                    onDismiss = { showMoreSheet = false }
+                )
             }
         }
     }
@@ -516,6 +569,32 @@ private fun NavigationUI(
                 useClassEquality = true
             )
         }
+        /**
+         * XOYO: xử lý thao tác nhanh trên Tổng quan.
+         * Mỗi thao tác chỉ mở đúng trang đã có sẵn, không tạo chức năng mới.
+         */
+        val onQuickAction: (QuickAction) -> Unit = { action ->
+            when (action) {
+                QuickAction.CREATE_PROFILE -> screenBackStackModel.navigateToDownload()
+                QuickAction.MANAGE_VERSIONS -> screenBackStackModel.navigateToDestination(NavDestination.VERSIONS)
+                QuickAction.INSTALL_MODS -> screenBackStackModel.navigateToDownload(screenBackStackModel.downloadModScreen)
+                QuickAction.INSTALL_SHADERS -> screenBackStackModel.navigateToDownload(screenBackStackModel.downloadShadersScreen)
+                QuickAction.INSTALL_RESOURCE_PACKS -> screenBackStackModel.navigateToDownload(screenBackStackModel.downloadResourcePackScreen)
+                QuickAction.MANAGE_WORLDS -> screenBackStackModel.navigateToDestination(NavDestination.WORLDS)
+                QuickAction.PERFORMANCE -> screenBackStackModel.navigateToDestination(NavDestination.PERFORMANCE)
+                QuickAction.OPEN_GAME_FOLDER -> {
+                    val target = VersionsManager.currentVersion.value?.takeIf { it.isValid() }
+                    if (target != null) {
+                        eventViewModel.sendEvent(
+                            EventViewModel.Event.OpenFileManager(rootPath = target.getGameDir().absolutePath)
+                        )
+                    } else {
+                        eventViewModel.sendToast(androidText(R.string.game_launch_no_version))
+                        screenBackStackModel.navigateToDestination(NavDestination.VERSIONS)
+                    }
+                }
+            }
+        }
 
         NestedNavDisplay(
             ownerKey = screenBackStackModel.mainScreen,
@@ -550,9 +629,45 @@ private fun NavigationUI(
                         onOpenLink = {
                             eventViewModel.sendEvent(EventViewModel.Event.OpenLink(it))
                         },
+                        onQuickAction = onQuickAction,
+                        onNavigate = { destination ->
+                            screenBackStackModel.navigateToDestination(destination)
+                        },
                         startGuideOnce = { keys ->
                             eventViewModel.sendStartGuideOnce(keys)
                         }
+                    )
+                }
+                entry<NormalNavKey.GameLibrary> {
+                    GameLibraryScreen(
+                        backStackViewModel = screenBackStackModel,
+                        eventViewModel = eventViewModel,
+                        navigateToVersions = navigateToVersions
+                    )
+                }
+                entry<NormalNavKey.PerformanceCenter> {
+                    PerformanceCenterScreen(
+                        backStackViewModel = screenBackStackModel,
+                        eventViewModel = eventViewModel
+                    )
+                }
+                entry<NormalNavKey.ServerHub> {
+                    ServerHubScreen(
+                        backStackViewModel = screenBackStackModel,
+                        eventViewModel = eventViewModel
+                    )
+                }
+                entry<NormalNavKey.WorldManager> {
+                    WorldManagerScreen(
+                        backStackViewModel = screenBackStackModel,
+                        eventViewModel = eventViewModel
+                    )
+                }
+                entry<NormalNavKey.ContentCenter> { key ->
+                    ContentCenterScreen(
+                        key = key,
+                        backScreenViewModel = screenBackStackModel,
+                        eventViewModel = eventViewModel
                     )
                 }
                 entry<NestedNavKey.Settings> { key ->

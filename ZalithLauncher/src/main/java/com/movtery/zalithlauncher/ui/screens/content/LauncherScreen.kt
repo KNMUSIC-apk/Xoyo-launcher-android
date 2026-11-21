@@ -18,6 +18,7 @@
 
 package com.movtery.zalithlauncher.ui.screens.content
 
+import android.view.WindowManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,8 +36,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -46,9 +49,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +64,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
@@ -95,17 +101,19 @@ import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.CutoutBox
 import com.movtery.zalithlauncher.ui.components.MarqueeText
 import com.movtery.zalithlauncher.ui.components.PetModelView
-import com.movtery.zalithlauncher.ui.components.ScalingIconButton
 import com.movtery.zalithlauncher.ui.components.animated
 import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
 import com.movtery.zalithlauncher.ui.guide.GuideKeys
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
+import com.movtery.zalithlauncher.ui.screens.main.NavDestination
 import com.movtery.zalithlauncher.ui.screens.content.elements.CommonVersionInfoLayout
 import com.movtery.zalithlauncher.ui.screens.content.elements.PlayerFace
 import com.movtery.zalithlauncher.ui.screens.content.elements.VersionIconImage
+import com.movtery.zalithlauncher.ui.screens.content.home.DashboardOverview
 import com.movtery.zalithlauncher.ui.screens.content.home.HomeGrid
 import com.movtery.zalithlauncher.ui.screens.content.home.LocalActionMenuDrag
+import com.movtery.zalithlauncher.ui.screens.content.home.QuickAction
 import com.movtery.zalithlauncher.ui.screens.content.home.actionMenuDragAnchor
 import com.movtery.zalithlauncher.ui.screens.content.home.actionMenuDragExclusion
 import com.movtery.zalithlauncher.ui.screens.content.home.rememberActionMenuDragState
@@ -134,6 +142,8 @@ fun LauncherScreen(
     onLaunchGame: (Version?) -> Unit,
     onQuickPlayServer: (Version?, String) -> Unit,
     onOpenLink: (String) -> Unit,
+    onQuickAction: (QuickAction) -> Unit,
+    onNavigate: (NavDestination) -> Unit,
     startGuideOnce: (GuideKeys.Keys) -> Unit,
 ) {
     LaunchedEffect(Unit) {
@@ -221,7 +231,10 @@ fun LauncherScreen(
                             onLaunchGame(version)
                         },
                         onQuickPlayServer = onQuickPlayServer,
-                        onOpenVersionSettings = navigateToVersions
+                        onOpenVersionSettings = navigateToVersions,
+                        onQuickAction = onQuickAction,
+                        onNavigate = onNavigate,
+                        onOpenLink = onOpenLink
                     )
                 }
 
@@ -262,16 +275,23 @@ fun LauncherScreen(
     }
 }
 
+/** Hai chế độ của trang chủ: Tổng quan (XOYO) và Thẻ (giao diện thẻ có sẵn) */
+private enum class HomeTab { OVERVIEW, CARDS }
+
 @Composable
 private fun ContentMenu(
     isVisible: Boolean,
     onLaunchGame: (Version) -> Unit,
     onQuickPlayServer: (Version?, String) -> Unit,
     onOpenVersionSettings: (Version) -> Unit,
+    onQuickAction: (QuickAction) -> Unit,
+    onNavigate: (NavDestination) -> Unit,
+    onOpenLink: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val ctx = rememberAnimatedContext(isVisible = isVisible)
     val gridState = rememberCardGridState()
+    var tab by rememberSaveable { mutableStateOf(HomeTab.OVERVIEW) }
 
     CompositionLocalProvider(
         LocalHomeCardLauncher provides onLaunchGame,
@@ -279,13 +299,50 @@ private fun ContentMenu(
         LocalServerCardQuickPlay provides onQuickPlayServer
     ) {
         Box(modifier = modifier.fillMaxSize()) {
-            HomeGrid(
-                state = gridState,
-                isVisible = isVisible,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .animated(ctx)
-            )
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = tab == HomeTab.OVERVIEW,
+                        onClick = { tab = HomeTab.OVERVIEW },
+                        label = { Text(stringResource(R.string.home_tab_overview)) }
+                    )
+                    FilterChip(
+                        selected = tab == HomeTab.CARDS,
+                        onClick = { tab = HomeTab.CARDS },
+                        label = { Text(stringResource(R.string.home_tab_cards)) }
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    when (tab) {
+                        HomeTab.OVERVIEW -> DashboardOverview(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 12.dp),
+                            onLaunchGame = onLaunchGame,
+                            onOpenVersionSettings = onOpenVersionSettings,
+                            onQuickAction = onQuickAction,
+                            onNavigate = onNavigate,
+                            onOpenLink = onOpenLink
+                        )
+                        HomeTab.CARDS -> HomeGrid(
+                            state = gridState,
+                            isVisible = isVisible,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .animated(ctx)
+                        )
+                    }
+                }
+            }
             // Nhãn bắt buộc theo điều khoản bổ sung của ZalithLauncher2 khi phát hành bản chỉnh sửa
             Text(
                 modifier = Modifier
@@ -502,18 +559,7 @@ private fun VersionsContent(
                 }
             }
 
-            // 启动游戏按钮
-            ScalingIconButton(
-                modifier = Modifier.padding(end = 8.dp),
-                onClick = {
-                    onLaunchGame(null)
-                }
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_play_arrow_filled),
-                    contentDescription = stringResource(R.string.main_launch_game),
-                )
-            }
+            // XOYO: nút PLAY lớn nằm ở HeroPlayButton, phía dưới thẻ phiên bản
         }
     }
 }
@@ -548,16 +594,32 @@ private fun PetModelContent(
         }
     }
 
-    PetModelView(
-        modifier = modifier,
-        skin = skinBytes,
-        cape = capeBytes,
-        arm = armModel,
-        yaw = yaw,
-        animation = PetAnimation.Idle,
-        tapReaction = PetTapReaction.Interact,
-        dragYaw = false
-    )
+    // XOYO: nút xoay mô hình, mỗi lần xoay 45 độ
+    var yawStep by remember { mutableIntStateOf(0) }
+    val yawWithStep = yaw + Math.toRadians(yawStep.toDouble()).toFloat()
+
+    Box(modifier = modifier) {
+        PetModelView(
+            modifier = Modifier.fillMaxSize(),
+            skin = skinBytes,
+            cape = capeBytes,
+            arm = armModel,
+            yaw = yawWithStep,
+            animation = PetAnimation.Idle,
+            tapReaction = PetTapReaction.Interact,
+            dragYaw = false
+        )
+        IconButton(
+            modifier = Modifier.align(Alignment.TopEnd),
+            onClick = { yawStep = (yawStep + 45) % 360 }
+        ) {
+            Icon(
+                modifier = Modifier.size(20.dp),
+                painter = painterResource(R.drawable.ic_refresh),
+                contentDescription = stringResource(R.string.hero_rotate_model)
+            )
+        }
+    }
 }
 
 @Composable
@@ -706,7 +768,72 @@ private fun ActionMenuContent(
                     }
                 }
             }
+
+            HeroPlayButton(
+                version = version,
+                onLaunchGame = { onLaunchGame(null) }
+            )
         }
+    }
+}
+
+/** Nút PLAY lớn của Hero, kèm RAM đã cấp và mục tiêu FPS (tần số màn hình, không phải FPS đo được) */
+@Composable
+private fun HeroPlayButton(
+    version: Version?,
+    onLaunchGame: () -> Unit,
+) {
+    val refreshHz = rememberDisplayRefreshRate()
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Button(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            enabled = version != null,
+            shape = MaterialTheme.shapes.large,
+            onClick = onLaunchGame
+        ) {
+            Icon(
+                modifier = Modifier.size(20.dp),
+                painter = painterResource(R.drawable.ic_play_arrow_filled),
+                contentDescription = null
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.hero_play),
+                style = MaterialTheme.typography.titleSmall
+            )
+        }
+        if (version != null) {
+            val fpsText = refreshHz?.let {
+                stringResource(R.string.hero_stat_fps_target, it.roundToInt())
+            } ?: stringResource(R.string.hero_stat_fps_unknown)
+            Text(
+                text = listOf(
+                    stringResource(R.string.hero_stat_ram, version.getRamAllocation()),
+                    fpsText
+                ).joinToString("  ·  "),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+/** Tần số làm mới của màn hình (Hz), đọc một lần khi vào màn hình. Trả về null nếu không đọc được. */
+@Suppress("DEPRECATION")
+@Composable
+private fun rememberDisplayRefreshRate(): Float? {
+    val context = LocalContext.current
+    return remember(context) {
+        runCatching {
+            context.getSystemService(WindowManager::class.java).defaultDisplay.refreshRate
+        }.getOrNull()
     }
 }
 

@@ -103,6 +103,7 @@ import com.movtery.zalithlauncher.game.input.AWTCharSender
 import com.movtery.zalithlauncher.game.input.CharacterSenderStrategy
 import com.movtery.zalithlauncher.game.input.LWJGLCharSender
 import com.movtery.zalithlauncher.game.launch.GameLauncher
+import com.movtery.zalithlauncher.game.playhistory.PlayHistory
 import com.movtery.zalithlauncher.game.launch.GameService
 import com.movtery.zalithlauncher.game.launch.JvmLaunchInfo
 import com.movtery.zalithlauncher.game.launch.JvmLauncher
@@ -701,6 +702,7 @@ class VMActivity : BaseAppCompatActivity(), SurfaceTextureListener {
     }
 
     private fun onLauncherExit(exitCode: Int, isSignal: Boolean) {
+        PlayHistory.onSessionEnded()
         stopAllService()
         if (exitCode != 0) {
             val session = vmViewModel.currentLayout?.session
@@ -900,6 +902,8 @@ class VMActivity : BaseAppCompatActivity(), SurfaceTextureListener {
         surfaceGeneration++
         getSystemService(DisplayManager::class.java)?.unregisterDisplayListener(displayListener)
         stopAllService()
+        //兜底：即使退出回调未触发，也结束本次计时（重复调用是安全的）
+        PlayHistory.onSessionEnded()
         vmViewModel.currentLayout?.session?.handler?.onDestroy()
         SdlBridge.reset()
         FliteTts.shutdown()
@@ -1316,6 +1320,8 @@ fun runGame(
     version: Version,
     account: Account,
 ) {
+    //记录开始时间（XOYO：用于“最近游玩”与总游玩时长）
+    PlayHistory.onSessionStarted(version.getVersionName())
     startGameService(context)
     val intent = Intent(context, VMActivity::class.java).apply {
         putExtra(INTENT_RUN_GAME, true)

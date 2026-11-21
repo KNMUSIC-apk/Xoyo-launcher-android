@@ -3103,4 +3103,180 @@
     <string name="control_manage_template_blank">Blank layout</string>
     <!-- Template option: a ready-made touch layout (derived from Cubiq Launcher, GPL-3.0) -->
     <string name="control_manage_template_touch">Touch controls</string>
+
+    <!-- XOYO: sidebar and bottom navigation -->
+    <string name="nav_group_main">Main</string>
+    <string name="nav_group_content">Content</string>
+    <string name="nav_group_social">Social</string>
+    <string name="nav_group_system">System</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_profiles">Library</string>
+    <string name="nav_versions">Versions</string>
+    <string name="nav_mods">Mods</string>
+    <string name="nav_modpacks">Modpacks</string>
+    <string name="nav_resource_packs">Resource packs</string>
+    <string name="nav_shaders">Shaders</string>
+    <string name="nav_worlds">Worlds</string>
+    <string name="nav_servers">Servers</string>
+    <string name="nav_accounts">Accounts</string>
+    <string name="nav_performance">Performance</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_collapse">Collapse menu</string>
+    <string name="nav_expand">Expand menu</string>
+    <string name="nav_more">More</string>
+
+    <!-- XOYO: home overview, quick actions, activity and discovery -->
+    <string name="home_tab_overview">Overview</string>
+    <string name="home_tab_cards">Cards</string>
+    <string name="dash_stats_title">Overview</string>
+    <string name="dash_stats_profiles">Profiles</string>
+    <string name="dash_stats_playtime">Play time</string>
+    <string name="dash_stats_last_played">Last played</string>
+    <string name="dash_quick_actions">Quick actions</string>
+    <string name="dash_quick_actions_edit">Edit quick actions</string>
+    <string name="dash_quick_actions_empty">No quick actions. Tap the edit button to add some.</string>
+    <string name="dash_recent">Recent activity</string>
+    <string name="dash_recent_empty">No games played yet. Launch a version and it will show up here.</string>
+    <string name="dash_last_played">Last played %1$s</string>
+    <string name="dash_play_time">Played %1$s</string>
+    <string name="dash_sessions">%1$d sessions</string>
+    <string name="dash_open_settings">Open settings</string>
+    <string name="dash_discovery">Discovery</string>
+    <string name="dash_discovery_content">Browse mods and content</string>
+    <string name="dash_discovery_news">Minecraft news (opens in browser)</string>
+    <string name="dash_discovery_updates">XOYO releases (opens in browser)</string>
+    <string name="dash_discovery_note">Links only. This launcher does not show a live feed yet.</string>
+    <string name="qa_create_profile">Create profile</string>
+    <string name="qa_manage_versions">Manage versions</string>
+    <string name="qa_install_mods">Install mods</string>
+    <string name="qa_install_shaders">Install shaders</string>
+    <string name="qa_install_resource_packs">Resource packs</string>
+    <string name="qa_manage_worlds">Worlds</string>
+    <string name="qa_performance">Performance</string>
+    <string name="qa_open_folder">Open game folder</string>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="duration_minutes">%1$d min</string>
+
+    <!-- XOYO: hero on the home screen -->
+    <string name="hero_play">PLAY</string>
+    <string name="hero_rotate_model">Rotate model</string>
+    <string name="hero_stat_ram">RAM %1$d MB</string>
+    <string name="hero_stat_fps_target">Target %1$d Hz</string>
+    <string name="hero_stat_fps_unknown">Refresh rate unknown</string>
+
+    <!-- XOYO: game library -->
+    <string name="library_sort_last_played">Last played</string>
+    <string name="library_sort_playtime">Play time</string>
+    <string name="library_sort_name">Name</string>
+    <string name="library_search_hint">Search versions</string>
+    <string name="library_view_grid">Grid</string>
+    <string name="library_view_list">List</string>
+    <string name="library_stat_sessions">Launches</string>
+    <string name="library_never_played">Never played</string>
+    <string name="library_empty">No versions yet. Create one to see it in your library.</string>
+    <string name="library_no_match">No versions match your search.</string>
+    <string name="library_open_versions">Go to versions</string>
+
+    <!-- XOYO: performance center -->
+    <string name="perf_notice">Device values are measured on this phone. Anything Android does not let the launcher read is shown as unavailable. RAM and preset suggestions are estimates, not benchmarks.</string>
+    <string name="perf_device_title">This device</string>
+    <string name="perf_device_ram">Memory in use</string>
+    <string name="perf_device_cpu">CPU usage</string>
+    <string name="perf_device_battery">Battery temperature</string>
+    <string name="perf_device_thermal">Hottest sensor</string>
+    <string name="perf_device_measuring">Measuring...</string>
+    <string name="perf_unavailable">Unavailable</string>
+    <string name="perf_ingame_title">In game</string>
+    <string name="perf_gpu_title">GPU usage</string>
+    <string name="perf_gpu_note">The launcher cannot read GPU usage on Android.</string>
+    <string name="perf_fps_title">In-game FPS</string>
+    <string name="perf_fps_note">The launcher cannot read in-game FPS. The display refresh rate is shown as a target on the home screen instead.</string>
+    <string name="perf_profile_title">Selected version</string>
+    <string name="perf_profile_none">No version selected.</string>
+    <string name="perf_profile_open_versions">Choose a version</string>
+    <string name="perf_profile_ram">Allocated RAM</string>
+    <string name="perf_profile_java">Java runtime</string>
+    <string name="perf_profile_jvm">JVM arguments</string>
+    <string name="perf_profile_renderer">Renderer</string>
+    <string name="perf_default_value">Default</string>
+    <string name="perf_presets_title">Presets</string>
+    <string name="perf_preset_low">Light</string>
+    <string name="perf_preset_balanced">Balanced</string>
+    <string name="perf_preset_high">High</string>
+    <string name="perf_preset_extreme">Maximum</string>
+    <string name="perf_preset_suggested">Suggested for this device</string>
+    <string name="perf_preset_ram_estimate">Estimated RAM: about %1$d MB</string>
+    <string name="perf_preset_need_device_ram">Device memory unknown, so no estimate.</string>
+    <string name="perf_preset_apply">Apply to this version</string>
+    <string name="perf_applied">Preset applied to this version</string>
+    <string name="perf_custom_title">Custom presets</string>
+    <string name="perf_custom_add">Add</string>
+    <string name="perf_custom_empty">No custom presets yet.</string>
+    <string name="perf_custom_dialog_title">New preset</string>
+    <string name="perf_custom_name">Name</string>
+    <string name="perf_custom_ram">RAM (MB)</string>
+    <string name="perf_custom_jvm">JVM arguments (optional)</string>
+    <string name="perf_custom_ram_value">RAM %1$d MB</string>
+    <string name="perf_custom_invalid">Enter a name and a RAM value of at least %1$d MB.</string>
+    <string name="perf_diag_title">Diagnostics</string>
+    <string name="perf_diag_note">Based on the latest game log and the mod files. This is not a full diagnosis.</string>
+    <string name="perf_diag_run">Run diagnostics</string>
+    <string name="perf_diag_running">Checking...</string>
+    <string name="diag_out_of_memory">The game ran out of Java memory. Raise RAM in version settings or remove heavy mods.</string>
+    <string name="diag_java_version">The game needs a different Java version. Choose a suitable runtime in version settings.</string>
+    <string name="diag_missing_class">A class is missing. A mod is probably not compatible or a dependency is missing.</string>
+    <string name="diag_duplicate_mod">Two copies of the same mod were found. Keep only one.</string>
+    <string name="diag_mixin_failure">A mod failed to inject its code. This usually means an incompatible mod or wrong game version.</string>
+    <string name="diag_corrupted_file">A file is corrupted in the latest log. Reinstall the affected version or file.</string>
+    <string name="diag_native_library">A native library failed to load. Check the renderer and the device architecture.</string>
+    <string name="diag_missing_dependency">A required mod or library is missing.</string>
+    <string name="diag_low_disk">Free storage is very low. Free up space before playing.</string>
+    <string name="diag_high_ram">The allocated RAM is above 80% of device memory. This can make Android kill the game. Lower it.</string>
+    <string name="diag_corrupted_mod_jar">Some mod files cannot be opened, so they are probably corrupted or incomplete. Re-download them.</string>
+    <string name="diag_no_issues">No known problems in the latest log.</string>
+    <string name="settings_launcher_reduced_motion_title">Reduce motion</string>
+    <string name="settings_launcher_reduced_motion_summary">Turn off sidebar and number animations. Helpful on slower devices.</string>
+
+    <!-- XOYO: server hub -->
+    <string name="hub_server_intro">Only servers you added are shown. Status comes from real pings to each server, never from sample data.</string>
+    <string name="hub_server_add">Add server</string>
+    <string name="hub_server_add_title">Add server</string>
+    <string name="hub_server_name">Name (optional)</string>
+    <string name="hub_server_address">Address</string>
+    <string name="hub_server_add_failed">Could not add: the address is empty or already in the list.</string>
+    <string name="hub_server_empty">No servers yet. Add one to check its status and launch quickly.</string>
+    <string name="hub_server_ping_loading">Checking...</string>
+    <string name="hub_server_ping_failed">Could not connect</string>
+    <string name="hub_server_ping_ms">%1$d ms</string>
+    <string name="hub_server_quick_launch">Quick launch</string>
+    <string name="hub_server_refresh">Check again</string>
+    <string name="hub_server_play">Play on this server</string>
+    <string name="hub_server_delete">Remove</string>
+    <string name="hub_server_delete_title">Remove server</string>
+    <string name="hub_server_delete_message">Remove %1$s from the list?</string>
+
+    <!-- XOYO: world manager -->
+    <string name="world_search_hint">Search worlds</string>
+    <string name="world_loading">Reading worlds...</string>
+    <string name="world_empty">No worlds found in any version yet.</string>
+    <string name="world_no_match">No worlds match your search.</string>
+    <string name="world_version">Version: %1$s</string>
+    <string name="world_mc_version">MC %1$s</string>
+    <string name="world_playtime">Play time: %1$s</string>
+    <string name="world_no_details">No details</string>
+    <string name="world_invalid">Could not read this world\'s level.dat.</string>
+    <string name="world_open_folder">Open folder</string>
+    <string name="world_delete">Delete</string>
+    <string name="world_delete_title">Delete world</string>
+    <string name="world_delete_message">Delete %1$s? This cannot be undone. Make sure the game is not running.</string>
+
+    <!-- XOYO: content center -->
+    <string name="content_select_version">Choose a version first. Its content will be listed here.</string>
+    <string name="content_for_version">Version: %1$s</string>
+    <string name="content_items_count">%1$d items installed</string>
+    <string name="content_install">Find and install</string>
+    <string name="content_open_folder">Open folder</string>
+    <string name="content_empty">No items installed in this version yet.</string>
+    <string name="content_folder">Folder</string>
+    <string name="content_modpack_note">Modpacks are installed as new versions, so there is no folder to list here. Use Find and install to get one.</string>
 </resources>

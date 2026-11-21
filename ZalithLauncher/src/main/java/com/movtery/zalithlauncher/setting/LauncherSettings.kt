@@ -90,6 +90,30 @@ object LauncherSettings : SettingsRegistry() {
     val launcherTaskMenuExpanded = boolSetting("launcherTaskMenuExpanded", true)
 
     /**
+     * XOYO：sidebar điều hướng có đang mở rộng không (màn hình rộng)
+     */
+    val launcherSidebarExpanded = boolSetting("launcherSidebarExpanded", true)
+
+    /**
+     * XOYO：giảm chuyển động (sidebar, số liệu trên Hero). Dành cho máy cấu hình yếu.
+     */
+    val launcherReducedMotion = boolSetting("launcherReducedMotion", false)
+
+    /**
+     * XOYO：các thao tác nhanh hiển thị trên Tổng quan, theo đúng thứ tự, phân tách bằng dấu phẩy.
+     * Tên các thao tác khớp với enum QuickAction.
+     */
+    val launcherQuickActions = stringSetting(
+        "launcherQuickActions",
+        "CREATE_PROFILE,MANAGE_VERSIONS,INSTALL_MODS,INSTALL_SHADERS,INSTALL_RESOURCE_PACKS,MANAGE_WORLDS,PERFORMANCE,OPEN_GAME_FOLDER"
+    )
+
+    /**
+     * XOYO：các bộ cấu hình tối ưu do người dùng lưu (JSON)
+     */
+    val performanceCustomPresets = stringSetting("performanceCustomPresets", "[]")
+
+    /**
      * 启动器背景元素不透明度
      */
     val launcherBackgroundOpacity = intSetting("launcherBackgroundOpacity", 80, 20..100)

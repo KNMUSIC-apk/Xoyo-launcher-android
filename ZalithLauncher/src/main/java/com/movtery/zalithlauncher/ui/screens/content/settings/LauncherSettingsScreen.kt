@@ -227,10 +227,18 @@ fun LauncherSettingsScreen(
 
                     SwitchSettingsCard(
                         modifier = Modifier.fillMaxWidth(),
-                        position = CardPosition.Bottom,
+                        position = CardPosition.Middle,
                         unit = LauncherSettings.launcherFullScreen,
                         title = stringResource(R.string.settings_launcher_full_screen_title),
                         summary = stringResource(R.string.settings_launcher_full_screen_summary)
+                    )
+
+                    SwitchSettingsCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        position = CardPosition.Bottom,
+                        unit = LauncherSettings.launcherReducedMotion,
+                        title = stringResource(R.string.settings_launcher_reduced_motion_title),
+                        summary = stringResource(R.string.settings_launcher_reduced_motion_summary)
                     )
                 }
             }

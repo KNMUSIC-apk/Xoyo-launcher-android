@@ -11,6 +11,9 @@ Nhánh `zalith-base` đang được chuyển đổi từ mã của ZalithLaunche
 - Đã đổi application ID thành `com.xoyo.launcher`.
 - Đã có bảng màu XOYO (mặc định) và Monochrome, icon mới, nhãn "Unofficial Modified Version" trên màn hình chính.
 - Khi tạo bố cục điều khiển mới có thể chọn mẫu cảm ứng (dựa trên Cubiq Launcher, GPL-3.0; xem [NOTICE.md](NOTICE.md)).
+- Giao diện mới: sidebar trên màn hình rộng, thanh dưới và trang "Thêm" trên màn hình hẹp; trang chủ có Tổng quan (thao tác nhanh, lịch sử chơi, khám phá chỉ là liên kết) và nút PLAY lớn.
+- Trang mới: Thư viện game, Trung tâm hiệu năng (số liệu thật, phần không đọc được ghi rõ là không khả dụng), Trung tâm máy chủ, Quản lý thế giới, Trung tâm nội dung.
+- Chưa có: nguồn tin khám phá trực tiếp, FPS và mức dùng GPU trong game (launcher không đọc được), nền động, UUID và chi tiết skin, sao lưu và nhập thế giới, lưu token Microsoft an toàn.
 - Chưa đổi tên toàn bộ package. Chưa kiểm thử trên thiết bị thật.
 
 ## Cài đặt từ GitHub Actions
