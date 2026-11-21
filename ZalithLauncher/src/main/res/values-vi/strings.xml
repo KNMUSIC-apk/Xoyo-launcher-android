@@ -1396,7 +1396,7 @@
     <string name="diag_corrupted_mod_jar">Một số file mod không mở được, có thể bị hỏng hoặc tải dở. Hãy tải lại.</string>
     <string name="diag_no_issues">Không phát hiện vấn đề đã biết trong log gần nhất.</string>
     <string name="settings_launcher_reduced_motion_title">Giảm chuyển động</string>
-    <string name="settings_launcher_reduced_motion_summary">Tắt hoạt ảnh sidebar và số liệu. Hữu ích trên máy yếu.</string>
+    <string name="settings_launcher_reduced_motion_summary">Tắt hiệu ứng đổi kích thước và màu của sidebar. Hữu ích trên máy yếu.</string>
 
     <!-- XOYO: server hub -->
     <string name="hub_server_intro">Chỉ hiện các máy chủ bạn đã thêm. Trạng thái lấy từ ping thật tới từng máy chủ, không có dữ liệu mẫu.</string>

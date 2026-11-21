@@ -3235,7 +3235,7 @@
     <string name="diag_corrupted_mod_jar">Some mod files cannot be opened, so they are probably corrupted or incomplete. Re-download them.</string>
     <string name="diag_no_issues">No known problems in the latest log.</string>
     <string name="settings_launcher_reduced_motion_title">Reduce motion</string>
-    <string name="settings_launcher_reduced_motion_summary">Turn off sidebar and number animations. Helpful on slower devices.</string>
+    <string name="settings_launcher_reduced_motion_summary">Turn off the sidebar width and colour animations. Helpful on slower devices.</string>
 
     <!-- XOYO: server hub -->
     <string name="hub_server_intro">Only servers you added are shown. Status comes from real pings to each server, never from sample data.</string>
