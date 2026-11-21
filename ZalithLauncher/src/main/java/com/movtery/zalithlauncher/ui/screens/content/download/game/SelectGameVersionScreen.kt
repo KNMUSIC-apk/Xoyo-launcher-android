@@ -20,6 +20,7 @@ package com.movtery.zalithlauncher.ui.screens.content.download.game
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +32,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -57,10 +59,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -514,80 +518,140 @@ private fun VersionItemLayout(
     }
 
     val (icon, versionType, wikiUrl, summary) = getVersionComponents(version)
+    val banner = versionBanner(version)
+    //Có ảnh nền thì chữ luôn dùng màu sáng để đọc được trên ảnh
+    val textColor = if (banner != null) Color.White else contentColor
 
     Surface(
         modifier = modifier.graphicsLayer(scaleY = scale.value, scaleX = scale.value),
         onClick = onClick,
         shape = shape,
         color = color,
-        contentColor = contentColor
+        contentColor = textColor
     ) {
-        Row(
+        Box(
             modifier = Modifier
+                .fillMaxWidth()
                 .clip(shape = shape)
                 .backgroundGlass(blur, color, influencedByBackground)
-                .padding(all = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
         ) {
-            icon?.let { versionIcon ->
+            if (banner != null) {
                 Image(
-                    modifier = Modifier.size(32.dp),
-                    painter = versionIcon,
-                    contentDescription = null
+                    modifier = Modifier.matchParentSize(),
+                    painter = banner,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                //Lớp phủ tối dần từ trái sang phải để chữ vẫn rõ
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    Color.Black.copy(alpha = 0.82f),
+                                    Color.Black.copy(alpha = 0.5f),
+                                    Color.Black.copy(alpha = 0.2f)
+                                )
+                            )
+                        )
+                )
             }
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 64.dp)
+                    .padding(all = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = version.version.id,
-                        style = MaterialTheme.typography.labelLarge
+                icon?.let { versionIcon ->
+                    Image(
+                        modifier = Modifier.size(32.dp),
+                        painter = versionIcon,
+                        contentDescription = null
                     )
-
-                    LittleTextLabel(
-                        text = versionType
-                    )
+                    Spacer(modifier = Modifier.width(12.dp))
                 }
 
-                summary?.let { text ->
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = version.version.id,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+
+                        LittleTextLabel(
+                            text = versionType
+                        )
+                    }
+
+                    summary?.let { text ->
+                        Text(
+                            modifier = Modifier.alpha(0.7f),
+                            text = text,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+
                     Text(
                         modifier = Modifier.alpha(0.7f),
-                        text = text,
+                        text = formatDate(
+                            input = version.version.releaseTime,
+                            pattern = stringResource(R.string.date_format)
+                        ),
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
 
-                Text(
-                    modifier = Modifier.alpha(0.7f),
-                    text = formatDate(
-                        input = version.version.releaseTime,
-                        pattern = stringResource(R.string.date_format)
-                    ),
-                    style = MaterialTheme.typography.labelMedium
-                )
-            }
-
-            wikiUrl?.let { url ->
-                IconButton(
-                    modifier = Modifier.size(32.dp),
-                    onClick = { onAccessWiki(url) }
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_link),
-                        contentDescription = "Wiki"
-                    )
+                wikiUrl?.let { url ->
+                    IconButton(
+                        modifier = Modifier.size(32.dp),
+                        onClick = { onAccessWiki(url) }
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_link),
+                            contentDescription = "Wiki"
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+private val VERSION_NUMBER_REGEX = Regex("^(\\d+)\\.(\\d+)")
+
+/**
+ * Ảnh nền minh hoạ theo thế hệ phiên bản, giúp danh sách phiên bản không còn trống trải
+ */
+@Composable
+private fun versionBanner(version: MinecraftVersion): Painter? {
+    val numbers = VERSION_NUMBER_REGEX.find(version.version.id)
+    val major = numbers?.groupValues?.getOrNull(1)?.toIntOrNull()
+    val minor = numbers?.groupValues?.getOrNull(2)?.toIntOrNull()
+    val drawableId = when (version.type) {
+        MinecraftVersion.Type.Release -> when {
+            major == null || minor == null -> R.drawable.img_ver_classic
+            major >= 2 || minor >= 21 -> R.drawable.img_ver_trial
+            minor == 20 -> R.drawable.img_ver_cherry
+            minor == 19 -> R.drawable.img_ver_wild
+            minor == 18 || minor == 17 -> R.drawable.img_ver_caves
+            minor == 16 -> R.drawable.img_ver_nether
+            else -> R.drawable.img_ver_classic
+        }
+        MinecraftVersion.Type.Snapshot -> R.drawable.img_ver_trial
+        else -> R.drawable.img_ver_classic
+    }
+    return painterResource(drawableId)
+}
+
 
 @Composable
 private fun getVersionComponents(
