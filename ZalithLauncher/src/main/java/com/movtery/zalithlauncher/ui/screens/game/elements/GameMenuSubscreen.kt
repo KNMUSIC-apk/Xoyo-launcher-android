@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.game.sdl.SdlBridge
 import com.movtery.zalithlauncher.setting.ControlSettings
+import com.movtery.zalithlauncher.game.record.ScreenRecordController
 import com.movtery.zalithlauncher.setting.GameUiSettings
 import com.movtery.zalithlauncher.setting.RendererSettings
 import com.movtery.zalithlauncher.setting.enums.FpsDisplayMode
@@ -120,7 +121,9 @@ fun GameMenuSubscreen(
     onSendKeycode: () -> Unit,
     onReplacementControl: () -> Unit,
     onEditLayout: () -> Unit,
-    onShowToast: (AndroidStringText, Int) -> Unit
+    onShowToast: (AndroidStringText, Int) -> Unit,
+    onToggleRecording: () -> Unit,
+    stutterCount: Int
 ) {
     DualMenuSubscreen(
         state = state,
@@ -201,7 +204,9 @@ fun GameMenuSubscreen(
                 enableTerracotta = enableTerracotta,
                 onOpenTerracottaMenu = onOpenTerracottaMenu,
                 onRefreshWindowSize = onRefreshWindowSize,
-                onShowToast = onShowToast
+                onShowToast = onShowToast,
+                onToggleRecording = onToggleRecording,
+                stutterCount = stutterCount
             )
         }
     )
@@ -215,6 +220,8 @@ private fun GameActionContent(
     onOpenTerracottaMenu: () -> Unit,
     onRefreshWindowSize: () -> Unit,
     onShowToast: (AndroidStringText, Int) -> Unit,
+    onToggleRecording: () -> Unit,
+    stutterCount: Int,
     modifier: Modifier = Modifier,
     color: Color = cardColor(false),
     contentColor: Color = onCardColor(),
@@ -243,6 +250,19 @@ private fun GameActionContent(
                 modifier = Modifier.fillMaxWidth(),
                 text = stringResource(R.string.game_menu_option_switch_log),
                 onClick = onSwitchLog,
+                color = color,
+                contentColor = contentColor,
+            )
+        }
+        //XOYO: ghi hình màn hình trong game
+        item {
+            val recording by ScreenRecordController.isRecording.collectAsState()
+            MenuTextButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = stringResource(
+                    if (recording) R.string.game_menu_option_record_stop else R.string.game_menu_option_record_start
+                ),
+                onClick = onToggleRecording,
                 color = color,
                 contentColor = contentColor,
             )
@@ -335,6 +355,19 @@ private fun GameActionContent(
                 contentColor = contentColor,
                 enabled = GameUiSettings.showMenuBall.state && GameUiSettings.showFPS.state
             )
+        }
+        //XOYO: số lần FPS tụt đột ngột trong lần chơi này
+        if (GameUiSettings.showFPS.state) {
+            item {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
+                    text = stringResource(R.string.game_menu_option_stutter_count, stutterCount),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = contentColor
+                )
+            }
         }
         //内存显示
         item {

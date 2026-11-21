@@ -125,6 +125,10 @@ import com.movtery.zalithlauncher.viewmodel.EditorViewModel
 import com.movtery.zalithlauncher.viewmodel.EventViewModel
 import com.movtery.zalithlauncher.viewmodel.GamepadViewModel
 import com.movtery.zalithlauncher.viewmodel.sendToast
+import com.movtery.zalithlauncher.game.performance.STUTTER_SUGGEST_THRESHOLD
+import com.movtery.zalithlauncher.game.performance.StutterDetector
+import com.movtery.zalithlauncher.ui.androidText
+import android.widget.Toast
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -184,6 +188,11 @@ private class GameViewModel(
     /** 最低帧重算倒计时（时间节点数），-1 表示无需重算 */
     private var fpsMinResyncCountdown = -1
     private var fpsJob: Job? = null
+    /** XOYO: bộ phát hiện giật hình, chỉ chạy khi đang thu thập FPS */
+    private val stutterDetector = StutterDetector()
+    /** XOYO: số đợt FPS tụt đột ngột trong lần chơi này */
+    var stutterCount by mutableIntStateOf(0)
+        private set
     /** 开始帧率捕获 */
     fun startFpsCapture() {
         if (fpsJob?.isActive == true) return
@@ -193,6 +202,8 @@ private class GameViewModel(
         fpsMin = 0
         fpsMaxResyncCountdown = -1
         fpsMinResyncCountdown = -1
+        stutterDetector.reset()
+        stutterCount = 0
         //开启一个新的协程，每秒更新一次帧率数据
         fpsJob = viewModelScope.launch(Dispatchers.Default) {
             while (true) {
@@ -219,6 +230,7 @@ private class GameViewModel(
      */
     private fun recordFps(fps: Int) {
         gameFps = fps
+        if (stutterDetector.onSample(fps)) stutterCount = stutterDetector.count
         //衰减重算倒计时，归零说明等待期内没有出现更高/更低的帧
         if (fpsMaxResyncCountdown > 0) fpsMaxResyncCountdown--
         if (fpsMinResyncCountdown > 0) fpsMinResyncCountdown--
@@ -785,6 +797,10 @@ fun GameScreen(
                     editorVM = editorViewModel
                 )
             },
+            onToggleRecording = {
+                eventViewModel.sendEvent(EventViewModel.Event.Game.ToggleScreenRecording)
+            },
+            stutterCount = viewModel.stutterCount,
             onShowToast = { text, duration ->
                 eventViewModel.sendToast(text, duration)
             }
@@ -855,6 +871,13 @@ fun GameScreen(
                     }
                 )
             }
+        }
+    }
+
+    //XOYO: FPS tụt đột ngột nhiều lần thì gợi ý cách tối ưu
+    LaunchedEffect(viewModel.stutterCount) {
+        if (viewModel.stutterCount == STUTTER_SUGGEST_THRESHOLD) {
+            eventViewModel.sendToast(androidText(R.string.game_stutter_suggest), Toast.LENGTH_LONG)
         }
     }
 

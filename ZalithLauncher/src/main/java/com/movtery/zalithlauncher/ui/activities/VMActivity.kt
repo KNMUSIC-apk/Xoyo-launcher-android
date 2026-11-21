@@ -21,6 +21,7 @@ package com.movtery.zalithlauncher.ui.activities
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.media.projection.MediaProjectionManager
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Bitmap
@@ -104,6 +105,9 @@ import com.movtery.zalithlauncher.game.input.CharacterSenderStrategy
 import com.movtery.zalithlauncher.game.input.LWJGLCharSender
 import com.movtery.zalithlauncher.game.launch.GameLauncher
 import com.movtery.zalithlauncher.game.playhistory.PlayHistory
+import com.movtery.zalithlauncher.game.record.ScreenRecordController
+import com.movtery.zalithlauncher.game.record.ScreenRecordService
+import androidx.activity.result.contract.ActivityResultContracts
 import com.movtery.zalithlauncher.game.launch.GameService
 import com.movtery.zalithlauncher.game.launch.JvmLaunchInfo
 import com.movtery.zalithlauncher.game.launch.JvmLauncher
@@ -446,6 +450,18 @@ class VMActivity : BaseAppCompatActivity(), SurfaceTextureListener {
 
     private val vmViewModel: VMViewModel by viewModels()
 
+    /** XOYO: nhận kết quả hộp thoại cấp quyền ghi màn hình của hệ thống */
+    private val screenRecordPermission = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val data = result.data
+        if (result.resultCode == android.app.Activity.RESULT_OK && data != null) {
+            ScreenRecordService.start(this, result.resultCode, data)
+        } else {
+            Toast.makeText(this, R.string.record_permission_denied, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     /** View used to locate the layout hosting SDL's text input bridge. */
     private var gameTextureView: TextureView? = null
 
@@ -529,6 +545,9 @@ class VMActivity : BaseAppCompatActivity(), SurfaceTextureListener {
                     }
                     is EventViewModel.Event.Game.SwitchIme -> {
                         vmViewModel.textInputMode = event.mode ?: vmViewModel.textInputMode.switch()
+                    }
+                    is EventViewModel.Event.Game.ToggleScreenRecording -> {
+                        toggleScreenRecording()
                     }
                     is EventViewModel.Event.Game.KeyHandle -> {
                         vmViewModel.keyHandle = event.handle
@@ -910,7 +929,28 @@ class VMActivity : BaseAppCompatActivity(), SurfaceTextureListener {
         super.onDestroy()
     }
 
+    /** XOYO: bật ghi hình (xin quyền trước) hoặc dừng ghi hình đang chạy */
+    private fun toggleScreenRecording() {
+        if (ScreenRecordController.isRecording.value) {
+            ScreenRecordService.stop(this)
+            return
+        }
+        val manager = getSystemService(MediaProjectionManager::class.java)
+        if (manager == null) {
+            Toast.makeText(this, R.string.record_failed, Toast.LENGTH_SHORT).show()
+            return
+        }
+        runCatching {
+            screenRecordPermission.launch(manager.createScreenCaptureIntent())
+        }.onFailure {
+            Toast.makeText(this, R.string.record_failed, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun stopAllService() {
+        if (ScreenRecordController.isRecording.value) {
+            ScreenRecordService.stop(this)
+        }
         stopService(Intent(this, GameService::class.java))
         if (TerracottaVPNService.isRunning()) {
             //停止指令必须用 stopService 下发

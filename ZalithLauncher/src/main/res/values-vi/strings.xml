@@ -1463,4 +1463,20 @@
     <string name="web_skin_invalid_image">Ảnh không phải skin 64×64 hoặc cape PNG tỉ lệ 2:1.</string>
     <string name="web_skin_network_error">Không tải được dữ liệu. Kiểm tra mạng rồi thử lại.</string>
     <string name="world_download_action">Tải thế giới về</string>
+
+    <!-- XOYO: ghi hình màn hình, giật hình và sao lưu thế giới -->
+    <string name="game_menu_option_record_start">Bắt đầu ghi hình</string>
+    <string name="game_menu_option_record_stop">Dừng ghi hình</string>
+    <string name="game_menu_option_stutter_count">Số lần giật hình trong phiên này: %1$d</string>
+    <string name="game_stutter_suggest">FPS đã tụt đột ngột nhiều lần. Thử giảm khoảng cách hiển thị, hoặc chọn cấu hình chống giật trong Trung tâm hiệu năng.</string>
+    <string name="record_channel_name">Ghi hình màn hình</string>
+    <string name="record_notification_title">Đang ghi hình màn hình</string>
+    <string name="record_notification_stop">Dừng</string>
+    <string name="record_saved">Đã lưu bản ghi vào %1$s</string>
+    <string name="record_stop_failed">Bản ghi quá ngắn hoặc bị lỗi nên không lưu được</string>
+    <string name="record_failed">Không thể bắt đầu ghi hình</string>
+    <string name="record_permission_denied">Chưa cấp quyền ghi màn hình</string>
+    <string name="world_backup_action">Sao lưu thế giới</string>
+    <string name="world_backup_success">Đã sao lưu thế giới vào %1$s</string>
+    <string name="world_backup_failed">Sao lưu thế giới thất bại</string>
 </resources>

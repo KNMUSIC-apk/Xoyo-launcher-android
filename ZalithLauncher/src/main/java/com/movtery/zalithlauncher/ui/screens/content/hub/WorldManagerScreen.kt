@@ -37,6 +37,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.movtery.zalithlauncher.R
+import com.movtery.zalithlauncher.game.world.backupWorldToZip
+import com.movtery.zalithlauncher.ui.androidText
+import com.movtery.zalithlauncher.viewmodel.sendToast
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.movtery.zalithlauncher.game.version.installed.Version
 import com.movtery.zalithlauncher.game.version.installed.VersionFolders
 import com.movtery.zalithlauncher.game.version.installed.VersionsManager
@@ -59,6 +67,8 @@ import java.io.File
 private data class WorldEntry(
     val versionName: String,
     val data: SaveData,
+    /** Thư mục game (.minecraft) của phiên bản, nơi đặt thư mục sao lưu */
+    val gameDir: File,
 )
 
 /**
@@ -76,6 +86,28 @@ fun WorldManagerScreen(
     ) { _ ->
         val versions by VersionsManager.versions.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()
+        val context = LocalContext.current
+
+        //XOYO: sao lưu thế giới thành zip trong thư mục world_backups của phiên bản
+        val backupWorld: (WorldEntry) -> Unit = { entry ->
+            scope.launch {
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ROOT).format(Date())
+                val result = runCatching {
+                    withContext(Dispatchers.IO) {
+                        backupWorldToZip(
+                            worldDir = entry.data.saveFile,
+                            targetDir = File(entry.gameDir, "world_backups"),
+                            timestamp = timestamp
+                        )
+                    }
+                }
+                val message = result.fold(
+                    onSuccess = { context.getString(R.string.world_backup_success, it.absolutePath) },
+                    onFailure = { context.getString(R.string.world_backup_failed) }
+                )
+                eventViewModel.sendToast(androidText(message), Toast.LENGTH_LONG)
+            }
+        }
 
         var worlds by remember { mutableStateOf<List<WorldEntry>?>(null) }
         var reloadKey by remember { mutableStateOf(0) }
@@ -151,7 +183,8 @@ fun WorldManagerScreen(
                                 )
                             )
                         },
-                        onDelete = { pendingDelete = entry }
+                        onDelete = { pendingDelete = entry },
+                        onBackup = { backupWorld(entry) }
                     )
                 }
             }
@@ -205,7 +238,7 @@ private suspend fun scanWorlds(versions: List<Version>): List<WorldEntry> {
                 levelDatFile = levelDat,
                 worldGenDatFile = File(dir, "data/minecraft/world_gen_settings.dat")
             )
-            result += WorldEntry(versionName = version.getVersionName(), data = data)
+            result += WorldEntry(versionName = version.getVersionName(), data = data, gameDir = version.getGameDir())
         }
     }
     return result.sortedByDescending { it.data.lastPlayed ?: 0L }
@@ -216,6 +249,7 @@ private fun WorldCard(
     entry: WorldEntry,
     onOpenFolder: () -> Unit,
     onDelete: () -> Unit,
+    onBackup: () -> Unit,
 ) {
     val data = entry.data
     BackgroundCard(modifier = Modifier.fillMaxWidth()) {
@@ -273,6 +307,12 @@ private fun WorldCard(
                 Icon(
                     painter = painterResource(R.drawable.ic_folder_outlined),
                     contentDescription = stringResource(R.string.world_open_folder)
+                )
+            }
+            IconButton(onClick = onBackup) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_archive_filled),
+                    contentDescription = stringResource(R.string.world_backup_action)
                 )
             }
             IconButton(onClick = onDelete) {

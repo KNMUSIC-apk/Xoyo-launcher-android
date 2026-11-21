@@ -65,6 +65,8 @@ class EventViewModel : ViewModel() {
             data object OnBack : Game
             /** [com.movtery.zalithlauncher.game.launch.handler.AbstractHandler.onResume] */
             data object OnResume: Game
+            /** XOYO: bật hoặc tắt ghi hình màn hình trong game */
+            data object ToggleScreenRecording: Game
         }
         sealed interface Terracotta : Event {
             /** 申请 VPN 权限 */

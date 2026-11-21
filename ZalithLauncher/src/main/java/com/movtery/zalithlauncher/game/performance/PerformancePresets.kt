@@ -6,6 +6,16 @@ package com.movtery.zalithlauncher.game.performance
 
 import com.google.gson.Gson
 
+/**
+ * Bộ tham số G1 đã điều chỉnh để giảm khựng hình (drop FPS), dùng cho các preset từ Cân bằng trở lên.
+ * Vùng trẻ lớn hơn để GC đầy ít xảy ra hơn, ngưỡng bắt đầu GC hỗn hợp thấp hơn để dọn sớm,
+ * và bỏ qua lệnh gọi GC thủ công từ mod. Đây là điểm khởi đầu, nên đo lại FPS trên máy thật.
+ */
+private const val G1_SMOOTH =
+    "-XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+ParallelRefProcEnabled -XX:+DisableExplicitGC " +
+        "-XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 " +
+        "-XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:MaxTenuringThreshold=1"
+
 /** Mức preset có sẵn. RAM đề xuất được tính theo tổng RAM thiết bị. */
 enum class PerformancePreset(
     /** Tỷ lệ RAM thiết bị dành cho game */
@@ -16,17 +26,9 @@ enum class PerformancePreset(
     val jvmArgs: String
 ) {
     LOW(ramFraction = 0.25f, maxRamMb = 2048, jvmArgs = "-XX:+UseSerialGC"),
-    BALANCED(ramFraction = 0.35f, maxRamMb = 4096, jvmArgs = "-XX:+UseG1GC -XX:MaxGCPauseMillis=50"),
-    HIGH(
-        ramFraction = 0.5f,
-        maxRamMb = 6144,
-        jvmArgs = "-XX:+UseG1GC -XX:MaxGCPauseMillis=50 -XX:+ParallelRefProcEnabled"
-    ),
-    EXTREME(
-        ramFraction = 0.6f,
-        maxRamMb = 8192,
-        jvmArgs = "-XX:+UseG1GC -XX:MaxGCPauseMillis=40 -XX:+ParallelRefProcEnabled -XX:+DisableExplicitGC"
-    );
+    BALANCED(ramFraction = 0.35f, maxRamMb = 4096, jvmArgs = "$G1_SMOOTH -XX:MaxGCPauseMillis=50"),
+    HIGH(ramFraction = 0.5f, maxRamMb = 6144, jvmArgs = "$G1_SMOOTH -XX:MaxGCPauseMillis=40"),
+    EXTREME(ramFraction = 0.6f, maxRamMb = 8192, jvmArgs = "$G1_SMOOTH -XX:MaxGCPauseMillis=40");
 }
 
 const val MIN_RAM_MB = 512

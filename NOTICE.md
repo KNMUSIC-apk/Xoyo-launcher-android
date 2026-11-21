@@ -73,6 +73,17 @@ Dữ liệu skin và cape lấy từ `api.mojang.com` và `sessionserver.mojang.
 
 Giao diện được thiết kế theo đặc tả của dự án. Không sao chép mã hay tài nguyên của Dawn Client hoặc FastClient.
 
+## Ghi hình, theo dõi giật hình và sao lưu thế giới
+
+- `game/record/ScreenRecordService.kt`, `ScreenRecordController.kt`, `ScreenRecordGeometry.kt` (mới): ghi hình màn hình trong game bằng MediaProjection và MediaRecorder. Ý tưởng tính năng tham khảo từ Hyper Launcher 3 (LGPL-3.0). Mã được viết lại, không sao chép.
+- `game/performance/StutterDetector.kt` (mới): phát hiện đợt FPS tụt đột ngột từ các mẫu FPS có sẵn.
+- `game/performance/PerformancePresets.kt` (sửa): tham số G1 đã điều chỉnh cho các preset Cân bằng, Cao và Cực hạn.
+- `game/world/WorldBackup.kt` (mới) và `ui/screens/content/hub/WorldManagerScreen.kt` (sửa): sao lưu thế giới thành zip.
+- `ui/activities/VMActivity.kt`, `ui/screens/game/GameScreen.kt`, `ui/screens/game/elements/GameMenuSubscreen.kt`, `viewmodel/EventViewModel.kt` (sửa): nút ghi hình và số lần giật trong menu game.
+- `AndroidManifest.xml` (sửa): quyền `FOREGROUND_SERVICE_MEDIA_PROJECTION` và dịch vụ ghi hình chạy trong tiến trình `:game`.
+- `notification/NotificationChannelData.kt`, `_NotificationID.kt` (sửa): kênh và ID thông báo cho ghi hình.
+- `src/test/.../game/performance/StutterDetectorTest.kt`, `game/record/ScreenRecordGeometryTest.kt`, `game/world/WorldBackupTest.kt` (mới).
+
 ## Mẫu và dữ liệu từ dự án khác
 
 - `ZalithLauncher/src/main/assets/control_templates/touch_template.json`: bố cục điều khiển cảm ứng, lấy từ [Cubiq Launcher](https://github.com/VivxKumar07/Cubiq-Launcher). Cubiq Launcher cũng là bản fork GPL-3.0 của ZalithLauncher2.
