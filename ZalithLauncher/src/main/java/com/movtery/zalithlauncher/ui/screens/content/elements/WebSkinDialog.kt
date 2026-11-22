@@ -7,13 +7,16 @@ package com.movtery.zalithlauncher.ui.screens.content.elements
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -50,8 +53,10 @@ import com.movtery.zalithlauncher.game.account.wardrobe.PlayerNotFoundException
 import com.movtery.zalithlauncher.game.account.wardrobe.SkinModelType
 import com.movtery.zalithlauncher.game.account.wardrobe.WebImageInvalidException
 import com.movtery.zalithlauncher.game.account.wardrobe.WebImageKind
+import com.movtery.zalithlauncher.game.account.wardrobe.classifyPngImage
 import com.movtery.zalithlauncher.game.account.wardrobe.downloadWebPng
 import com.movtery.zalithlauncher.game.account.wardrobe.findPlayerTextures
+import com.movtery.zalithlauncher.game.account.wardrobe.isCapeImage
 import com.movtery.zalithlauncher.game.account.wardrobe.isSlimModel
 import com.movtery.zalithlauncher.game.account.wardrobe.isValidMinecraftName
 import com.movtery.zalithlauncher.game.account.wardrobe.toArmModel
@@ -83,12 +88,15 @@ private fun newWebCacheFile(): File =
 /** Tải ảnh về cache, chỉ giữ lại nếu đúng loại [expected]. Chạy trên luồng IO. */
 private suspend fun fetchWebImage(url: String, expected: WebImageKind): File? {
     val target = newWebCacheFile()
-    return if (downloadWebPng(url, target) == expected) {
-        target
-    } else {
-        target.delete()
-        null
+    downloadWebPng(url, target)
+    val matches = target.exists() && when (expected) {
+        // Cape hiện đại cũng là 64x32 nên phải kiểm tra theo tỉ lệ ảnh
+        WebImageKind.CAPE -> target.isCapeImage()
+        WebImageKind.SKIN -> target.classifyPngImage() == WebImageKind.SKIN
+        WebImageKind.INVALID -> false
     }
+    if (!matches) target.delete()
+    return target.takeIf { matches }
 }
 
 /** Tải skin và cape của người chơi về cache. Chạy trên luồng IO. */
@@ -107,7 +115,7 @@ private suspend fun loadPlayerResult(name: String): WebSkinResult {
 
 /**
  * XOYO: tìm và cài skin hoặc cape ngay trong launcher.
- * - Tìm theo tên người chơi Minecraft (API công khai của Mojang).
+ * - Tìm theo tên người chơi Minecraft (API công khai của Mojang), kèm cả cape nếu có.
  * - Hoặc dán link ảnh PNG https trực tiếp.
  * Skin áp dụng cho cả tài khoản offline và Microsoft.
  * Cape tự chọn chỉ áp dụng cho tài khoản offline, vì Mojang chỉ cho dùng cape đã được cấp.
@@ -220,158 +228,203 @@ fun WebSkinDialog(
     } ?: account.skinModelType
     val previewArm = previewModel.toArmModel()
 
+    /** Xem trước mô hình: khung dọc để thấy toàn bộ skin kèm cape, không bị cắt chân */
+    val previewView: @Composable (Modifier) -> Unit = { previewModifier ->
+        Box(
+            modifier = previewModifier
+                .clip(MaterialTheme.shapes.large)
+                .background(itemColor(false)),
+            contentAlignment = Alignment.Center
+        ) {
+            PetModelView(
+                modifier = Modifier.fillMaxSize(),
+                skin = previewSkin,
+                cape = previewCape,
+                arm = previewArm,
+                gazeEnabled = false
+            )
+        }
+    }
+
+    val inputFields: @Composable () -> Unit = {
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = nameQuery,
+            onValueChange = { nameQuery = it },
+            singleLine = true,
+            enabled = !loading,
+            label = { Text(stringResource(R.string.web_skin_name_hint)) },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { searchPlayer() })
+        )
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { searchPlayer() },
+            enabled = !loading && nameQuery.isNotBlank()
+        ) {
+            Text(stringResource(R.string.web_skin_search))
+        }
+
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = urlQuery,
+            onValueChange = { urlQuery = it },
+            singleLine = true,
+            enabled = !loading,
+            label = { Text(stringResource(R.string.web_skin_url_hint)) },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { loadLink() })
+        )
+        OutlinedButton(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { loadLink() },
+            enabled = !loading && urlQuery.isNotBlank()
+        ) {
+            Text(stringResource(R.string.web_skin_load_url))
+        }
+
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp
+            )
+        }
+
+        errorText?.let { message ->
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
+        result?.let { loaded ->
+            if (loaded.skinFile == null && loaded.capeFile == null) {
+                Text(
+                    text = stringResource(R.string.web_skin_no_textures),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+
+    val actions: @Composable () -> Unit = {
+        val skinFile = result?.skinFile
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            enabled = skinFile != null && !loading,
+            onClick = {
+                val model = if (result?.skinSlim == true) SkinModelType.ALEX else SkinModelType.STEVE
+                skinFile?.let { onApplySkin(it, model) }
+                //Người chơi có cape thì dùng luôn cape đó cho mô hình
+                result?.capeFile?.takeIf { localAccount }?.let(onApplyCape)
+                onDismissRequest()
+            }
+        ) {
+            Text(stringResource(R.string.web_skin_apply_skin))
+        }
+
+        val capeFile = result?.capeFile
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            enabled = localAccount && capeFile != null && !loading,
+            onClick = {
+                capeFile?.let { onApplyCape(it) }
+                onDismissRequest()
+            }
+        ) {
+            Text(stringResource(R.string.web_skin_apply_cape))
+        }
+
+        if (localAccount && hasLocalCape) {
+            OutlinedButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    onRemoveCape()
+                    onDismissRequest()
+                }
+            ) {
+                Text(stringResource(R.string.web_skin_remove_cape))
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(R.string.generic_close))
+            }
+        }
+    }
+
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
+        BoxWithConstraints(
             modifier = Modifier
-                .padding(all = 16.dp)
-                .fillMaxWidth(0.6f)
-                .heightIn(max = rememberDialogMaxHeight()),
-            shape = MaterialTheme.shapes.extraLarge,
-            color = cardColor(false),
-            contentColor = onCardColor(),
-            shadowElevation = 6.dp
+                .fillMaxSize()
+                .padding(all = 16.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            //Màn hình đủ rộng: đưa phần xem trước sang bên phải
+            val sidePreview = maxWidth >= 620.dp
+
+            Surface(
                 modifier = Modifier
-                    .padding(16.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .fillMaxWidth(if (sidePreview) 0.85f else 0.92f)
+                    .heightIn(max = rememberDialogMaxHeight()),
+                shape = MaterialTheme.shapes.extraLarge,
+                color = cardColor(false),
+                contentColor = onCardColor(),
+                shadowElevation = 6.dp
             ) {
-                Text(
-                    text = stringResource(R.string.web_skin_title),
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                if (!localAccount) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Text(
-                        text = stringResource(R.string.account_cape_offline_only),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = stringResource(R.string.web_skin_title),
+                        style = MaterialTheme.typography.titleMedium
                     )
-                }
 
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = nameQuery,
-                    onValueChange = { nameQuery = it },
-                    singleLine = true,
-                    enabled = !loading,
-                    label = { Text(stringResource(R.string.web_skin_name_hint)) },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { searchPlayer() })
-                )
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { searchPlayer() },
-                    enabled = !loading && nameQuery.isNotBlank()
-                ) {
-                    Text(stringResource(R.string.web_skin_search))
-                }
-
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = urlQuery,
-                    onValueChange = { urlQuery = it },
-                    singleLine = true,
-                    enabled = !loading,
-                    label = { Text(stringResource(R.string.web_skin_url_hint)) },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { loadLink() })
-                )
-                OutlinedButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { loadLink() },
-                    enabled = !loading && urlQuery.isNotBlank()
-                ) {
-                    Text(stringResource(R.string.web_skin_load_url))
-                }
-
-                if (loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
-                    )
-                }
-
-                errorText?.let { message ->
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(240.dp)
-                        .clip(MaterialTheme.shapes.large)
-                        .background(itemColor(false)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    PetModelView(
-                        modifier = Modifier.fillMaxSize(),
-                        skin = previewSkin,
-                        cape = previewCape,
-                        arm = previewArm,
-                        gazeEnabled = false
-                    )
-                }
-
-                result?.let { loaded ->
-                    if (loaded.skinFile == null && loaded.capeFile == null) {
+                    if (!localAccount) {
                         Text(
-                            text = stringResource(R.string.web_skin_no_textures),
-                            style = MaterialTheme.typography.bodySmall
+                            text = stringResource(R.string.account_cape_offline_only),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                }
 
-                val skinFile = result?.skinFile
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = skinFile != null && !loading,
-                    onClick = {
-                        val model = if (result?.skinSlim == true) SkinModelType.ALEX else SkinModelType.STEVE
-                        skinFile?.let { onApplySkin(it, model) }
-                        onDismissRequest()
-                    }
-                ) {
-                    Text(stringResource(R.string.web_skin_apply_skin))
-                }
-
-                val capeFile = result?.capeFile
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = localAccount && capeFile != null && !loading,
-                    onClick = {
-                        capeFile?.let { onApplyCape(it) }
-                        onDismissRequest()
-                    }
-                ) {
-                    Text(stringResource(R.string.web_skin_apply_cape))
-                }
-
-                if (localAccount && hasLocalCape) {
-                    OutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            onRemoveCape()
-                            onDismissRequest()
+                    if (sidePreview) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                inputFields()
+                                actions()
+                            }
+                            Column(modifier = Modifier.width(210.dp)) {
+                                previewView(Modifier.fillMaxWidth().aspectRatio(0.62f))
+                            }
                         }
-                    ) {
-                        Text(stringResource(R.string.web_skin_remove_cape))
+                    } else {
+                        Column(
+                            modifier = Modifier.verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            inputFields()
+                            previewView(Modifier.fillMaxWidth().aspectRatio(0.62f))
+                            actions()
+                        }
                     }
-                }
-
-                TextButton(
-                    modifier = Modifier.align(Alignment.End),
-                    onClick = onDismissRequest
-                ) {
-                    Text(stringResource(R.string.generic_close))
                 }
             }
         }
