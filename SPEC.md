@@ -19,16 +19,17 @@
 | Branding | `ZalithLauncher/gradle.properties`: `launcher_name=XoyoLauncher`, `launcher_app_name=XOYO Launcher`, `launcher_short_name=XOYO`, `url_home`, `launcher_version_code=1`, `launcher_version_name=0.1.0`. |
 | Quy mô mã | `ZalithLauncher/src/main/java`: 912 file. `ui/screens`: 169 (`content` 102, `main` 35, `game` 19, `splash` 6, gốc 7). `ui/components` 34, `ui/control` 34, `ui/theme` 23, `ui/activities` 6, `ui/base` 5, `ui/guide` 4, `ui/code_editor` 4. Logic: `game/` 351, `setting/` 33, `utils/` 44, `viewmodel/` 18. |
 | Test | `ZalithLauncher/src/test/java`: 41 file. `src/test/resources`: 14 file. |
-| Chuỗi | `values/strings.xml`: 1782 khóa. `values-vi/strings.xml`: 1464 khóa. Còn thiếu 318 khóa tiếng Việt (đang rơi về tiếng Anh). |
+| Chuỗi | `values/strings.xml`: 1780 dòng khóa. `values-vi/strings.xml`: 1780 dòng khóa. Còn thiếu 0 khóa tiếng Việt (cập nhật sau khi gộp `ui/vi-localization`). |
 | CI | `.github/workflows/xoyo-ci.yml`. Chạy khi push vào `main` và `zalith-base`, khi có PR, và thủ công với `publish=true`. |
 
 ### Điểm lệch cần biết trước khi làm
 
-1. `docs/ARCHITECTURE.md` đã cũ. Nó mô tả các package `auth`, `renderer`, `launch`, `settings`, `touchcontrols` như đã có, nhưng code thật nằm ở `game/account`, `game/renderer`, `game/launch`, `setting`, `ui/control`. Không dùng tài liệu này làm căn cứ kiến trúc, và cần cập nhật.
+1. `docs/ARCHITECTURE.md` đã cũ. Nó mô tả các package `auth`, `renderer`, `launch`, `settings`, `touchcontrols` như đã có, nhưng code thật nằm ở `game/account`, `game/renderer`, `game/launch`, `setting`, `ui/control`. Không dùng tài liệu này làm căn cứ kiến trúc, và cần cập nhật. Tài liệu này nằm trên nhánh `main` (bản khung ban đầu), không có trên `zalith-base`.
 2. Client ID Microsoft: tài liệu ghi `XOYO_MS_CLIENT_ID`, nhưng Gradle và code đọc `OAUTH_CLIENT_ID` (env, hoặc `.oauth_client_id.txt`, hoặc `oauth_client_id` trong `gradle.properties`). CI ánh xạ secret `XOYO_MS_CLIENT_ID` thành env `OAUTH_CLIENT_ID`. Trong code luôn dùng tên `OAUTH_CLIENT_ID`.
 3. `addonPlatformSource` lưu dưới khóa cũ `assetPlatformSource`. Giữ nguyên để tương thích dữ liệu cũ.
 4. Kho cài đặt MMKV dùng `BuildKeys.LAUNCHER_IDENTIFIER` làm ID (`setting/_MMKV.kt`), và giá trị này lấy từ `launcher_name`. Đổi `launcher_name` sẽ làm người dùng mất toàn bộ cài đặt đã lưu.
 5. Có logic nằm trong file UI: `scanInstalled` (`ui/screens/content/hub/ContentCenterScreen.kt`) và `backupWorld` (`ui/screens/content/hub/WorldManagerScreen.kt`). Xem mục 6.
+6. Nhánh `main` (nhánh mặc định trên GitHub) là một khung dự án khác: có module `app/`, package `com.xoyo.launcher`, không chứa code Zalith. Nếu build hoặc chạy từ `main`, bạn đang chạy sai dự án. Hãy dùng `zalith-base` hoặc nhánh tích hợp `integrate/spec-merge`.
 
 ---
 
@@ -70,6 +71,8 @@ Mã Compose:
 - Test: `ZalithLauncher/src/test/java/com/movtery/zalithlauncher/ui/theme/**`
 
 Ghi chú về `ZalithLauncher/src/main/java/com/movtery/zalithlauncher/ui/screens/main/AppNavigation.kt`: file này dùng chung. A.I #1 sở hữu phần giao diện (sidebar, thanh dưới, sheet "Thêm", các composable của nhóm). Ba hàm `navDestinationOf`, `navigateToDestination`, `downloadDestination`, cùng `NavDestination` và `NavGroup`, có đích là NavKey. Đổi đích điều hướng là đổi logic, nên chỉ làm khi A.I #2 đồng ý và mục 3.4 không đổi. Trong một thời điểm chỉ một A.I sửa file này, và PR ghi rõ điều đó.
+
+Quyết định khi gộp (`integrate/spec-merge`): mục Mod trên sidebar vẫn mở danh sách mod đã cài (`ContentKind.MODS`), không chuyển thẳng sang trang tải như nhánh `fix/ui-scroll-skin-mod`. Lý do: nếu chuyển thẳng, danh sách mod đã cài không còn lối vào nào. Đường tải mod là mục "Tải mod" trong nhóm Tải về. Muốn đổi thì sửa đúng một dòng trong `navigateToDestination`, nhưng cần người duyệt ghi lại trong mục 7.
 
 ### 2.2 A.I #2 được sửa
 
@@ -181,6 +184,13 @@ Thêm hoặc bớt sự kiện: sửa mục này trước, rồi mới sửa cod
   - `data class CustomPreset(name: String, ramMb: Int, jvmArgs: String)`
   - `parseCustomPresets(json: String): List<CustomPreset>`, `encodeCustomPresets(presets: List<CustomPreset>): String`
 
+- **Đăng nhập skin và cape từ web** (`game/account/wardrobe/`, thuộc A.I #2):
+  - `findPlayerTextures(name: String): WebPlayerTextures` (suspend). Ném `PlayerNotFoundException(name)` khi không tìm thấy.
+  - `downloadWebPng(url: String, target: File): WebImageKind` (suspend, chạy IO). Link `http://` được nâng lên `https://` trước khi tải. Link khác `http`/`https` ném `IllegalArgumentException`.
+  - `enum class WebImageKind { SKIN, CAPE, INVALID }`
+  - Hàm mở rộng trên `File` trong `WebSkinImages.kt`: `isPngFile()`, `isCapeImage()`, `classifyPngImage(): WebImageKind`.
+  - `isValidMinecraftName(name: String): Boolean`. Ngoại lệ `WebImageInvalidException`.
+  - UI gọi các hàm này trong `ui/screens/content/elements/WebSkinDialog.kt`.
 - **Ghi hình, sao lưu**: UI chỉ gửi `Event.Game.ToggleScreenRecording`. `ScreenRecordService` chạy ở tiến trình `:game` và không được gọi trực tiếp từ UI. `WorldBackup` (`game/world/WorldBackup.kt`, hàm `backupWorldToZip`) là logic của A.I #2.
 
 ### 3.3 Khóa cài đặt (`setting/LauncherSettings.kt`)
@@ -265,6 +275,10 @@ Thêm lớp mới được phép. Đổi hoặc xóa lớp đã có phải sửa
 - Thao tác nhanh trên trang chủ (`launcherQuickActions`).
 - Cài đặt ngôn ngữ, chủ đề, hiệu ứng lễ hội, giảm chuyển động (`launcherReducedMotion`).
 - Import điều khiển cảm ứng (`ImportControls`).
+- Thanh cuộn cho sidebar khi danh sách dài (`verticalScrollWithBar`).
+- Ảnh nền theo thế hệ phiên bản trong danh sách phiên bản (`drawable-nodpi/img_ver_*.jpg`), và xem trước skin nằm bên phải hộp thoại.
+- Tìm skin theo tên: link `http` từ Mojang được nâng lên `https`.
+- Danh sách mod đã cài, truy cập từ mục Mod.
 
 Đã bỏ có chủ ý, theo yêu cầu người dùng:
 - Nút "Tìm và tải về" trong Trung tâm nội dung và "Tải thế giới về" trong Quản lý thế giới (commit `60117b7`).
@@ -276,8 +290,8 @@ Thêm lớp mới được phép. Đổi hoặc xóa lớp đã có phải sửa
 
 Không phải lỗi phải sửa ngay. Ghi để hai A.I không làm trùng hoặc làm hỏng.
 
-- `values-vi` thiếu khoảng 318 khóa so với `values` (A.I #1).
-- Khóa `content_install` ("Tìm và tải về") và `world_download_action` không còn được dùng. Xóa sau khi đã `grep` xác nhận (A.I #1).
+- Đã xong: `values-vi` đủ khóa so với `values` (merge `ui/vi-localization`, commit `3dc88eb`).
+- Đã xong: `content_install` và `world_download_action` đã xóa, sau khi `grep` xác nhận không còn tham chiếu.
 - `docs/ARCHITECTURE.md` mô tả cấu trúc chưa tồn tại. Cập nhật theo code thật, và sửa tên biến client ID thành `OAUTH_CLIENT_ID` (A.I #2, người duyệt).
 - Logic còn nằm trong file UI: `scanInstalled` và `backupWorld`. Chuyển sang `game/` là việc của A.I #2, và phải công bố qua mục 3. Cho đến khi chuyển, A.I #1 không đổi logic bên trong hai hàm này.
 - Khóa `content_modpack_note` đã đổi nội dung để trỏ đến mục "Tải modpack" trên sidebar.
@@ -292,6 +306,9 @@ Câu hỏi mở cho người duyệt:
 1. Menu tài khoản: người dùng nói "3 tính năng" nhưng mới nêu 2. Tính năng thứ ba là gì?
 2. `PetLib` (module Rust): mục đích là gì và giao cho A.I nào? Hiện để ở mục 2.3.
 3. Có chấp nhận quy trình nhánh và PR ở mục 8 không?
+4. Nhánh tích hợp `integrate/spec-merge` (đã xanh CI, gồm `ui/vi-localization`, `fix/ui-scroll-skin-mod`, `feat/version-banners-skin-preview`) có nên thành `zalith-base` không?
+5. Mục Mod: giữ danh sách mod đã cài (đang chọn), hay chuyển thẳng sang trang tải như nhánh `fix/ui-scroll-skin-mod`?
+6. Có nên đổi nhánh mặc định `main` (khung dự án khác) để trỏ về nhánh có code Zalith không?
 
 ---
 
