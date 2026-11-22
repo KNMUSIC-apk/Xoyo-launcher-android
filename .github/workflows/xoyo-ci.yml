@@ -64,6 +64,9 @@ jobs:
           # Client ID là public, nhưng đưa qua secret để không phải commit vào repo.
           # Nếu chưa đặt secret thì build vẫn chạy; chỉ luồng đăng nhập Microsoft báo lỗi lúc chạy.
           OAUTH_CLIENT_ID: ${{ secrets.XOYO_MS_CLIENT_ID }}
+          # Khóa CurseForge để tải mod, world, shader, modpack. Đặt secret trong Settings → Secrets and variables → Actions.
+          # Chưa đặt secret thì APK vẫn build, nhưng phần tải từ CurseForge không hoạt động.
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
         # -Darch=arm64: chỉ đóng gói native lib và runtime Java cho arm64.
         # Bản "all" đóng gói cả 4 ABI và mọi runtime, nặng khoảng 400 MB.
         run: ./gradlew testDebugUnitTest assembleDebug -Darch=arm64 --stacktrace
