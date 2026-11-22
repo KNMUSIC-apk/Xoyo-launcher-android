@@ -28,6 +28,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -38,9 +39,14 @@ import androidx.compose.ui.graphics.Shape
  * Các nút dưới đây cùng tên và cùng chữ ký với nút Material. Các file trong ui/ chỉ đổi import sang file này,
  * không đổi cách gọi. Khi có ảnh nền, nút hiện kính Liquid Glass (xem LiquidGlass.kt). Không có nền thì giữ
  * đúng giao diện Material.
- *
- * Nút chỉ dùng trong ui/components và các file đã import từ đây, không import lại từ androidx.compose.material3.
  */
+
+/**
+ * Màu nền để vẽ kính: màu của nút khi bật; khi tắt dùng 12% onSurface như Material.
+ */
+@Composable
+private fun glassTint(containerColor: Color, enabled: Boolean): Color =
+    if (enabled) containerColor else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
 
 @Composable
 fun Button(
@@ -59,7 +65,7 @@ fun Button(
     val defaultSource = remember { MutableInteractionSource() }
     androidx.compose.material3.Button(
         onClick = onClick,
-        modifier = if (liquid) modifier.liquidGlass(shape, colors.containerColor(enabled).value, enabled) else modifier,
+        modifier = if (liquid) modifier.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else modifier,
         enabled = enabled,
         shape = shape,
         colors = if (liquid) colors.copy(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent) else colors,
@@ -88,7 +94,7 @@ fun FilledTonalButton(
     val defaultSource = remember { MutableInteractionSource() }
     androidx.compose.material3.FilledTonalButton(
         onClick = onClick,
-        modifier = if (liquid) modifier.liquidGlass(shape, colors.containerColor(enabled).value, enabled) else modifier,
+        modifier = if (liquid) modifier.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else modifier,
         enabled = enabled,
         shape = shape,
         colors = if (liquid) colors.copy(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent) else colors,
@@ -117,7 +123,7 @@ fun OutlinedButton(
     val defaultSource = remember { MutableInteractionSource() }
     androidx.compose.material3.OutlinedButton(
         onClick = onClick,
-        modifier = if (liquid) modifier.liquidGlass(shape, colors.containerColor(enabled).value, enabled) else modifier,
+        modifier = if (liquid) modifier.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else modifier,
         enabled = enabled,
         shape = shape,
         colors = if (liquid) colors.copy(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent) else colors,
@@ -146,7 +152,7 @@ fun TextButton(
     val defaultSource = remember { MutableInteractionSource() }
     androidx.compose.material3.TextButton(
         onClick = onClick,
-        modifier = if (liquid) modifier.liquidGlass(shape, colors.containerColor(enabled).value, enabled) else modifier,
+        modifier = if (liquid) modifier.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else modifier,
         enabled = enabled,
         shape = shape,
         colors = if (liquid) colors.copy(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent) else colors,
@@ -163,6 +169,7 @@ fun IconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    shape: Shape = CircleShape,
     colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
     interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit
@@ -170,8 +177,9 @@ fun IconButton(
     val liquid = isLiquidGlassEnabled()
     androidx.compose.material3.IconButton(
         onClick = onClick,
-        modifier = if (liquid) modifier.liquidGlass(CircleShape, colors.containerColor(enabled).value, enabled) else modifier,
+        modifier = if (liquid) modifier.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else modifier,
         enabled = enabled,
+        shape = shape,
         colors = if (liquid) colors.copy(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent) else colors,
         interactionSource = interactionSource,
         content = content
