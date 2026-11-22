@@ -255,6 +255,14 @@
     <string name="splash_screen_installing">The launcher is extracting these files. Once done, it will automatically enter the main screen. Please wait patiently.</string>
     <!-- Button on the first run screen to start extracting and installing -->
     <string name="splash_screen_agree">Install</string>
+    <string name="splash_loading_preparing">Preparing…</string>
+    <string name="splash_loading_checking">Checking %1$s…</string>
+    <string name="splash_loading_agreement">Loading agreements…</string>
+    <string name="splash_loading_finishing">Finishing up…</string>
+    <string name="splash_loading_percent">%1$d%%</string>
+    <string name="splash_loading_version">Version %1$s</string>
+    <string name="splash_loading_error_title">Could not finish starting up</string>
+    <string name="splash_loading_retry">Try again</string>
     <!-- Title on the architecture mismatch screen shown when the APK arch does not match the device -->
     <string name="splash_arch_mismatch_title">It seems you have installed the wrong version!</string>
     <!-- Text on the architecture mismatch screen showing the build architecture of the installed APK -->

@@ -86,6 +86,14 @@
     <string name="splash_screen_unpack_desc">Trình khởi chạy cần giải nén mấy thứ này thì Minecraft mới chạy được. Chúng đã có sẵn trong ứng dụng, cần giải phóng ra. Bấm nút bên dưới để tiến hành và cập nhật.</string>
     <string name="splash_screen_installing">Trình khởi chạy đang giải nén, xong sẽ tự vào màn hình chính. Chờ tí nhé.</string>
     <string name="splash_screen_agree">Cài đặt</string>
+    <string name="splash_loading_preparing">Đang chuẩn bị…</string>
+    <string name="splash_loading_checking">Đang kiểm tra %1$s…</string>
+    <string name="splash_loading_agreement">Đang tải thỏa thuận…</string>
+    <string name="splash_loading_finishing">Đang hoàn tất…</string>
+    <string name="splash_loading_percent">%1$d%%</string>
+    <string name="splash_loading_version">Phiên bản %1$s</string>
+    <string name="splash_loading_error_title">Không thể hoàn tất khởi động</string>
+    <string name="splash_loading_retry">Thử lại</string>
     <string name="splash_arch_mismatch_title">Có vẻ bạn đã cài đặt sai phiên bản!</string>
     <string name="splash_arch_mismatch_package_arch">Kiến trúc bản dựng của trình khởi chạy đã cài đặt: %s</string>
     <string name="splash_arch_mismatch_device_arch">Kiến trúc thiết bị của bạn: %s</string>
