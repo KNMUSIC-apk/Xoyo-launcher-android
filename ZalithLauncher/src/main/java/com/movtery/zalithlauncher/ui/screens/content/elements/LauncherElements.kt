@@ -567,7 +567,9 @@ fun Background(
     Box(
         modifier = modifier
             .then(
-                if (backgroundBlurEnabled && Build.VERSION.SDK_INT >= 31) {
+                // Chỉ video cần blur theo khung hình trên API 31+.
+                // Ảnh tĩnh dùng bản đã mờ sẵn (BackgroundGlassBlur), tránh blur toàn màn hình mỗi frame.
+                if (backgroundBlurEnabled && viewModel.isVideo && Build.VERSION.SDK_INT >= 31) {
                     Modifier.blur(blur.dp)
                 } else {
                     Modifier
@@ -592,7 +594,7 @@ fun Background(
                 }
                 viewModel.isImage -> {
                     val blurred = viewModel.blurredBackground
-                    if (backgroundBlurEnabled && Build.VERSION.SDK_INT < 31 && blurred != null) {
+                    if (backgroundBlurEnabled && blurred != null) {
                         Image(
                             bitmap = blurred,
                             contentDescription = null,

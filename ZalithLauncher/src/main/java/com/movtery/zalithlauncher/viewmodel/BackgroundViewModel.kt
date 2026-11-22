@@ -20,7 +20,6 @@ package com.movtery.zalithlauncher.viewmodel
 
 import android.content.Context
 import android.net.Uri
-import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -153,12 +152,13 @@ class BackgroundViewModel: ViewModel() {
                     generation = refreshTrigger
                 )
             }.collectLatest { config ->
+                // Ảnh tĩnh ở chế độ Background dùng bản đã mờ sẵn trên mọi phiên bản Android.
+                // Tính một lần trên luồng IO thay vì blur toàn màn hình mỗi khung hình (rất nặng khi bán kính lớn).
                 when {
-                    Build.VERSION.SDK_INT >= 31 || !config.valid ||
-                        config.blur <= 0 || config.opacity >= 100 ->
+                    !config.valid || config.blur <= 0 || config.opacity >= 100 ||
+                        !config.isImage || config.blurType != BackgroundBlur.Background ->
                         glassBlur.clearBlurredBackground()
-                    config.isImage && config.blurType == BackgroundBlur.Background ->
-                        glassBlur.refreshStaticDisplayBitmap(config.blur)
+                    else -> glassBlur.refreshStaticDisplayBitmap(config.blur)
                 }
             }
         }

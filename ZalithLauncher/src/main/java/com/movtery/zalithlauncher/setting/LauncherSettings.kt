@@ -119,6 +119,26 @@ object LauncherSettings : SettingsRegistry() {
     val launcherBackgroundOpacity = intSetting("launcherBackgroundOpacity", 80, 20..100)
 
     /**
+     * XOYO：độ rõ của chữ (20..100, mặc định 50). Kéo tăng thì chữ rõ hơn, không bị chìm vào nền.
+     */
+    val launcherTextOpacity = intSetting("launcherTextOpacity", 50, 20..100)
+
+    /**
+     * XOYO：bật/tắt chủ đề Liquid Glass cho nút, thanh trượt và thẻ bấm được.
+     */
+    val launcherLiquidGlass = boolSetting("launcherLiquidGlass", true)
+
+    /**
+     * XOYO：đường dẫn font tùy chỉnh đã sao chép vào bộ nhớ riêng của launcher. Rỗng nghĩa là dùng font mặc định.
+     */
+    val launcherCustomFontPath = stringSetting("launcherCustomFontPath", "")
+
+    /**
+     * XOYO：ẩn phần Tổng quan trên trang chủ để nhìn rõ nền phía sau.
+     */
+    val launcherHomeOverviewHidden = boolSetting("launcherHomeOverviewHidden", false)
+
+    /**
      * 启动器视频背景音量
      */
     val videoBackgroundVolume = intSetting("videoBackgroundVolume", 0, 0..100)
