@@ -323,6 +323,39 @@ Câu hỏi mở cho người duyệt:
 
 ---
 
+## 9. Phân công và cách tạo một kết quả chung
+
+Lý do: trước đây mỗi A.I đẩy công việc lên một nhánh riêng, nên APK của từng nhánh chỉ có phần việc của một bên. Từ nay chỉ có một nhánh chính và một kết quả cho mỗi lần phát hành.
+
+### 9.1 Quy tắc
+
+1. Nhánh chính duy nhất là `zalith-base`. APK phát hành chỉ được tạo từ nhánh này.
+2. Mỗi A.I làm việc đã được giao ở mục 9.2, trên nhánh tạm ngắn (`ui/<việc>` hoặc `logic/<việc>`), bắt đầu từ `zalith-base` mới nhất.
+3. Trước khi mở PR, nhánh tạm phải được đồng bộ với `zalith-base` (merge `zalith-base` vào nhánh tạm), và CI của nhánh tạm phải xanh.
+4. PR chỉ được merge vào `zalith-base` khi CI xanh và không chạm file ngoài phạm vi mục 2 của A.I đó.
+5. Không giữ kết quả trên nhánh riêng. Việc đã merge thì xóa nhánh tạm.
+6. Sau mỗi lần merge, tạo lại APK từ `zalith-base` bằng `gh workflow run xoyo-ci.yml --ref zalith-base -f publish=true`.
+
+### 9.2 Phân công
+
+| Việc | Người làm | Trạng thái | Nhánh gốc đã merge | Phạm vi file |
+|---|---|---|---|---|
+| Việt hóa 318 khóa; xóa `content_install`, `world_download_action` | A.I bên kia (UI) | Đã merge | `ui/vi-localization` | mục 2.1 |
+| Ảnh nền theo thế hệ phiên bản; xem trước skin bên phải | A.I bên kia (UI) | Đã merge | `feat/version-banners-skin-preview` | mục 2.1 |
+| Thanh cuộn sidebar | A.I bên kia (UI) | Đã merge | `fix/ui-scroll-skin-mod` | mục 2.1 |
+| Tìm skin theo tên: nâng `http` lên `https`; ảnh skin và cape | A.I bên kia (logic) | Đã merge | `fix/ui-scroll-skin-mod`, `feat/version-banners-skin-preview` | mục 2.2, `game/account/wardrobe/` |
+| Ghi hình, giật hình, sao lưu thế giới, nút quay lại, nhóm Tải về | Claude | Đã có trên `zalith-base` | `zalith-base` | mục 2.1, 2.2 |
+| Tích hợp, kiểm tra hợp đồng, SPEC, tạo APK | Claude | Đã làm | `integrate/spec-merge` đưa lên `zalith-base` | mục 3, 9 |
+
+Việc tiếp theo: người duyệt ghi vào bảng này trước khi giao. Một việc chỉ được bắt đầu khi đã có dòng trong bảng.
+
+### 9.3 Kết quả chung
+
+- Nhánh: `zalith-base`, đưa lên từ `integrate/spec-merge` bằng fast-forward (không ghi đè lịch sử).
+- APK: xem mục Releases trên GitHub, tag có dạng `debug-<run>-<sha7>`. Mỗi APK là kết quả của mọi việc đã merge tại thời điểm đó.
+
+---
+
 ## Phụ lục A: cấu trúc đã quét (commit `60117b7`)
 
 ```
