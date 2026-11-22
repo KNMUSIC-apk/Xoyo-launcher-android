@@ -19,7 +19,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import com.movtery.zalithlauncher.ui.components.verticalScrollWithBar
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -63,6 +63,7 @@ import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.ContentKind
+import com.movtery.zalithlauncher.ui.components.verticalScrollWithBar
 import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
@@ -149,6 +150,8 @@ fun ScreenBackStackViewModel.navigateToDestination(destination: NavDestination) 
         NavDestination.HOME -> mainScreen.clearWith(NormalNavKey.LauncherMain)
         NavDestination.PROFILES -> mainScreen.clearWith(NormalNavKey.GameLibrary)
         NavDestination.VERSIONS -> mainScreen.clearWith(NormalNavKey.VersionsManager)
+        // Vào thẳng nơi tải mod, bỏ bước trung gian "Tìm và tải về"
+        // Danh sách mod đã cài vẫn giữ lối vào từ mục Mod. Đường tải mod nằm ở mục Tải mod trong nhóm Tải về.
         NavDestination.MODS -> mainScreen.clearWith(NormalNavKey.ContentCenter(ContentKind.MODS))
         NavDestination.MODPACKS -> mainScreen.clearWith(NormalNavKey.ContentCenter(ContentKind.MODPACKS))
         NavDestination.RESOURCE_PACKS -> mainScreen.clearWith(NormalNavKey.ContentCenter(ContentKind.RESOURCE_PACKS))
@@ -219,11 +222,12 @@ fun AppSidebar(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(vertical = 12.dp, horizontal = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(vertical = 12.dp, horizontal = 8.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (expanded) {
@@ -255,10 +259,12 @@ fun AppSidebar(
                 }
             }
 
+            // Danh sách mục điều hướng dài hơn màn hình: cho phép cuộn và hiện thanh cuộn
+            val listScrollState = rememberScrollState()
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScrollWithBar(state = listScrollState),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 NavDestination.entries.groupBy { it.group }.forEach { (group, items) ->

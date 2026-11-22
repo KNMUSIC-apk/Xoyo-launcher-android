@@ -80,16 +80,22 @@ suspend fun findPlayerTextures(name: String): WebPlayerTextures {
 }
 
 /**
- * Tải một ảnh PNG từ link https vào [target], rồi phân loại theo kích thước.
+ * Tải một ảnh PNG từ link vào [target], rồi phân loại theo kích thước.
  * Ảnh sai định dạng hoặc quá lớn sẽ bị xoá và trả về INVALID.
  * Chạy trên luồng IO.
- * @throws IllegalArgumentException khi link không phải https
+ * Mojang trả link skin/cape dạng http (textures.minecraft.net), server vẫn phục vụ https
+ * nên link http được nâng cấp lên https trước khi tải.
+ * @throws IllegalArgumentException khi link không phải http hay https
  */
 suspend fun downloadWebPng(url: String, target: File): WebImageKind {
-    require(url.startsWith("https://")) { "Only https links are allowed" }
+    val httpsUrl = when {
+        url.startsWith("https://") -> url
+        url.startsWith("http://") -> "https://" + url.substring("http://".length)
+        else -> throw IllegalArgumentException("Only https links are allowed")
+    }
     target.parentFile?.mkdirs()
     target.delete()
-    downloadFile(url = url, outputFile = target)
+    downloadFile(url = httpsUrl, outputFile = target)
     if (!target.exists()) return WebImageKind.INVALID
     if (target.length() > MAX_WEB_IMAGE_BYTES) {
         target.delete()
