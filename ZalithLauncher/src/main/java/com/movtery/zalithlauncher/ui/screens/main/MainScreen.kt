@@ -218,8 +218,17 @@ fun MainScreen(
                         isTasksExpanded = isTaskMenuExpanded,
                         contentColor = onBackgroundColor(),
                         onScreenBack = {
-                            //XOYO: dùng cùng logic với nút Back hệ thống (kể cả ngăn xếp lồng nhau), không xoá màn hình gốc
-                            onBack(screenBackStackModel.mainScreen.backStack)
+                            //XOYO: không bao giờ để ngăn xếp màn hình gốc rỗng.
+                            //Ngăn xếp rỗng làm cả app hiện màn hình trắng và nút Back hệ thống đóng launcher.
+                            //Hết lịch sử thì quay về Trang chủ, giống nút Home.
+                            val backStack = screenBackStackModel.mainScreen.backStack
+                            val topKey = backStack.lastOrNull()
+                            val nestedCanPop = topKey is BackStackNavKey<*> && topKey.backStack.size > 1
+                            if (backStack.size <= 1 && !nestedCanPop) {
+                                toMainScreen()
+                            } else {
+                                onBack(backStack)
+                            }
                         },
                         toMainScreen = toMainScreen,
                         toSettingsScreen = {

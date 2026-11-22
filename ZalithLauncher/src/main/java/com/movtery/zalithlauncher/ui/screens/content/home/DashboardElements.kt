@@ -15,9 +15,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -429,15 +432,28 @@ private fun QuickActionsEditDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = stringResource(R.string.dash_quick_actions_edit)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                (draft + QuickAction.entries.filter { it !in draft }).forEach { action ->
+            //XOYO: danh sách dài nên cuộn được; mỗi dòng cố định chiều cao và nút sắp xếp thu nhỏ
+            //để không chồng lên nhau trên màn hình hẹp.
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 360.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                items(
+                    items = draft + QuickAction.entries.filter { it !in draft },
+                    key = { it.name }
+                ) { action ->
                     val index = draft.indexOf(action)
                     val isOn = index >= 0
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(
+                            modifier = Modifier.size(36.dp),
                             checked = isOn,
                             onCheckedChange = { checked ->
                                 draft = if (checked) draft + action else draft - action
@@ -451,31 +467,26 @@ private fun QuickActionsEditDialog(
                         Text(
                             modifier = Modifier
                                 .weight(1f)
-                                .padding(start = 8.dp),
+                                .padding(start = 8.dp, end = 4.dp),
                             text = stringResource(action.titleRes),
                             style = MaterialTheme.typography.bodyMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         if (isOn) {
-                            IconButton(
+                            QuickActionMoveButton(
+                                up = true,
                                 enabled = index > 0,
                                 onClick = { draft = draft.moved(index, index - 1) }
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_keyboard_arrow_up),
-                                    contentDescription = null
-                                )
-                            }
-                            IconButton(
+                            )
+                            QuickActionMoveButton(
+                                up = false,
                                 enabled = index < draft.lastIndex,
                                 onClick = { draft = draft.moved(index, index + 1) }
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_keyboard_arrow_down),
-                                    contentDescription = null
-                                )
-                            }
+                            )
+                        } else {
+                            //Giữ chỗ để các dòng không nhảy khi bật/tắt
+                            Spacer(modifier = Modifier.width(72.dp))
                         }
                     }
                 }
@@ -492,6 +503,28 @@ private fun QuickActionsEditDialog(
             }
         }
     )
+}
+
+/** Nút mũi tên lên/xuống gọn cho hộp thoại sửa thao tác nhanh */
+@Composable
+private fun QuickActionMoveButton(
+    up: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    IconButton(
+        modifier = Modifier.size(36.dp),
+        enabled = enabled,
+        onClick = onClick
+    ) {
+        Icon(
+            modifier = Modifier.size(18.dp),
+            painter = painterResource(
+                if (up) R.drawable.ic_keyboard_arrow_up else R.drawable.ic_keyboard_arrow_down
+            ),
+            contentDescription = null
+        )
+    }
 }
 
 private fun List<QuickAction>.moved(from: Int, to: Int): List<QuickAction> =

@@ -297,11 +297,6 @@ private fun NavigationUI(
                         versionsScreenKey = versionsScreenKey,
                         version = version,
                         backToMainScreen = backToMainScreen,
-                        swapToDownload = {
-                            backScreenViewModel.navigateToDownload(
-                                targetScreen = backScreenViewModel.downloadModScreen
-                            )
-                        },
                         onSwapMoreInfo = { projectId, platform ->
                             backScreenViewModel.mainScreen.removeAndNavigateTo(
                                 NestedNavKey.AddonInfo::class,
@@ -321,11 +316,6 @@ private fun NavigationUI(
                         versionsScreenKey = versionsScreenKey,
                         version = version,
                         backToMainScreen = backToMainScreen,
-                        swapToDownload = {
-                            backScreenViewModel.navigateToDownload(
-                                targetScreen = backScreenViewModel.downloadSavesScreen
-                            )
-                        },
                         onQuickPlay = { version, saveName ->
                             eventViewModel.sendEvent(
                                 EventViewModel.Event.Launch.PlaySave(
@@ -343,11 +333,6 @@ private fun NavigationUI(
                         versionsScreenKey = versionsScreenKey,
                         version = version,
                         backToMainScreen = backToMainScreen,
-                        swapToDownload =  {
-                            backScreenViewModel.navigateToDownload(
-                                targetScreen = backScreenViewModel.downloadResourcePackScreen
-                            )
-                        },
                         submitError = submitError
                     )
                 }
@@ -357,11 +342,6 @@ private fun NavigationUI(
                         versionsScreenKey = versionsScreenKey,
                         version = version,
                         backToMainScreen = backToMainScreen,
-                        swapToDownload = {
-                            backScreenViewModel.navigateToDownload(
-                                targetScreen = backScreenViewModel.downloadShadersScreen
-                            )
-                        },
                         submitError = submitError
                     )
                 }

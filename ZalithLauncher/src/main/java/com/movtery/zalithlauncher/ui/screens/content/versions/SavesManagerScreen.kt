@@ -96,7 +96,6 @@ import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.CardTitleLayout
 import com.movtery.zalithlauncher.ui.components.ContentCheckBox
 import com.movtery.zalithlauncher.ui.components.EdgeDirection
-import com.movtery.zalithlauncher.ui.components.IconTextButton
 import com.movtery.zalithlauncher.ui.components.LittleTextLabel
 import com.movtery.zalithlauncher.ui.components.ProgressDialog
 import com.movtery.zalithlauncher.ui.components.PullToRefreshLayout
@@ -307,7 +306,6 @@ fun SavesManagerScreen(
     version: Version,
     onQuickPlay: (Version, String) -> Unit,
     backToMainScreen: () -> Unit,
-    swapToDownload: () -> Unit,
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit
 ) {
     if (!version.isValid()) {
@@ -396,7 +394,6 @@ fun SavesManagerScreen(
                     isAscending = MiscSettings.savesSortAscending.state,
                     onToggleSortOrder = { viewModel.updateSortOrder() },
                     savesDir = savesDir,
-                    swapToDownload = swapToDownload,
                     refreshSaves = { viewModel.refresh() },
                     submitError = submitError,
                     enabled = viewModel.savesState is LoadingState.None,
@@ -449,7 +446,6 @@ private fun SavesActionsHeader(
     isAscending: Boolean,
     onToggleSortOrder: () -> Unit,
     savesDir: File,
-    swapToDownload: () -> Unit,
     refreshSaves: () -> Unit,
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit,
     inputFieldColor: Color = itemColor(),
@@ -555,13 +551,6 @@ private fun SavesActionsHeader(
                                 taskBuilder(uris)
                             )
                         },
-                        enabled = enabled,
-                    )
-
-                    IconTextButton(
-                        onClick = swapToDownload,
-                        painter = painterResource(R.drawable.ic_download_2_filled),
-                        text = stringResource(R.string.generic_download),
                         enabled = enabled,
                     )
 

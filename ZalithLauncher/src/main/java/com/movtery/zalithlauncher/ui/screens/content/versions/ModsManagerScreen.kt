@@ -118,7 +118,6 @@ import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.CardTitleLayout
 import com.movtery.zalithlauncher.ui.components.EdgeDirection
-import com.movtery.zalithlauncher.ui.components.IconTextButton
 import com.movtery.zalithlauncher.ui.components.LittleTextLabel
 import com.movtery.zalithlauncher.ui.components.MarqueeText
 import com.movtery.zalithlauncher.ui.components.PullToRefreshLayout
@@ -586,7 +585,6 @@ fun ModsManagerScreen(
     versionsScreenKey: TitledNavKey?,
     version: Version,
     backToMainScreen: () -> Unit,
-    swapToDownload: () -> Unit,
     onSwapMoreInfo: (id: String, Platform) -> Unit,
     onSwapModifyVersion: () -> Unit,
     eventViewModel: EventViewModel,
@@ -745,7 +743,6 @@ fun ModsManagerScreen(
                     onClearModsSelected = {
                         viewModel.clearSelected()
                     },
-                    swapToDownload = swapToDownload,
                     refresh = { viewModel.refresh(context) },
                     submitError = submitError,
                     enabled = viewModel.modsState is LoadingState.None,
@@ -846,7 +843,6 @@ private fun ModsActionsHeader(
     canUpdate: Boolean,
     onSelectAll: () -> Unit,
     onClearModsSelected: () -> Unit,
-    swapToDownload: () -> Unit,
     refresh: () -> Unit,
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit = {},
     inputFieldColor: Color = itemColor(),
@@ -1047,13 +1043,6 @@ private fun ModsActionsHeader(
                                 taskBuilder(uris)
                             )
                         },
-                        enabled = enabled,
-                    )
-
-                    IconTextButton(
-                        onClick = swapToDownload,
-                        painter = painterResource(R.drawable.ic_download_2_filled),
-                        text = stringResource(R.string.generic_download),
                         enabled = enabled,
                     )
 

@@ -44,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -202,6 +203,14 @@ fun AppSidebar(
 
     //Trạng thái mở của từng nhóm thu gọn. Mặc định đều đóng.
     val openGroups = remember { mutableStateListOf<NavGroup>() }
+
+    //Nhóm chứa mục đang chọn luôn được mở để thấy ngay mình đang ở đâu
+    LaunchedEffect(selected) {
+        val group = selected?.group ?: return@LaunchedEffect
+        if (group in CollapsibleNavGroups && group !in openGroups) {
+            openGroups.add(group)
+        }
+    }
 
     val width by animateDpAsState(
         targetValue = if (expanded) SidebarExpandedWidth else SidebarCollapsedWidth,
@@ -502,6 +511,14 @@ fun MoreDestinationsSheet(
     val sheetState = rememberModalBottomSheetState()
     val reducedMotion = LauncherSettings.launcherReducedMotion.state
     val openGroups = remember { mutableStateListOf<NavGroup>() }
+
+    //Nhóm chứa mục đang chọn luôn được mở để thấy ngay mình đang ở đâu
+    LaunchedEffect(selected) {
+        val group = selected?.group ?: return@LaunchedEffect
+        if (group in CollapsibleNavGroups && group !in openGroups) {
+            openGroups.add(group)
+        }
+    }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
