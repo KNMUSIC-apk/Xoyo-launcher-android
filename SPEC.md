@@ -215,6 +215,10 @@ Lưu bằng MMKV. UI đọc bằng `LauncherSettings.<thuộc tính>.state` và 
 | `launcherQuickActions` | `launcherQuickActions` | String, danh sách CSV | `CREATE_PROFILE,MANAGE_VERSIONS,INSTALL_MODS,INSTALL_SHADERS,INSTALL_RESOURCE_PACKS,MANAGE_WORLDS,PERFORMANCE,OPEN_GAME_FOLDER` |
 | `performanceCustomPresets` | `performanceCustomPresets` | String, JSON | `[]` |
 | `launcherBackgroundOpacity` | `launcherBackgroundOpacity` | Int, 20..100 | `80` |
+| `launcherTextOpacity` | `launcherTextOpacity` | Int, 20..100 | `50` |
+| `launcherLiquidGlass` | `launcherLiquidGlass` | Boolean | `true` |
+| `launcherCustomFontPath` | `launcherCustomFontPath` | String, đường dẫn file font trong `filesDir/fonts/` (rỗng = font mặc định) | `""` |
+| `launcherHomeOverviewHidden` | `launcherHomeOverviewHidden` | Boolean | `false` |
 | `videoBackgroundVolume` | `videoBackgroundVolume` | Int, 0..100 | `0` |
 | `backgroundBlur` | `backgroundBlur` | Int, 0..40 | `0` |
 | `backgroundBlurType` | `backgroundBlurType` | enum `BackgroundBlur` | `Background` |
