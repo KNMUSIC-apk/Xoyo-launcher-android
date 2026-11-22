@@ -3281,7 +3281,6 @@
     <string name="content_select_version">Choose a version first. Its content will be listed here.</string>
     <string name="content_for_version">Version: %1$s</string>
     <string name="content_items_count">%1$d items installed</string>
-    <string name="content_install">Find and install</string>
     <string name="content_open_folder">Open folder</string>
     <string name="content_empty">No items installed in this version yet.</string>
     <string name="content_folder">Folder</string>
@@ -3308,7 +3307,6 @@
     <string name="web_skin_invalid_url">The link must start with https://</string>
     <string name="web_skin_invalid_image">The image is not a 64×64 skin or a 2:1 PNG cape.</string>
     <string name="web_skin_network_error">Could not load data. Check your connection and try again.</string>
-    <string name="world_download_action">Download worlds</string>
 
     <!-- XOYO: ghi hình màn hình, giật hình và sao lưu thế giới -->
     <string name="game_menu_option_record_start">Start screen recording</string>
