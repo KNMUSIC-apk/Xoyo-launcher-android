@@ -114,6 +114,21 @@ enum class NavDestination(val iconRes: Int, val titleRes: Int, val group: NavGro
     SETTINGS(R.drawable.ic_settings_filled, R.string.nav_settings, NavGroup.SYSTEM);
 }
 
+/**
+ * Nhóm Nội dung chỉ giữ những mục chưa có trong nhóm Tải về:
+ * tìm kiếm theo ID, yêu thích và trò chơi. Mod, modpack, resource pack, shader và thế giới
+ * đã có mục tải riêng nên không lặp lại ở đây.
+ */
+private val ContentGroupDestinations = setOf(
+    NavDestination.GAME_DOWNLOAD,
+    NavDestination.SEARCH_ID,
+    NavDestination.FAVORITES
+)
+
+/** Lọc bớt các mục trùng với nhóm Tải về khỏi nhóm Nội dung */
+private fun NavDestination.isVisibleIn(group: NavGroup): Boolean =
+    group != NavGroup.CONTENT || this in ContentGroupDestinations
+
 /** Các mục hiện trực tiếp trên thanh dưới khi màn hình hẹp. Phần còn lại nằm trong "Thêm". */
 val CompactPrimaryDestinations = listOf(
     NavDestination.HOME,
@@ -270,7 +285,8 @@ fun AppSidebar(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                NavDestination.entries.groupBy { it.group }.forEach { (group, items) ->
+                NavDestination.entries.groupBy { it.group }.forEach { (group, allItems) ->
+                    val items = allItems.filter { it.isVisibleIn(group) }
                     if (group in CollapsibleNavGroups) {
                         //Mỗi nhóm chỉ hiện một nút. Bấm vào để mở hoặc đóng các mục bên trong.
                         val open = group in openGroups
@@ -532,7 +548,8 @@ fun MoreDestinationsSheet(
             NavDestination.entries
                 .filter { it !in CompactPrimaryDestinations }
                 .groupBy { it.group }
-                .forEach { (group, items) ->
+                .forEach { (group, allItems) ->
+                    val items = allItems.filter { it.isVisibleIn(group) }
                     if (group in CollapsibleNavGroups) {
                         val open = group in openGroups
                         SheetGroupHeader(
