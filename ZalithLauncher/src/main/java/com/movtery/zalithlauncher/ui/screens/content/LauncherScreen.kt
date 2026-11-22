@@ -40,6 +40,11 @@ import com.movtery.zalithlauncher.ui.components.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
+import com.movtery.zalithlauncher.ui.components.isLiquidGlassEnabled
+import com.movtery.zalithlauncher.ui.components.liquidGlass
 import androidx.compose.material3.Icon
 import com.movtery.zalithlauncher.ui.components.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -53,7 +58,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,7 +84,6 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.movtery.cardgrid.state.rememberCardGridState
 import com.movtery.guide.GuideSide
 import com.movtery.guide.LocalGuideStep
 import com.movtery.guide.guideNode
@@ -111,7 +114,6 @@ import com.movtery.zalithlauncher.ui.screens.content.elements.CommonVersionInfoL
 import com.movtery.zalithlauncher.ui.screens.content.elements.PlayerFace
 import com.movtery.zalithlauncher.ui.screens.content.elements.VersionIconImage
 import com.movtery.zalithlauncher.ui.screens.content.home.DashboardOverview
-import com.movtery.zalithlauncher.ui.screens.content.home.HomeGrid
 import com.movtery.zalithlauncher.ui.screens.content.home.LocalActionMenuDrag
 import com.movtery.zalithlauncher.ui.screens.content.home.QuickAction
 import com.movtery.zalithlauncher.ui.screens.content.home.actionMenuDragAnchor
@@ -226,7 +228,6 @@ fun LauncherScreen(
                             )
                             .weight(ContentWeight)
                             .offset { IntOffset(x = dragState.previewShift.value.roundToInt(), y = 0) },
-                        isVisible = isVisible,
                         onLaunchGame = { version ->
                             onLaunchGame(version)
                         },
@@ -275,12 +276,8 @@ fun LauncherScreen(
     }
 }
 
-/** Hai chế độ của trang chủ: Tổng quan (XOYO) và Thẻ (giao diện thẻ có sẵn) */
-private enum class HomeTab { OVERVIEW, CARDS }
-
 @Composable
 private fun ContentMenu(
-    isVisible: Boolean,
     onLaunchGame: (Version) -> Unit,
     onQuickPlayServer: (Version?, String) -> Unit,
     onOpenVersionSettings: (Version) -> Unit,
@@ -289,9 +286,8 @@ private fun ContentMenu(
     onOpenLink: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val ctx = rememberAnimatedContext(isVisible = isVisible)
-    val gridState = rememberCardGridState()
-    var tab by rememberSaveable { mutableStateOf(HomeTab.OVERVIEW) }
+    // Nút ẩn/hiện Tổng quan để nhìn rõ nền phía sau. Trạng thái được lưu lại cho lần mở sau.
+    val overviewHidden = LauncherSettings.launcherHomeOverviewHidden.state
 
     CompositionLocalProvider(
         LocalHomeCardLauncher provides onLaunchGame,
@@ -304,17 +300,45 @@ private fun ContentMenu(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val liquid = isLiquidGlassEnabled()
+                    val chipShape = RoundedCornerShape(percent = 50)
                     FilterChip(
-                        selected = tab == HomeTab.OVERVIEW,
-                        onClick = { tab = HomeTab.OVERVIEW },
-                        label = { Text(stringResource(R.string.home_tab_overview)) }
-                    )
-                    FilterChip(
-                        selected = tab == HomeTab.CARDS,
-                        onClick = { tab = HomeTab.CARDS },
-                        label = { Text(stringResource(R.string.home_tab_cards)) }
+                        modifier = if (liquid) {
+                            Modifier.liquidGlass(
+                                shape = chipShape,
+                                tint = if (overviewHidden) Color.Transparent
+                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                            )
+                        } else Modifier,
+                        shape = chipShape,
+                        colors = if (liquid) {
+                            FilterChipDefaults.filterChipColors(
+                                containerColor = Color.Transparent,
+                                selectedContainerColor = Color.Transparent
+                            )
+                        } else FilterChipDefaults.filterChipColors(),
+                        selected = !overviewHidden,
+                        onClick = { LauncherSettings.launcherHomeOverviewHidden.save(!overviewHidden) },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(
+                                    if (overviewHidden) R.drawable.ic_visibility_off_outlined
+                                    else R.drawable.ic_visibility_outlined
+                                ),
+                                contentDescription = null
+                            )
+                        },
+                        label = {
+                            Text(
+                                stringResource(
+                                    if (overviewHidden) R.string.home_overview_show
+                                    else R.string.home_overview_hide
+                                )
+                            )
+                        }
                     )
                 }
                 Box(
@@ -322,8 +346,8 @@ private fun ContentMenu(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    when (tab) {
-                        HomeTab.OVERVIEW -> DashboardOverview(
+                    if (!overviewHidden) {
+                        DashboardOverview(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(horizontal = 12.dp),
@@ -332,13 +356,6 @@ private fun ContentMenu(
                             onQuickAction = onQuickAction,
                             onNavigate = onNavigate,
                             onOpenLink = onOpenLink
-                        )
-                        HomeTab.CARDS -> HomeGrid(
-                            state = gridState,
-                            isVisible = isVisible,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .animated(ctx)
                         )
                     }
                 }

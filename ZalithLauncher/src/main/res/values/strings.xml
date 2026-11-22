@@ -3331,4 +3331,15 @@
     <string name="world_backup_action">Back up world</string>
     <string name="world_backup_success">World backed up to %1$s</string>
     <string name="world_backup_failed">World backup failed</string>
+
+    <!-- XOYO: text opacity, Liquid Glass, custom font, show/hide overview on home -->
+    <string name="settings_launcher_text_opacity_title">Text opacity</string>
+    <string name="settings_launcher_text_opacity_summary">Increase to make text clearer and less blended into the background. Decrease to make text more transparent.</string>
+    <string name="settings_launcher_liquid_glass_title">Liquid Glass</string>
+    <string name="settings_launcher_liquid_glass_summary">Buttons, sliders and cards get a glass look. Turn off to use the standard Material look.</string>
+    <string name="settings_launcher_font_title">Font</string>
+    <string name="settings_launcher_font_summary">Pick a .ttf or .otf file for the whole launcher. Tap Reset to go back to the default font.</string>
+    <string name="settings_launcher_font_import_error">Could not import font</string>
+    <string name="home_overview_hide">Hide overview</string>
+    <string name="home_overview_show">Show overview</string>
 </resources>

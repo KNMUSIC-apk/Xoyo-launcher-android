@@ -20,6 +20,13 @@ package com.movtery.zalithlauncher.ui.screens.content.settings
 
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.content.Context
+import android.net.Uri
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.IOException
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
@@ -228,6 +235,24 @@ fun LauncherSettingsScreen(
                     SwitchSettingsCard(
                         modifier = Modifier.fillMaxWidth(),
                         position = CardPosition.Middle,
+                        unit = LauncherSettings.launcherLiquidGlass,
+                        title = stringResource(R.string.settings_launcher_liquid_glass_title),
+                        summary = stringResource(R.string.settings_launcher_liquid_glass_summary)
+                    )
+
+                    SettingsCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        position = CardPosition.Middle
+                    ) {
+                        CustomFontRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            submitError = submitError
+                        )
+                    }
+
+                    SwitchSettingsCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        position = CardPosition.Middle,
                         unit = LauncherSettings.launcherFullScreen,
                         title = stringResource(R.string.settings_launcher_full_screen_title),
                         summary = stringResource(R.string.settings_launcher_full_screen_summary)
@@ -271,6 +296,18 @@ fun LauncherSettingsScreen(
                             valueRange = LauncherSettings.launcherBackgroundOpacity.floatRange,
                             suffix = "%",
                             enabled = backgroundViewModel.isValid,
+                            fineTuningControl = true
+                        )
+
+                        IntSliderSettingsCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            position = CardPosition.Middle,
+                            unit = LauncherSettings.launcherTextOpacity,
+                            title = stringResource(R.string.settings_launcher_text_opacity_title),
+                            summary = stringResource(R.string.settings_launcher_text_opacity_summary),
+                            valueRange = LauncherSettings.launcherTextOpacity.floatRange,
+                            suffix = "%",
+                            enabled = true,
                             fineTuningControl = true
                         )
 
@@ -792,6 +829,104 @@ private fun CustomBackground(
                 }
             )
         }
+    }
+}
+
+/**
+ * Chọn font chữ tùy chỉnh cho toàn bộ launcher. File được sao chép vào thư mục riêng của launcher,
+ * nên không phụ thuộc vào file gốc sau khi đã nhập.
+ */
+@Composable
+private fun CustomFontRow(
+    submitError: (ErrorViewModel.ThrowableMessage) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val importErrorText = stringResource(R.string.settings_launcher_font_import_error)
+    val fontPath = LauncherSettings.launcherCustomFontPath.state
+    val hasCustomFont = fontPath.isNotBlank()
+
+    val filePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val oldPath = fontPath
+        scope.launch(Dispatchers.IO) {
+            runCatching { importCustomFont(context, uri) }
+                .onSuccess { newPath ->
+                    withContext(Dispatchers.Main) {
+                        LauncherSettings.launcherCustomFontPath.save(newPath)
+                    }
+                    if (oldPath.isNotBlank()) File(oldPath).delete()
+                }
+                .onFailure { th ->
+                    withContext(Dispatchers.Main) {
+                        submitError(
+                            ErrorViewModel.ThrowableMessage(
+                                title = androidText(importErrorText),
+                                message = androidText(th.getMessageOrToString())
+                            )
+                        )
+                    }
+                }
+        }
+    }
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clickable { filePicker.launch(arrayOf("*/*")) }
+                .padding(all = 16.dp),
+        ) {
+            TitleAndSummary(
+                title = stringResource(R.string.settings_launcher_font_title),
+                summary = stringResource(R.string.settings_launcher_font_summary)
+            )
+        }
+
+        AnimatedVisibility(visible = hasCustomFont) {
+            IconTextButton(
+                painter = painterResource(R.drawable.ic_restart_alt),
+                text = stringResource(R.string.generic_reset),
+                onClick = {
+                    scope.launch(Dispatchers.IO) {
+                        File(fontPath).delete()
+                        withContext(Dispatchers.Main) {
+                            LauncherSettings.launcherCustomFontPath.save("")
+                        }
+                    }
+                }
+            )
+        }
+    }
+}
+
+/**
+ * Sao chép font được chọn vào thư mục riêng của launcher, kiểm tra đúng là font rồi trả về đường dẫn.
+ * Mỗi lần nhập dùng một tên file mới để giao diện nạp lại font, không giữ bản cũ trong bộ nhớ đệm.
+ */
+private fun importCustomFont(context: Context, uri: Uri): String {
+    val dir = File(context.filesDir, "fonts").apply { mkdirs() }
+    val extension = if (uri.toString().endsWith(".otf", ignoreCase = true)) "otf" else "ttf"
+    val target = File(dir, "custom_${System.currentTimeMillis()}.$extension")
+    try {
+        val input = context.contentResolver.openInputStream(uri)
+            ?: throw IOException("openInputStream returned null")
+        input.use { source ->
+            target.outputStream().use { output -> source.copyTo(output) }
+        }
+        // createFromFile ném lỗi ngay nếu file không phải font hợp lệ
+        android.graphics.Typeface.createFromFile(target)
+        return target.absolutePath
+    } catch (t: Throwable) {
+        target.delete()
+        throw t
     }
 }
 

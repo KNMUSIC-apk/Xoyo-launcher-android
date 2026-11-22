@@ -42,11 +42,11 @@ import com.movtery.zalithlauncher.viewmodel.LocalBackgroundViewModel
  */
 
 /**
- * Kính Liquid Glass luôn bật. Không có ảnh nền thì nút vẫn có lớp bán trong suốt và viền sáng.
- * Đây là chỗ gắn công tắc cài đặt sau này nếu cần.
+ * Chủ đề Liquid Glass có bật hay không. Đọc từ cài đặt "launcherLiquidGlass" (mặc định bật).
+ * Tắt thì nút, thanh trượt và thẻ quay về giao diện Material gốc.
  */
 @Composable
-fun isLiquidGlassEnabled(): Boolean = true
+fun isLiquidGlassEnabled(): Boolean = LauncherSettings.launcherLiquidGlass.state
 
 /** Độ đục của lớp kính khi không có ảnh nền. Có ảnh nền thì dùng slider "Độ mờ nền". */
 private const val GlassFillWithoutWallpaper = 0.72f
@@ -68,6 +68,7 @@ fun Modifier.liquidGlass(
     tint: Color,
     enabled: Boolean = true
 ): Modifier {
+    if (!LauncherSettings.launcherLiquidGlass.state) return this
     val hasWallpaper = LocalBackgroundViewModel.current?.isValid == true
     val blurActive = hasWallpaper &&
             LauncherSettings.backgroundBlurType.state == BackgroundBlur.Foreground &&

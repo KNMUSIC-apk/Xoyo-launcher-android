@@ -23,6 +23,7 @@ import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -36,6 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamicColorScheme
 import com.movtery.zalithlauncher.setting.LauncherSettings
@@ -46,6 +49,7 @@ import com.movtery.zalithlauncher.utils.festival.LocalFestivals
 import com.movtery.zalithlauncher.viewmodel.BackgroundViewModel
 import com.movtery.zalithlauncher.viewmodel.LocalBackgroundViewModel
 import top.yukonga.miuix.kmp.utils.MiuixOverscrollFactory
+import java.io.File
 
 private val embermireLight = lightColorScheme(
     primary = primaryLight.embermire,
@@ -679,16 +683,50 @@ fun ZalithLauncherTheme(
         }
     }
 
+    // Độ rõ của chữ (cài đặt "Độ mờ chữ"): chỉ giảm alpha các màu chữ, không đụng màu nền hay màu nút
+    val textOpacity = LauncherSettings.launcherTextOpacity.state / 100f
+    val displayScheme = remember(currentDisplayScheme, textOpacity) {
+        currentDisplayScheme.withTextOpacity(textOpacity)
+    }
+    // Font tùy chỉnh người dùng đã nhập; không có thì dùng font mặc định
+    val customFontPath = LauncherSettings.launcherCustomFontPath.state
+    val typography = remember(customFontPath) { launcherTypography(customFontPath) }
+
     CompositionLocalProvider(
         LocalBackgroundViewModel provides backgroundViewModel,
         LocalFestivals provides festivals,
         LocalOverscrollFactory provides MiuixOverscrollFactory,
     ) {
         MaterialExpressiveTheme(
-            colorScheme = currentDisplayScheme,
+            colorScheme = displayScheme,
             motionScheme = MotionScheme.expressive(),
-            typography = AppTypography,
+            typography = typography,
             content = content
         )
     }
+}
+
+/** Áp độ rõ của chữ lên các màu chữ chính. Ở 100% thì giữ nguyên bảng màu. */
+private fun ColorScheme.withTextOpacity(opacity: Float): ColorScheme {
+    if (opacity >= 1f) return this
+    return copy(
+        onSurface = onSurface.copy(alpha = onSurface.alpha * opacity),
+        onSurfaceVariant = onSurfaceVariant.copy(alpha = onSurfaceVariant.alpha * opacity),
+        onBackground = onBackground.copy(alpha = onBackground.alpha * opacity),
+    )
+}
+
+/**
+ * Typography của launcher. Có font tùy chỉnh thì dùng font đó cho mọi kiểu chữ.
+ * Đường dẫn rỗng, file đã bị xóa hoặc file hỏng thì rơi về font mặc định, không làm sập app.
+ */
+private fun launcherTypography(fontPath: String): Typography {
+    if (fontPath.isBlank()) return AppTypography
+    val file = File(fontPath)
+    val family = runCatching {
+        // createFromFile ném lỗi ngay nếu file không phải font hợp lệ
+        android.graphics.Typeface.createFromFile(file)
+        FontFamily(Font(file))
+    }.getOrNull() ?: return AppTypography
+    return Typography(defaultFontFamily = family)
 }
