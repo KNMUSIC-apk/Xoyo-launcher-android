@@ -728,5 +728,39 @@ private fun launcherTypography(fontPath: String): Typography {
         android.graphics.Typeface.createFromFile(file)
         FontFamily(Font(file))
     }.getOrNull() ?: return AppTypography
-    return Typography(defaultFontFamily = family)
+    // Phiên bản Material3 này không có tham số defaultFontFamily nữa,
+    // nên gắn font vào từng kiểu chữ, giữ nguyên cỡ chữ và độ đậm của AppTypography.
+    val b = AppTypography
+    return Typography(
+        displayLarge = b.displayLarge.copy(fontFamily = family),
+        displayMedium = b.displayMedium.copy(fontFamily = family),
+        displaySmall = b.displaySmall.copy(fontFamily = family),
+        headlineLarge = b.headlineLarge.copy(fontFamily = family),
+        headlineMedium = b.headlineMedium.copy(fontFamily = family),
+        headlineSmall = b.headlineSmall.copy(fontFamily = family),
+        titleLarge = b.titleLarge.copy(fontFamily = family),
+        titleMedium = b.titleMedium.copy(fontFamily = family),
+        titleSmall = b.titleSmall.copy(fontFamily = family),
+        bodyLarge = b.bodyLarge.copy(fontFamily = family),
+        bodyMedium = b.bodyMedium.copy(fontFamily = family),
+        bodySmall = b.bodySmall.copy(fontFamily = family),
+        labelLarge = b.labelLarge.copy(fontFamily = family),
+        labelMedium = b.labelMedium.copy(fontFamily = family),
+        labelSmall = b.labelSmall.copy(fontFamily = family),
+        displayLargeEmphasized = b.displayLargeEmphasized.copy(fontFamily = family),
+        displayMediumEmphasized = b.displayMediumEmphasized.copy(fontFamily = family),
+        displaySmallEmphasized = b.displaySmallEmphasized.copy(fontFamily = family),
+        headlineLargeEmphasized = b.headlineLargeEmphasized.copy(fontFamily = family),
+        headlineMediumEmphasized = b.headlineMediumEmphasized.copy(fontFamily = family),
+        headlineSmallEmphasized = b.headlineSmallEmphasized.copy(fontFamily = family),
+        titleLargeEmphasized = b.titleLargeEmphasized.copy(fontFamily = family),
+        titleMediumEmphasized = b.titleMediumEmphasized.copy(fontFamily = family),
+        titleSmallEmphasized = b.titleSmallEmphasized.copy(fontFamily = family),
+        bodyLargeEmphasized = b.bodyLargeEmphasized.copy(fontFamily = family),
+        bodyMediumEmphasized = b.bodyMediumEmphasized.copy(fontFamily = family),
+        bodySmallEmphasized = b.bodySmallEmphasized.copy(fontFamily = family),
+        labelLargeEmphasized = b.labelLargeEmphasized.copy(fontFamily = family),
+        labelMediumEmphasized = b.labelMediumEmphasized.copy(fontFamily = family),
+        labelSmallEmphasized = b.labelSmallEmphasized.copy(fontFamily = family),
+    )
 }
