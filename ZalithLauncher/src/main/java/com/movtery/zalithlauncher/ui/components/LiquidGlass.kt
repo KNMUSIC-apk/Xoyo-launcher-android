@@ -35,29 +35,32 @@ import com.movtery.zalithlauncher.ui.screens.content.elements.backgroundGlass
 import com.movtery.zalithlauncher.viewmodel.LocalBackgroundViewModel
 
 /*
- * Liquid Glass cho nút.
- *
- * Chỉ bật khi người dùng đã đặt ảnh hoặc video nền. Không có nền thì nút giữ đúng giao diện Material gốc,
- * nên người dùng không có nền không thấy thay đổi nào.
+ * Liquid Glass cho nút và thẻ bấm được.
  *
  * Ý tưởng tham khảo từ AmberLauncher (GPL-3.0, github.com/ItsVynzzzz/AmberLauncher).
  * Mã ở đây được viết lại, không sao chép.
  */
 
 /**
- * Có đang hiển thị kính Liquid Glass cho nút không (tức là đã có nền).
+ * Kính Liquid Glass luôn bật. Không có ảnh nền thì nút vẫn có lớp bán trong suốt và viền sáng.
+ * Đây là chỗ gắn công tắc cài đặt sau này nếu cần.
  */
 @Composable
-fun isLiquidGlassEnabled(): Boolean = LocalBackgroundViewModel.current?.isValid == true
+fun isLiquidGlassEnabled(): Boolean = true
+
+/** Độ đục của lớp kính khi không có ảnh nền. Có ảnh nền thì dùng slider "Độ mờ nền". */
+private const val GlassFillWithoutWallpaper = 0.72f
 
 /**
- * Vẽ mặt kính của một nút. Chỉ gọi khi [isLiquidGlassEnabled] là true.
+ * Vẽ mặt kính của một nút.
  *
- * - Đang bật làm mờ nền ở chế độ "Foreground", với độ mờ > 0: nền đã mờ nằm ngay dưới nút, phủ [tint] bán trong suốt.
- * - Còn lại: chỉ phủ [tint] bán trong suốt, không làm mờ.
- * Luôn thêm một lớp bóng nhẹ ở nửa trên và viền sáng để nút trông như kính.
+ * - Có ảnh nền, đang bật Foreground với độ mờ > 0: nền đã mờ nằm dưới nút, phủ màu bán trong suốt.
+ * - Có ảnh nền, không làm mờ: màu bán trong suốt theo slider "Độ mờ nền".
+ * - Không có ảnh nền: màu bán trong suốt cố định.
+ * Luôn có viền sáng và một lớp bóng nhẹ ở nửa trên.
  *
- * @param tint màu nền gốc của nút. Nếu trong suốt (ví dụ nút chữ) thì dùng màu surface.
+ * @param tint màu nền gốc của nút. Nếu trong suốt (nút chữ, nút icon) thì dùng màu surface.
+ * @param enabled nút đang bật. Khi tắt, lớp kính mờ hơn.
  */
 @Composable
 fun Modifier.liquidGlass(
@@ -65,12 +68,19 @@ fun Modifier.liquidGlass(
     tint: Color,
     enabled: Boolean = true
 ): Modifier {
-    val base = if (tint.alpha > 0f) tint else MaterialTheme.colorScheme.surfaceBright
-    // Độ trong suốt theo slider "Độ mờ nền", giống các thẻ khác của launcher.
-    val color = influencedByBackgroundColor(color = base, enabled = enabled)
-    val blurActive = LauncherSettings.backgroundBlurType.state == BackgroundBlur.Foreground &&
+    val hasWallpaper = LocalBackgroundViewModel.current?.isValid == true
+    val blurActive = hasWallpaper &&
+            LauncherSettings.backgroundBlurType.state == BackgroundBlur.Foreground &&
             LauncherSettings.backgroundBlur.state > 0 &&
             LauncherSettings.launcherBackgroundOpacity.state < 100
+
+    val base = if (tint.alpha > 0f) tint else MaterialTheme.colorScheme.surfaceBright
+    val wallpaperFill = LauncherSettings.launcherBackgroundOpacity.state / 100f
+    val fillAlpha = (if (hasWallpaper) wallpaperFill else GlassFillWithoutWallpaper) *
+            (if (enabled) 1f else 0.6f)
+    // Giữ nguyên độ trong suốt sẵn có của màu gốc (ví dụ màu nút tắt đã mờ sẵn).
+    val color = base.copy(alpha = base.alpha * fillAlpha)
+
     val clipped = clip(shape)
     val filled = if (blurActive) {
         clipped.backgroundGlass(blur = LauncherSettings.backgroundBlur.state, color = color)
@@ -97,8 +107,6 @@ private val LiquidGloss = Brush.verticalGradient(
 )
 
 /**
- * Viền kính cho thẻ bấm được. Không có nền thì trả về null để giữ nguyên viền của thẻ.
+ * Viền kính cho thẻ bấm được (chip tài khoản, các thẻ có onClick).
  */
-@Composable
-fun liquidRimBorder(): BorderStroke? =
-    if (isLiquidGlassEnabled()) BorderStroke(0.8.dp, LiquidRim) else null
+fun liquidRimBorder(): BorderStroke = BorderStroke(0.8.dp, LiquidRim)
