@@ -34,7 +34,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.movtery.zalithlauncher.ui.components.IconButton
+import com.movtery.zalithlauncher.ui.components.isLiquidGlassEnabled
+import com.movtery.zalithlauncher.ui.components.liquidGlass
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -53,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -480,7 +483,11 @@ fun AppBottomBar(
     onMore: () -> Unit,
     moreSelected: Boolean,
 ) {
-    NavigationBar(containerColor = cardColor(true)) {
+    val liquid = isLiquidGlassEnabled()
+    NavigationBar(
+        containerColor = if (liquid) Color.Transparent else cardColor(true),
+        modifier = if (liquid) Modifier.liquidGlass(RectangleShape, cardColor(true)) else Modifier
+    ) {
         CompactPrimaryDestinations.forEach { destination ->
             NavigationBarItem(
                 selected = selected == destination,

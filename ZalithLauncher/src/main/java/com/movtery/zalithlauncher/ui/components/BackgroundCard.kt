@@ -108,7 +108,7 @@ fun BackgroundCard(
         shape = shape,
         colors = colors,
         elevation = elevation,
-        border = border,
+        border = border ?: liquidRimBorder(),
         onClick = onClick,
         enabled = enabled,
     ) {
