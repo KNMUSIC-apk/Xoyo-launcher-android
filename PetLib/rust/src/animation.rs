@@ -6,6 +6,8 @@ pub enum AnimationId {
     Idle,
     /// 行走
     Walking,
+    /// 坐下（如坐在矿车里）
+    Sitting,
 }
 
 /// 单帧动画姿态
@@ -71,6 +73,32 @@ pub(crate) const WALKING_PERIOD: f32 = 15. * std::f32::consts::PI;
 /// t 为累计动画时间（秒，已含速度缩放）。
 pub(crate) fn evaluate_walking(t: f32) -> AnimFrame {
     walking(t * 8.)
+}
+
+/// Thời gian (giây) để hạ từ tư thế đứng xuống tư thế ngồi. Sau đó giữ nguyên tư thế ngồi.
+pub(crate) const SIT_SECONDS: f32 = 0.8;
+/// Độ thấp của thân khi ngồi (đơn vị của skin, cùng hệ với đầu ở y = 24).
+pub(crate) const SIT_DROP: f32 = 6.;
+/// Hai chân gập ra trước, nằm ngang.
+const SIT_LEG: f32 = -std::f32::consts::FRAC_PI_2;
+/// Hai tay hơi đưa ra trước.
+const SIT_ARM: f32 = -0.5;
+
+/// Tư thế ngồi. t là thời gian (giây) kể từ lúc bắt đầu ngồi; quá SIT_SECONDS thì tư thế không đổi.
+pub(crate) fn evaluate_sitting(t: f32) -> AnimFrame {
+    let u = (t / SIT_SECONDS).clamp(0., 1.);
+    // smoothstep: hạ chậm ở hai đầu, nhanh ở giữa.
+    let p = u * u * (3. - 2. * u);
+    AnimFrame {
+        body_rot: Vec3::ZERO,
+        head_rot: Vec3::ZERO,
+        arms: [Vec3::new(SIT_ARM * p, 0., 0.); 2],
+        legs: [Vec3::new(SIT_LEG * p, 0., 0.); 2],
+        body_pos: Vec3::new(0., -SIT_DROP * p, 0.),
+        head_pos: 0.,
+        cape_x: std::f32::consts::PI * 0.06,
+        cape_z: None,
+    }
 }
 
 /// 行走动画，移植 skinview3d 的 WalkingAnimation

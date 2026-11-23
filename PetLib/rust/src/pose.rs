@@ -2,7 +2,7 @@
 
 use glam::{EulerRot, Mat4, Quat, Vec2, Vec3};
 
-use crate::animation::{evaluate_walking, AnimFrame, AnimationId, WALKING_PERIOD};
+use crate::animation::{evaluate_sitting, evaluate_walking, AnimFrame, AnimationId, SIT_SECONDS, WALKING_PERIOD};
 use crate::clip::{self, ClipPose, IdleClips};
 use crate::clip_data::{CLIP_IDLE, CLIP_INTERACT, CLIP_SUBS};
 
@@ -91,6 +91,8 @@ enum Source {
     Idle,
     /// 行走
     Walking,
+    /// 坐下
+    Sitting,
     /// 随机待机子动画
     Sub(usize),
     /// 点击反应
@@ -141,7 +143,7 @@ impl Track {
     }
 
     fn is_base(&self) -> bool {
-        matches!(self.source, Source::Idle | Source::Walking)
+        matches!(self.source, Source::Idle | Source::Walking | Source::Sitting)
     }
 
     fn is_oneshot(&self) -> bool {
@@ -345,6 +347,7 @@ impl Skeleton {
         let source = match id {
             AnimationId::Idle => Source::Idle,
             AnimationId::Walking => Source::Walking,
+            AnimationId::Sitting => Source::Sitting,
         };
         self.tracks.push(Track::looping(source));
         self.animation = Some((id, speed.max(0.01), head_follow));
@@ -416,7 +419,10 @@ impl Skeleton {
                 .max_by(|a, b| a.weight.total_cmp(&b.weight));
             match base {
                 Some(base) => {
-                    base.time = 0.;
+                    // Tư thế ngồi giữ nguyên thời gian, không hạ lại từ đầu sau mỗi lần tương tác.
+                    if base.source != Source::Sitting {
+                        base.time = 0.;
+                    }
                     base.target = 1.;
                 }
                 None => {
@@ -424,6 +430,7 @@ impl Skeleton {
                         let source = match id {
                             AnimationId::Idle => Source::Idle,
                             AnimationId::Walking => Source::Walking,
+                            AnimationId::Sitting => Source::Sitting,
                         };
                         self.tracks.push(Track::base_fade_in(source));
                     }
@@ -457,6 +464,12 @@ impl Skeleton {
                     base.time = (base.time + (dt * speed).min(0.05)) % WALKING_PERIOD;
                 }
             }
+            Some((AnimationId::Sitting, speed, _)) => {
+                if let Some(base) = self.tracks.iter_mut().find(|t| t.source == Source::Sitting) {
+                    // Chỉ hạ xuống một lần rồi giữ tư thế ngồi.
+                    base.time = (base.time + (dt * speed).min(0.05)).min(SIT_SECONDS);
+                }
+            }
             None => {}
         }
 
@@ -480,6 +493,7 @@ impl Skeleton {
         match track.source {
             Source::Idle => snapshot_from_pose(clip::sample(&CLIP_IDLE, self.idle_clips.base_time)),
             Source::Walking => snapshot_from_frame(evaluate_walking(track.time), cape_z),
+            Source::Sitting => snapshot_from_frame(evaluate_sitting(track.time), cape_z),
             Source::Sub(index) => snapshot_from_pose(clip::sample(&CLIP_SUBS[index], track.time)),
             Source::Interact => snapshot_from_pose(clip::sample(&CLIP_INTERACT, track.time)),
         }
@@ -1282,5 +1296,55 @@ mod tests {
         assert!(s.tracks.is_empty(), "tracks must drain: {:?}", s.tracks);
         assert!(s.body_pos.abs_diff_eq(Vec3::ZERO, 0.001));
         assert!((s.cape.x - std::f32::consts::PI * 0.06).abs() < 0.01);
+    }
+}
+
+#[cfg(test)]
+mod sitting_tests {
+    use super::*;
+    use crate::animation::{SIT_DROP, SIT_SECONDS};
+
+    fn run(s: &mut Skeleton, seconds: f32) {
+        let view = Vec2::new(100., 100.);
+        let frames = (seconds * 60.) as usize;
+        for _ in 0..frames {
+            s.update(view, 0., 1. / 60.);
+        }
+    }
+
+    #[test]
+    fn sitting_lowers_body_then_holds() {
+        let mut s = Skeleton::new();
+        s.play_animation(AnimationId::Sitting, 1., true);
+        run(&mut s, 2.);
+        assert!(
+            (s.body_pos.y + SIT_DROP).abs() < 0.05,
+            "seated body_pos.y = {}",
+            s.body_pos.y
+        );
+        run(&mut s, 2.);
+        assert!(
+            (s.body_pos.y + SIT_DROP).abs() < 0.05,
+            "seated pose must hold, body_pos.y = {}",
+            s.body_pos.y
+        );
+    }
+
+    #[test]
+    fn sitting_ramp_is_gradual() {
+        let mut s = Skeleton::new();
+        s.play_animation(AnimationId::Sitting, 1., true);
+        run(&mut s, SIT_SECONDS * 0.25);
+        assert!(s.body_pos.y > -SIT_DROP * 0.9, "should still be rising: {}", s.body_pos.y);
+    }
+
+    #[test]
+    fn standing_up_returns_to_idle_height() {
+        let mut s = Skeleton::new();
+        s.play_animation(AnimationId::Sitting, 1., true);
+        run(&mut s, 2.);
+        s.play_animation(AnimationId::Idle, 1., true);
+        run(&mut s, 2.);
+        assert!(s.body_pos.y > -1.0, "idle must not stay seated: {}", s.body_pos.y);
     }
 }
