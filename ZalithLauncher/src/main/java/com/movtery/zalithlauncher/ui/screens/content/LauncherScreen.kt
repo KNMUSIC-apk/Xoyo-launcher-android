@@ -590,7 +590,7 @@ private fun PetModelContent(
         cape = capeBytes,
         arm = armModel,
         yaw = yaw,
-        animation = PetAnimation.Sitting,
+        animation = PetAnimation.Idle,
         tapReaction = PetTapReaction.Interact,
         dragYaw = true
     )

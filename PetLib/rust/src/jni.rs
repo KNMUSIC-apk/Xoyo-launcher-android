@@ -104,12 +104,11 @@ fn arm_from(code: jint) -> Option<ArmModel> {
 }
 
 /// 动画编码
-/// 0 待机，1 行走，2 坐下
+/// 0 待机，1 行走
 fn animation_from(code: jint) -> Option<AnimationId> {
     match code {
         0 => Some(AnimationId::Idle),
         1 => Some(AnimationId::Walking),
-        2 => Some(AnimationId::Sitting),
         _ => None,
     }
 }
