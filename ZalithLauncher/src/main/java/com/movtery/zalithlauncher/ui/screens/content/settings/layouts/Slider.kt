@@ -143,8 +143,47 @@ fun IntSliderSettingsCard(
     titleStyle: TextStyle = MaterialTheme.typography.titleSmall,
     summaryStyle: TextStyle = MaterialTheme.typography.labelSmall,
     appendContent: @Composable () -> Unit = {},
-    previewContent: @Composable ColumnScope.() -> Unit = {}
+    previewContent: @Composable ColumnScope.() -> Unit = {},
+    /**
+     * Bước cập nhật theme khi kéo (0 = mỗi bước). Thanh kéo vẫn bám tay nhờ giá trị cục bộ,
+     * còn theme chỉ đổi theo từng bước để không dựng lại toàn bộ giao diện ở mỗi điểm ảnh.
+     */
+    themeStep: Int = 0
 ) {
+    if (themeStep > 0) {
+        var preview by remember { mutableStateOf(unit.state) }
+        IntSliderSettingsCard(
+            value = preview,
+            title = title,
+            position = position,
+            modifier = modifier,
+            outerShape = outerShape,
+            innerShape = innerShape,
+            summary = summary,
+            valueRange = valueRange,
+            steps = steps,
+            suffix = suffix,
+            onValueChange = {
+                preview = it
+                if (it % themeStep == 0) unit.updateState(it)
+                onValueChange(it)
+            },
+            onValueChangeFinished = {
+                unit.updateState(preview)
+                unit.save(preview)
+            },
+            enabled = enabled,
+            shorter = shorter,
+            fineTuningControl = fineTuningControl,
+            valueText = valueText,
+            titleStyle = titleStyle,
+            summaryStyle = summaryStyle,
+            appendContent = appendContent,
+            previewContent = previewContent
+        )
+        return
+    }
+
     IntSliderSettingsCard(
         value = unit.state,
         title = title,

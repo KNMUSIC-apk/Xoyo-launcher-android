@@ -308,7 +308,10 @@ fun LauncherSettingsScreen(
                             valueRange = LauncherSettings.launcherTextOpacity.floatRange,
                             suffix = "%",
                             enabled = true,
-                            fineTuningControl = true
+                            fineTuningControl = true,
+                            // Đổi màu chữ làm theme dựng lại toàn bộ giao diện, nên chỉ cập nhật
+                            // theo từng bước 5% khi kéo để thanh trượt không bị giật.
+                            themeStep = 5
                         )
 
                         IntSliderSettingsCard(

@@ -125,8 +125,9 @@ object LauncherSettings : SettingsRegistry() {
 
     /**
      * XOYO：bật/tắt chủ đề Liquid Glass cho nút, thanh trượt và thẻ bấm được.
+     * Mặc định tắt: giao diện nhẹ hơn và không phải tính lại lớp kính khi kéo thanh độ mờ.
      */
-    val launcherLiquidGlass = boolSetting("launcherLiquidGlass", true)
+    val launcherLiquidGlass = boolSetting("launcherLiquidGlass", false)
 
     /**
      * XOYO：đường dẫn font tùy chỉnh đã sao chép vào bộ nhớ riêng của launcher. Rỗng nghĩa là dùng font mặc định.

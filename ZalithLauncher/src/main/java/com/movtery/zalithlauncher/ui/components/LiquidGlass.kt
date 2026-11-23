@@ -42,7 +42,7 @@ import com.movtery.zalithlauncher.viewmodel.LocalBackgroundViewModel
  */
 
 /**
- * Chủ đề Liquid Glass có bật hay không. Đọc từ cài đặt "launcherLiquidGlass" (mặc định bật).
+ * Chủ đề Liquid Glass có bật hay không. Đọc từ cài đặt "launcherLiquidGlass" (mặc định tắt).
  * Tắt thì nút, thanh trượt và thẻ quay về giao diện Material gốc.
  */
 @Composable
