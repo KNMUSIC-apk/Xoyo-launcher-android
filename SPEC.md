@@ -216,7 +216,7 @@ Lưu bằng MMKV. UI đọc bằng `LauncherSettings.<thuộc tính>.state` và 
 | `performanceCustomPresets` | `performanceCustomPresets` | String, JSON | `[]` |
 | `launcherBackgroundOpacity` | `launcherBackgroundOpacity` | Int, 20..100 | `80` |
 | `launcherTextOpacity` | `launcherTextOpacity` | Int, 20..100 (từ 45 trở lên chữ rõ tối đa; dưới 45 chữ mờ dần) | `45` |
-| `launcherLiquidGlass` | `launcherLiquidGlass` | Boolean | `true` |
+| `launcherLiquidGlass` | `launcherLiquidGlass` | Boolean | `false` |
 | `launcherCustomFontPath` | `launcherCustomFontPath` | String, đường dẫn file font trong `filesDir/fonts/` (rỗng = font mặc định) | `""` |
 | `launcherHomeOverviewHidden` | `launcherHomeOverviewHidden` | Boolean | `false` |
 | `videoBackgroundVolume` | `videoBackgroundVolume` | Int, 0..100 | `0` |

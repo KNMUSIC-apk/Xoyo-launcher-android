@@ -242,7 +242,7 @@ fun MainScreen(
                         showSidebarToggle = !compact,
                         onToggleSidebar = {
                             LauncherSettings.launcherSidebarExpanded.save(
-                                !LauncherSettings.launcherSidebarExpanded.state
+                                !LauncherSettings.launcherSidebarExpanded.flow.value
                             )
                         },
                         changeExpandedState = {

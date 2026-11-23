@@ -151,7 +151,8 @@ fun IntSliderSettingsCard(
     themeStep: Int = 0
 ) {
     if (themeStep > 0) {
-        var preview by remember { mutableStateOf(unit.state) }
+        val initialValue = unit.state
+        var preview by remember { mutableStateOf(initialValue) }
         IntSliderSettingsCard(
             value = preview,
             title = title,
