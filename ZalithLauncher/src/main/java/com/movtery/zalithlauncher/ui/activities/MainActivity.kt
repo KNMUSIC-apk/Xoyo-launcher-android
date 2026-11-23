@@ -57,13 +57,11 @@ import com.movtery.zalithlauncher.notification.NotificationManager
 import com.movtery.zalithlauncher.path.PathManager
 import com.movtery.zalithlauncher.path.URL_SUPPORT
 import com.movtery.zalithlauncher.setting.LauncherSettings
-import com.movtery.zalithlauncher.setting.MiscSettings
 import com.movtery.zalithlauncher.ui.AndroidStringText
 import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.base.BaseAppCompatActivity
 import com.movtery.zalithlauncher.ui.base.ObserveFullScreenSetting
 import com.movtery.zalithlauncher.ui.buildAppendedText
-import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import com.movtery.zalithlauncher.ui.guide.GuideKeys
 import com.movtery.zalithlauncher.ui.guide.GuideProgress
 import com.movtery.zalithlauncher.ui.guide.NextTipLabel
@@ -326,8 +324,6 @@ class MainActivity : BaseAppCompatActivity() {
             }
         }
 
-        val finishedGame = MiscSettings.finishedGame
-        val showSponsorship = MiscSettings.showSponsorship
 
         val festivals = getTodayFestivals(
             containsChinese = isChinese(this@MainActivity)
@@ -413,24 +409,6 @@ class MainActivity : BaseAppCompatActivity() {
                             }
                         )
                     }
-                }
-
-                //显示赞助支持的小弹窗
-                if (!isImporting && finishedGame.state >= 100 && showSponsorship.state) {
-                    SimpleAlertDialog(
-                        title = stringResource(R.string.about_sponsor),
-                        text = stringResource(R.string.game_saponsorship_finished_game, finishedGame.state),
-                        dismissText = stringResource(R.string.generic_close),
-                        onDismiss = {
-                            showSponsorship.save(false)
-                        },
-                        onConfirm = {
-                            showSponsorship.save(false)
-                            eventViewModel.sendEvent(
-                                EventViewModel.Event.OpenLink(URL_SUPPORT)
-                            )
-                        }
-                    )
                 }
 
                 ModpackImportOperation(
