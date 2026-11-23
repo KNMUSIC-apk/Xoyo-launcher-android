@@ -313,29 +313,6 @@ private fun ContentMenu(
     ) {
         Box(modifier = modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Chỉ còn icon con mắt, không chữ và không viền liquid glass.
-                    androidx.compose.material3.IconButton(
-                        onClick = { LauncherSettings.launcherHomeOverviewHidden.save(!overviewHidden) }
-                    ) {
-                        Icon(
-                            painter = painterResource(
-                                if (overviewHidden) R.drawable.ic_visibility_off_outlined
-                                else R.drawable.ic_visibility_outlined
-                            ),
-                            contentDescription = stringResource(
-                                if (overviewHidden) R.string.home_overview_show
-                                else R.string.home_overview_hide
-                            )
-                        )
-                    }
-                }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -606,32 +583,17 @@ private fun PetModelContent(
         }
     }
 
-    // XOYO: nút xoay mô hình, mỗi lần xoay 45 độ
-    var yawStep by remember { mutableIntStateOf(0) }
-    val yawWithStep = yaw + Math.toRadians(yawStep.toDouble()).toFloat()
-
-    Box(modifier = modifier) {
-        PetModelView(
-            modifier = Modifier.fillMaxSize(),
-            skin = skinBytes,
-            cape = capeBytes,
-            arm = armModel,
-            yaw = yawWithStep,
-            animation = PetAnimation.Sitting,
-            tapReaction = PetTapReaction.Interact,
-            dragYaw = false
-        )
-        IconButton(
-            modifier = Modifier.align(Alignment.TopEnd),
-            onClick = { yawStep = (yawStep + 45) % 360 }
-        ) {
-            Icon(
-                modifier = Modifier.size(20.dp),
-                painter = painterResource(R.drawable.ic_refresh),
-                contentDescription = stringResource(R.string.hero_rotate_model)
-            )
-        }
-    }
+    // XOYO: bỏ nút xoay, kéo trực tiếp trên mô hình để xoay skin theo ý muốn
+    PetModelView(
+        modifier = modifier.fillMaxSize(),
+        skin = skinBytes,
+        cape = capeBytes,
+        arm = armModel,
+        yaw = yaw,
+        animation = PetAnimation.Sitting,
+        tapReaction = PetTapReaction.Interact,
+        dragYaw = true
+    )
 }
 
 @Composable

@@ -34,7 +34,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Icon
-import com.movtery.zalithlauncher.ui.components.IconButton
 import com.movtery.zalithlauncher.ui.components.isLiquidGlassEnabled
 import com.movtery.zalithlauncher.ui.components.liquidGlass
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -114,6 +113,8 @@ enum class NavDestination(val iconRes: Int, val titleRes: Int, val group: NavGro
     DOWNLOAD_WORLDS(R.drawable.ic_public, R.string.nav_download_worlds, NavGroup.DOWNLOAD),
     SERVERS(R.drawable.ic_dns_outlined, R.string.nav_servers, NavGroup.SOCIAL),
     ACCOUNTS(R.drawable.ic_person_outlined, R.string.nav_accounts, NavGroup.SOCIAL),
+    LAN(R.drawable.ic_group_filled, R.string.nav_lan, NavGroup.SOCIAL),
+    FILES(R.drawable.ic_folder_filled, R.string.nav_files, NavGroup.SYSTEM),
     PERFORMANCE(R.drawable.ic_dashboard_outlined, R.string.nav_performance, NavGroup.SYSTEM),
     SETTINGS(R.drawable.ic_settings_filled, R.string.nav_settings, NavGroup.SYSTEM);
 }
@@ -156,6 +157,7 @@ fun navDestinationOf(key: TitledNavKey?): NavDestination? = when (key) {
     is NormalNavKey.ServerHub -> NavDestination.SERVERS
     is NormalNavKey.AccountManager -> NavDestination.ACCOUNTS
     is NormalNavKey.PerformanceCenter -> NavDestination.PERFORMANCE
+    is NormalNavKey.Multiplayer -> NavDestination.LAN
     is NestedNavKey.Settings -> NavDestination.SETTINGS
     else -> null
 }
@@ -191,6 +193,12 @@ fun ScreenBackStackViewModel.navigateToDestination(destination: NavDestination) 
             removes = clearBeforeNavKeys,
             screenKey = settingsScreen
         )
+        NavDestination.LAN -> mainScreen.removeAndNavigateTo(
+            removes = clearBeforeNavKeys,
+            screenKey = NormalNavKey.Multiplayer
+        )
+        // Tệp không phải màn hình trong ngăn xếp: MainScreen mở file manager hệ thống thay vì điều hướng.
+        NavDestination.FILES -> Unit
     }
 }
 
@@ -269,20 +277,6 @@ fun AppSidebar(
                     )
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
-                }
-                IconButton(
-                    onClick = {
-                        LauncherSettings.launcherSidebarExpanded.save(!expanded)
-                    }
-                ) {
-                    Icon(
-                        painter = painterResource(
-                            if (expanded) R.drawable.ic_menu_open else R.drawable.ic_menu
-                        ),
-                        contentDescription = stringResource(
-                            if (expanded) R.string.nav_collapse else R.string.nav_expand
-                        )
-                    )
                 }
             }
 
@@ -380,7 +374,7 @@ private fun SidebarGroupHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp)
+            .height(40.dp)
             .clip(MaterialTheme.shapes.large)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 12.dp),
@@ -388,7 +382,7 @@ private fun SidebarGroupHeader(
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Icon(
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(22.dp),
             painter = painterResource(group.iconRes),
             contentDescription = if (expanded) null else title,
             tint = contentColor
@@ -442,7 +436,7 @@ private fun SidebarItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp)
+            .height(40.dp)
             .clip(MaterialTheme.shapes.large)
             .background(background)
             .selectable(
@@ -455,7 +449,7 @@ private fun SidebarItem(
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Icon(
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(22.dp),
             painter = painterResource(destination.iconRes),
             contentDescription = if (expanded) null else title,
             tint = contentColor

@@ -1615,6 +1615,8 @@
     <string name="nav_accounts">Tài khoản</string>
     <string name="nav_performance">Hiệu năng</string>
     <string name="nav_settings">Cài đặt</string>
+    <string name="nav_files">Tệp</string>
+    <string name="nav_lan">Chơi LAN</string>
     <string name="nav_collapse">Thu gọn menu</string>
     <string name="nav_expand">Mở rộng menu</string>
     <string name="nav_more">Thêm</string>

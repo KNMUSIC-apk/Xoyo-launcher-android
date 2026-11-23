@@ -63,11 +63,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -85,7 +83,6 @@ import com.movtery.zalithlauncher.ui.AndroidStringText
 import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.CardTitleLayout
-import com.movtery.zalithlauncher.ui.components.TextRailItem
 import com.movtery.zalithlauncher.ui.components.isLiquidGlassEnabled
 import com.movtery.zalithlauncher.ui.components.liquidGlass
 import com.movtery.zalithlauncher.ui.guide.sendStartGuideOnce
@@ -178,7 +175,15 @@ fun MainScreen(
         ?: if (mainScreenKey is NestedNavKey.Download) screenBackStackModel.downloadDestination() else null
     var showMoreSheet by remember { mutableStateOf(false) }
     val onNavigate: (NavDestination) -> Unit = { destination ->
-        screenBackStackModel.navigateToDestination(destination)
+        if (destination == NavDestination.FILES) {
+            eventViewModel.sendEvent(
+                EventViewModel.Event.OpenFileManager(
+                    rootPath = PathManager.DIR_FILES_EXTERNAL.absolutePath
+                )
+            )
+        } else {
+            screenBackStackModel.navigateToDestination(destination)
+        }
     }
 
     val isBackgroundValid = LocalBackgroundViewModel.current?.isValid == true
@@ -233,23 +238,10 @@ fun MainScreen(
                             }
                         },
                         toMainScreen = toMainScreen,
-                        toSettingsScreen = {
-                            screenBackStackModel.mainScreen.removeAndNavigateTo(
-                                removes = screenBackStackModel.clearBeforeNavKeys,
-                                screenKey = screenBackStackModel.settingsScreen
-                            )
-                        },
-                        toMultiplayerScreen = {
-                            screenBackStackModel.mainScreen.removeAndNavigateTo(
-                                removes = screenBackStackModel.clearBeforeNavKeys,
-                                screenKey = NormalNavKey.Multiplayer
-                            )
-                        },
-                        openFileManager = {
-                            eventViewModel.sendEvent(
-                                EventViewModel.Event.OpenFileManager(
-                                    rootPath = PathManager.DIR_FILES_EXTERNAL.absolutePath
-                                )
+                        showSidebarToggle = !compact,
+                        onToggleSidebar = {
+                            LauncherSettings.launcherSidebarExpanded.save(
+                                !LauncherSettings.launcherSidebarExpanded.state
                             )
                         },
                         changeExpandedState = {
@@ -319,15 +311,11 @@ private fun <E: TitledNavKey> TopBar(
     contentColor: Color,
     onScreenBack: () -> Unit,
     toMainScreen: () -> Unit,
-    toSettingsScreen: () -> Unit,
-    toMultiplayerScreen: () -> Unit,
-    openFileManager: () -> Unit,
+    showSidebarToggle: Boolean,
+    onToggleSidebar: () -> Unit,
     changeExpandedState: () -> Unit,
 ) {
     val festivals = LocalFestivals.current
-
-    val inMultiplayerScreen = mainScreenKey is NormalNavKey.Multiplayer
-    val inSettingsScreen = mainScreenKey is NestedNavKey.Settings
 
     CompositionLocalProvider(
         LocalContentColor provides contentColor
@@ -343,15 +331,38 @@ private fun <E: TitledNavKey> TopBar(
                         bottom.linkTo(parent.bottom)
                     }
                     .fillMaxHeight()
+                    .padding(start = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
+                //XOYO: nút ẩn/mở nội dung menu, đặt phía trên trước tên launcher
+                if (showSidebarToggle) {
+                    val sidebarExpanded = LauncherSettings.launcherSidebarExpanded.state
+                    IconButton(
+                        modifier = Modifier.size(32.dp),
+                        onClick = onToggleSidebar
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(20.dp),
+                            painter = painterResource(
+                                if (sidebarExpanded) R.drawable.ic_menu_open else R.drawable.ic_menu
+                            ),
+                            contentDescription = stringResource(
+                                if (sidebarExpanded) R.string.nav_collapse else R.string.nav_expand
+                            )
+                        )
+                    }
+                }
+
                 AnimatedVisibility(
                     visible = !inLauncherScreen
                 ) {
-                    Row(modifier = Modifier.fillMaxHeight()) {
-                        Spacer(Modifier.width(12.dp))
-
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
                         IconButton(
-                            modifier = Modifier.fillMaxHeight(),
+                            modifier = Modifier.size(32.dp),
                             onClick = {
                                 if (!inLauncherScreen) {
                                     //不在主屏幕时才允许返回.
@@ -361,14 +372,14 @@ private fun <E: TitledNavKey> TopBar(
                             }
                         ) {
                             Icon(
-                                modifier = Modifier.size(24.dp),
+                                modifier = Modifier.size(18.dp),
                                 painter = painterResource(R.drawable.ic_arrow_back),
                                 contentDescription = stringResource(R.string.generic_back)
                             )
                         }
 
                         IconButton(
-                            modifier = Modifier.fillMaxHeight(),
+                            modifier = Modifier.size(32.dp),
                             onClick = {
                                 if (!inLauncherScreen) {
                                     //不在主屏幕时才允许回到主页面
@@ -377,10 +388,34 @@ private fun <E: TitledNavKey> TopBar(
                             }
                         ) {
                             Icon(
+                                modifier = Modifier.size(18.dp),
                                 painter = painterResource(R.drawable.ic_home_filled),
                                 contentDescription = stringResource(R.string.generic_main_menu)
                             )
                         }
+                    }
+                }
+
+                //XOYO: nút ẩn nội dung Tổng quan, nằm ngay trước tên launcher
+                if (inLauncherScreen) {
+                    val overviewHidden = LauncherSettings.launcherHomeOverviewHidden.state
+                    IconButton(
+                        modifier = Modifier.size(32.dp),
+                        onClick = {
+                            LauncherSettings.launcherHomeOverviewHidden.save(!overviewHidden)
+                        }
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(20.dp),
+                            painter = painterResource(
+                                if (overviewHidden) R.drawable.ic_visibility_off_outlined
+                                else R.drawable.ic_visibility_outlined
+                            ),
+                            contentDescription = stringResource(
+                                if (overviewHidden) R.string.home_overview_show
+                                else R.string.home_overview_hide
+                            )
+                        )
                     }
                 }
             }
@@ -390,7 +425,7 @@ private fun <E: TitledNavKey> TopBar(
             Crossfade(
                 modifier = Modifier.constrainAs(title) {
                     centerVerticallyTo(parent)
-                    start.linkTo(backCenter.end, margin = 16.dp)
+                    start.linkTo(backCenter.end, margin = 10.dp)
                 },
                 targetState = parentRes to childRes
             ) { (parent, child) ->
@@ -466,78 +501,9 @@ private fun <E: TitledNavKey> TopBar(
                     }
                 }
 
-                IconButton(
-                    onClick = openFileManager
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_folder_filled),
-                        contentDescription = null
-                    )
-                }
-
-                TopBarRailItem(
-                    selected = inMultiplayerScreen,
-                    painter = painterResource(R.drawable.ic_group_filled),
-                    text = stringResource(R.string.terracotta),
-                    onClick = {
-                        if (!inMultiplayerScreen) toMultiplayerScreen()
-                    },
-                )
-
-                TopBarRailItem(
-                    selected = inSettingsScreen,
-                    painter = painterResource(R.drawable.ic_settings_filled),
-                    text = stringResource(R.string.generic_setting),
-                    onClick = {
-                        if (!inSettingsScreen) toSettingsScreen()
-                    },
-                )
             }
         }
     }
-}
-
-@Composable
-private fun TopBarRailItem(
-    selected: Boolean,
-    painter: Painter,
-    text: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit = {},
-    textStyle: TextStyle = MaterialTheme.typography.labelMedium
-) {
-    // Nút trên góc phải dùng liquid glass giống các nút khác; pill đang chọn cũng bán trong suốt.
-    val liquid = isLiquidGlassEnabled()
-    val glassShape = MaterialTheme.shapes.extraLarge
-    TextRailItem(
-        modifier = if (liquid) modifier.liquidGlass(glassShape, Color.Transparent) else modifier,
-        backgroundColor = if (liquid) {
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-        } else {
-            MaterialTheme.colorScheme.secondaryContainer
-        },
-        onClick = onClick,
-        text = {
-            AnimatedVisibility(visible = selected) {
-                Row {
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = text,
-                        style = textStyle
-                    )
-                }
-            }
-        },
-        icon = {
-            Icon(
-                painter = painter,
-                contentDescription = text
-            )
-        },
-        selected = selected,
-        selectedPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-        unSelectedPadding = PaddingValues(all = 8.dp),
-    )
 }
 
 @Composable
