@@ -55,7 +55,6 @@ import com.movtery.zalithlauncher.game.version.installed.Version
 import com.movtery.zalithlauncher.game.version.installed.VersionsManager
 import com.movtery.zalithlauncher.notification.NotificationManager
 import com.movtery.zalithlauncher.path.PathManager
-import com.movtery.zalithlauncher.path.URL_SUPPORT
 import com.movtery.zalithlauncher.setting.LauncherSettings
 import com.movtery.zalithlauncher.ui.AndroidStringText
 import com.movtery.zalithlauncher.ui.androidText
@@ -84,8 +83,6 @@ import com.movtery.zalithlauncher.ui.theme.showThemed
 import com.movtery.zalithlauncher.ui.toAndroidString
 import com.movtery.zalithlauncher.ui.vulkan_checker.VCOperation
 import com.movtery.zalithlauncher.ui.vulkan_checker.VulkanChecker
-import com.movtery.zalithlauncher.upgrade.TooFrequentOperationException
-import com.movtery.zalithlauncher.upgrade.UpgradePrefs
 import com.movtery.zalithlauncher.utils.compareLangTag
 import com.movtery.zalithlauncher.utils.copyText
 import com.movtery.zalithlauncher.utils.festival.getTodayFestivals
@@ -99,8 +96,6 @@ import com.movtery.zalithlauncher.viewmodel.BackgroundViewModel
 import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
 import com.movtery.zalithlauncher.viewmodel.EventViewModel
 import com.movtery.zalithlauncher.viewmodel.LaunchGameViewModel
-import com.movtery.zalithlauncher.viewmodel.LauncherUpgradeOperation
-import com.movtery.zalithlauncher.viewmodel.LauncherUpgradeViewModel
 import com.movtery.zalithlauncher.viewmodel.LogShareViewModel
 import com.movtery.zalithlauncher.viewmodel.LogsUploadViewModel
 import com.movtery.zalithlauncher.viewmodel.ModifyVersionOperation
@@ -110,8 +105,6 @@ import com.movtery.zalithlauncher.viewmodel.ModpackImportOperation
 import com.movtery.zalithlauncher.viewmodel.ModpackImportViewModel
 import com.movtery.zalithlauncher.viewmodel.ModpackVersionNameOperation
 import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
-import com.movtery.zalithlauncher.viewmodel.SponsorsDialog
-import com.movtery.zalithlauncher.viewmodel.SponsorsViewModel
 import com.movtery.zalithlauncher.viewmodel.VulkanCheckerViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -173,16 +166,6 @@ class MainActivity : BaseAppCompatActivity() {
     private val modifyVersionViewModel: ModifyVersionViewModel by viewModels()
 
     /**
-     * 启动器更新状态 ViewModel
-     */
-    val launcherUpgradeViewModel: LauncherUpgradeViewModel by viewModels()
-
-    /**
-     * 当月赞助者 ViewModel
-     */
-    private val sponsorsViewModel: SponsorsViewModel by viewModels()
-
-    /**
      * 游戏日志分享菜单 ViewModel
      */
     private val logShareViewModel: LogShareViewModel by viewModels()
@@ -210,7 +193,7 @@ class MainActivity : BaseAppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //处理外部导入
-        val isImporting = handleImportIfNeeded(intent)
+        handleImportIfNeeded(intent)
 
         //加载渲染器
         Renderers.init()
@@ -223,20 +206,6 @@ class MainActivity : BaseAppCompatActivity() {
 
         //初始化通知管理（创建渠道）
         NotificationManager.initManager(this)
-
-        //检查更新
-        if (!isImporting && launcherUpgradeViewModel.operation == LauncherUpgradeOperation.None) {
-            lifecycleScope.launch {
-                launcherUpgradeViewModel.checkOnAppStart()
-            }
-        }
-
-        //拉取当月赞助者数据
-        lifecycleScope.launch {
-            sponsorsViewModel.loadOnStart(
-                showLastMonth = GuideProgress.isPlayed(GuideKeys.Main) && !isImporting
-            )
-        }
 
         //错误信息展示
         lifecycleScope.launch {
@@ -267,12 +236,6 @@ class MainActivity : BaseAppCompatActivity() {
                         withContext(Dispatchers.Main) {
                             this@MainActivity.openLink(url)
                         }
-                    }
-                    is EventViewModel.Event.CheckUpdate -> {
-                        checkUpdate()
-                    }
-                    is EventViewModel.Event.ShowSponsors -> {
-                        sponsorsViewModel.openDialog()
                     }
                     is EventViewModel.Event.KeepScreen -> {
                         keepScreen(event.on)
@@ -484,24 +447,6 @@ class MainActivity : BaseAppCompatActivity() {
                     }
                 )
 
-                //检查更新操作流程
-                LauncherUpgradeOperation(
-                    operation = launcherUpgradeViewModel.operation,
-                    onChanged = { launcherUpgradeViewModel.operation = it },
-                    onIgnoredClick = { ver ->
-                        UpgradePrefs.lastIgnoredVersion = ver
-                    },
-                    onLinkClick = { eventViewModel.sendEvent(EventViewModel.Event.OpenLink(it)) }
-                )
-
-                //当月赞助者对话框 / 上月赞助者结算报告
-                SponsorsDialog(
-                    viewModel = sponsorsViewModel,
-                    onSupportClick = {
-                        eventViewModel.sendEvent(EventViewModel.Event.OpenLink(URL_SUPPORT))
-                    }
-                )
-
                 //版本修改操作流程
                 ModifyVersionOperation(
                     operation = modifyVersionViewModel.installOperation,
@@ -572,37 +517,6 @@ class MainActivity : BaseAppCompatActivity() {
         withContext(Dispatchers.Main) {
             val (result, useTurnip) = vulkanCheckerViewModel.check(version)
             vulkanCheckerViewModel.changeOperation(VCOperation.Result(result, useTurnip))
-        }
-    }
-
-    /**
-     * 检查启动器更新
-     */
-    private fun checkUpdate() {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val success = launcherUpgradeViewModel.checkManually(
-                    onInProgress = {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(this@MainActivity, getString(R.string.generic_in_progress), Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    onIsLatest = {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(this@MainActivity, getString(R.string.upgrade_is_latest), Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                )
-                if (!success) throw RuntimeException()
-            } catch (_: TooFrequentOperationException) {
-                //太频繁了
-                return@launch
-            } catch (_: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(this@MainActivity, getString(R.string.upgrade_get_remote_failed), Toast.LENGTH_SHORT).show()
-                }
-                return@launch
-            }
         }
     }
 
