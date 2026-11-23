@@ -86,6 +86,8 @@ import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.CardTitleLayout
 import com.movtery.zalithlauncher.ui.components.TextRailItem
+import com.movtery.zalithlauncher.ui.components.isLiquidGlassEnabled
+import com.movtery.zalithlauncher.ui.components.liquidGlass
 import com.movtery.zalithlauncher.ui.guide.sendStartGuideOnce
 import com.movtery.zalithlauncher.ui.screens.BackStackNavKey
 import com.movtery.zalithlauncher.ui.screens.NavStateHost
@@ -504,8 +506,16 @@ private fun TopBarRailItem(
     onClick: () -> Unit = {},
     textStyle: TextStyle = MaterialTheme.typography.labelMedium
 ) {
+    // Nút trên góc phải dùng liquid glass giống các nút khác; pill đang chọn cũng bán trong suốt.
+    val liquid = isLiquidGlassEnabled()
+    val glassShape = MaterialTheme.shapes.extraLarge
     TextRailItem(
-        modifier = modifier,
+        modifier = if (liquid) modifier.liquidGlass(glassShape, Color.Transparent) else modifier,
+        backgroundColor = if (liquid) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+        } else {
+            MaterialTheme.colorScheme.secondaryContainer
+        },
         onClick = onClick,
         text = {
             AnimatedVisibility(visible = selected) {

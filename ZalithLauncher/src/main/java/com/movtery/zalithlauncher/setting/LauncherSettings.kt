@@ -121,7 +121,7 @@ object LauncherSettings : SettingsRegistry() {
     /**
      * XOYO：độ rõ của chữ (20..100, mặc định 50). Kéo tăng thì chữ rõ hơn, không bị chìm vào nền.
      */
-    val launcherTextOpacity = intSetting("launcherTextOpacity", 50, 20..100)
+    val launcherTextOpacity = intSetting("launcherTextOpacity", 45, 20..100)
 
     /**
      * XOYO：bật/tắt chủ đề Liquid Glass cho nút, thanh trượt và thẻ bấm được.

@@ -24,6 +24,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -39,12 +40,6 @@ import androidx.compose.foundation.layout.width
 import com.movtery.zalithlauncher.ui.components.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.Color
-import com.movtery.zalithlauncher.ui.components.isLiquidGlassEnabled
-import com.movtery.zalithlauncher.ui.components.liquidGlass
 import androidx.compose.material3.Icon
 import com.movtery.zalithlauncher.ui.components.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -61,6 +56,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.awaitPointerEvent
+import androidx.compose.ui.input.pointer.awaitPointerEventScope
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
@@ -104,6 +103,8 @@ import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.CutoutBox
 import com.movtery.zalithlauncher.ui.components.MarqueeText
 import com.movtery.zalithlauncher.ui.components.PetModelView
+import com.movtery.zalithlauncher.ui.components.rememberShootingStarsState
+import com.movtery.zalithlauncher.ui.components.ShootingStarsOverlay
 import com.movtery.zalithlauncher.ui.components.animated
 import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
 import com.movtery.zalithlauncher.ui.guide.GuideKeys
@@ -170,11 +171,23 @@ fun LauncherScreen(
             if (!isVisible) dragState.onDragCancel()
         }
 
+        // Theo dõi tương tác để bật sao băng khi sảnh rảnh (xem ShootingStars.kt).
+        val shootingStars = rememberShootingStarsState()
+
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .onGloballyPositioned { coordinates ->
                     dragState.parentOrigin = coordinates.positionInRoot()
+                }
+                .pointerInput(shootingStars) {
+                    // Chỉ quan sát ở lượt Initial, không tiêu thụ sự kiện nên các nút vẫn hoạt động bình thường.
+                    awaitPointerEventScope {
+                        while (true) {
+                            awaitPointerEvent(PointerEventPass.Initial)
+                            shootingStars.notifyInteraction()
+                        }
+                    }
                 }
         ) {
             val parentWidthPx = constraints.maxWidth.toFloat()
@@ -272,6 +285,13 @@ fun LauncherScreen(
                     )
                 }
             }
+
+            // Sao băng khi sảnh không có tương tác; lớp này không nhận chạm.
+            ShootingStarsOverlay(
+                state = shootingStars,
+                enabled = isVisible,
+                modifier = Modifier.matchParentSize()
+            )
         }
     }
 }
@@ -303,43 +323,21 @@ private fun ContentMenu(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val liquid = isLiquidGlassEnabled()
-                    val chipShape = RoundedCornerShape(percent = 50)
-                    FilterChip(
-                        modifier = if (liquid) {
-                            Modifier.liquidGlass(
-                                shape = chipShape,
-                                tint = if (overviewHidden) Color.Transparent
-                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                    // Chỉ còn icon con mắt, không chữ và không viền liquid glass.
+                    androidx.compose.material3.IconButton(
+                        onClick = { LauncherSettings.launcherHomeOverviewHidden.save(!overviewHidden) }
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                if (overviewHidden) R.drawable.ic_visibility_off_outlined
+                                else R.drawable.ic_visibility_outlined
+                            ),
+                            contentDescription = stringResource(
+                                if (overviewHidden) R.string.home_overview_show
+                                else R.string.home_overview_hide
                             )
-                        } else Modifier,
-                        shape = chipShape,
-                        colors = if (liquid) {
-                            FilterChipDefaults.filterChipColors(
-                                containerColor = Color.Transparent,
-                                selectedContainerColor = Color.Transparent
-                            )
-                        } else FilterChipDefaults.filterChipColors(),
-                        selected = !overviewHidden,
-                        onClick = { LauncherSettings.launcherHomeOverviewHidden.save(!overviewHidden) },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(
-                                    if (overviewHidden) R.drawable.ic_visibility_off_outlined
-                                    else R.drawable.ic_visibility_outlined
-                                ),
-                                contentDescription = null
-                            )
-                        },
-                        label = {
-                            Text(
-                                stringResource(
-                                    if (overviewHidden) R.string.home_overview_show
-                                    else R.string.home_overview_hide
-                                )
-                            )
-                        }
-                    )
+                        )
+                    }
                 }
                 Box(
                     modifier = Modifier
@@ -622,7 +620,7 @@ private fun PetModelContent(
             cape = capeBytes,
             arm = armModel,
             yaw = yawWithStep,
-            animation = PetAnimation.Idle,
+            animation = PetAnimation.Sitting,
             tapReaction = PetTapReaction.Interact,
             dragYaw = false
         )

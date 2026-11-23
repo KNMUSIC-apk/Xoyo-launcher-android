@@ -36,6 +36,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -683,7 +685,7 @@ fun ZalithLauncherTheme(
         }
     }
 
-    // Độ rõ của chữ (cài đặt "Độ mờ chữ"): chỉ giảm alpha các màu chữ, không đụng màu nền hay màu nút
+    // Độ rõ của chữ (cài đặt "Độ mờ chữ"): mặc định 45 đã rõ bằng 100% của launcher cũ; chỉ đổi màu chữ, không đụng nền hay nút
     val textOpacity = LauncherSettings.launcherTextOpacity.state / 100f
     val displayScheme = remember(currentDisplayScheme, textOpacity) {
         currentDisplayScheme.withTextOpacity(textOpacity)
@@ -706,13 +708,34 @@ fun ZalithLauncherTheme(
     }
 }
 
-/** Áp độ rõ của chữ lên các màu chữ chính. Ở 100% thì giữ nguyên bảng màu. */
+/**
+ * Mức độ rõ "đầy đủ" của cài đặt Độ mờ chữ (mặc định 45).
+ * Ở mức này chữ rõ bằng 100% của launcher cũ.
+ */
+private const val TEXT_CLARITY_FULL = 0.45f
+
+/**
+ * Áp độ rõ của chữ lên các màu chữ chính.
+ * - Dưới [TEXT_CLARITY_FULL]: giảm alpha theo tỉ lệ, chữ càng kéo thấp càng trong suốt.
+ * - Từ [TEXT_CLARITY_FULL] trở lên: giữ alpha tối đa và kéo màu chữ về phía tương phản nhất
+ *   (trắng với nền tối, đen với nền sáng), nên kéo càng cao chữ càng rõ.
+ */
 private fun ColorScheme.withTextOpacity(opacity: Float): ColorScheme {
-    if (opacity >= 1f) return this
+    if (opacity < TEXT_CLARITY_FULL) {
+        val alpha = (opacity / TEXT_CLARITY_FULL).coerceIn(0f, 1f)
+        return copy(
+            onSurface = onSurface.copy(alpha = onSurface.alpha * alpha),
+            onSurfaceVariant = onSurfaceVariant.copy(alpha = onSurfaceVariant.alpha * alpha),
+            onBackground = onBackground.copy(alpha = onBackground.alpha * alpha),
+        )
+    }
+    val boost = ((opacity - TEXT_CLARITY_FULL) / (1f - TEXT_CLARITY_FULL)).coerceIn(0f, 1f)
+    if (boost <= 0f) return this
+    val target = if (background.luminance() < 0.5f) Color.White else Color.Black
     return copy(
-        onSurface = onSurface.copy(alpha = onSurface.alpha * opacity),
-        onSurfaceVariant = onSurfaceVariant.copy(alpha = onSurfaceVariant.alpha * opacity),
-        onBackground = onBackground.copy(alpha = onBackground.alpha * opacity),
+        onSurface = lerp(onSurface, target, boost * 0.6f),
+        onSurfaceVariant = lerp(onSurfaceVariant, target, boost * 0.6f),
+        onBackground = lerp(onBackground, target, boost * 0.6f),
     )
 }
 
