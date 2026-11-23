@@ -93,6 +93,11 @@ enum class NavGroup(val titleRes: Int, val iconRes: Int) {
 /** Các nhóm thu gọn được trên sidebar và trong sheet "Thêm". Nhóm Chính luôn hiện đầy đủ. */
 private val CollapsibleNavGroups = setOf(NavGroup.CONTENT, NavGroup.DOWNLOAD, NavGroup.SOCIAL, NavGroup.SYSTEM)
 
+/**
+ * Các nhóm mở sẵn khi mở menu 3 gạch: Kết nối (LAN) và Hệ thống (Cài đặt, Files) để thấy ngay mà không cần bấm thêm.
+ */
+private val DefaultOpenNavGroups = setOf(NavGroup.SOCIAL, NavGroup.SYSTEM)
+
 /** Các mục điều hướng của XOYO. Nhóm Nội dung gồm cả các mục tải xuống trước đây nằm trong thanh danh mục */
 enum class NavDestination(val iconRes: Int, val titleRes: Int, val group: NavGroup) {
     HOME(R.drawable.ic_home_filled, R.string.nav_home, NavGroup.MAIN),
@@ -230,8 +235,8 @@ fun AppSidebar(
     val expanded = LauncherSettings.launcherSidebarExpanded.state
     val reducedMotion = LauncherSettings.launcherReducedMotion.state
 
-    //Trạng thái mở của từng nhóm thu gọn. Mặc định đều đóng.
-    val openGroups = remember { mutableStateListOf<NavGroup>() }
+    //Trạng thái mở của từng nhóm thu gọn. Mặc định đóng, trừ các nhóm trong DefaultOpenNavGroups.
+    val openGroups = remember { mutableStateListOf(*DefaultOpenNavGroups.toTypedArray()) }
 
     //Nhóm chứa mục đang chọn luôn được mở để thấy ngay mình đang ở đâu
     LaunchedEffect(selected) {
@@ -533,7 +538,7 @@ fun MoreDestinationsSheet(
 ) {
     val sheetState = rememberModalBottomSheetState()
     val reducedMotion = LauncherSettings.launcherReducedMotion.state
-    val openGroups = remember { mutableStateListOf<NavGroup>() }
+    val openGroups = remember { mutableStateListOf(*DefaultOpenNavGroups.toTypedArray()) }
 
     //Nhóm chứa mục đang chọn luôn được mở để thấy ngay mình đang ở đâu
     LaunchedEffect(selected) {

@@ -19,7 +19,10 @@
 package com.movtery.zalithlauncher.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.shape.CircleShape
@@ -28,12 +31,17 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.semantics.Role
 
 /*
  * Các nút dưới đây cùng tên và cùng chữ ký với nút Material. Các file trong ui/ chỉ đổi import sang file này,
@@ -184,4 +192,37 @@ fun IconButton(
         interactionSource = interactionSource,
         content = content
     )
+}
+
+/**
+ * Nút icon gọn cho thanh trên. Kích thước lấy từ [modifier] (thường 32dp) và không có vùng chạm tối thiểu 48dp
+ * của Material, nên các nút đặt cạnh nhau không chồng lên nhau. Khi bật Liquid Glass thì vẽ kính tròn cùng kích thước.
+ */
+@Composable
+fun CompactIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    shape: Shape = CircleShape,
+    containerColor: Color = Color.Transparent,
+    contentColor: Color = LocalContentColor.current,
+    content: @Composable () -> Unit
+) {
+    val fill = if (isLiquidGlassEnabled()) {
+        Modifier.liquidGlass(shape, glassTint(containerColor, enabled), enabled)
+    } else {
+        Modifier.background(if (enabled) containerColor else Color.Transparent, shape)
+    }
+    val iconColor = if (enabled) contentColor else contentColor.copy(alpha = 0.38f)
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .then(fill)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        CompositionLocalProvider(LocalContentColor provides iconColor) {
+            content()
+        }
+    }
 }

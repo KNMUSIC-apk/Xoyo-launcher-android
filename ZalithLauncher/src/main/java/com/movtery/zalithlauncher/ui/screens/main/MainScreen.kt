@@ -45,6 +45,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import com.movtery.zalithlauncher.ui.components.CompactIconButton
 import com.movtery.zalithlauncher.ui.components.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
@@ -333,12 +334,12 @@ private fun <E: TitledNavKey> TopBar(
                     .fillMaxHeight()
                     .padding(start = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 //XOYO: nút ẩn/mở nội dung menu, đặt phía trên trước tên launcher
                 if (showSidebarToggle) {
                     val sidebarExpanded = LauncherSettings.launcherSidebarExpanded.state
-                    IconButton(
+                    CompactIconButton(
                         modifier = Modifier.size(32.dp),
                         onClick = onToggleSidebar
                     ) {
@@ -359,9 +360,9 @@ private fun <E: TitledNavKey> TopBar(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        IconButton(
+                        CompactIconButton(
                             modifier = Modifier.size(32.dp),
                             onClick = {
                                 if (!inLauncherScreen) {
@@ -378,7 +379,7 @@ private fun <E: TitledNavKey> TopBar(
                             )
                         }
 
-                        IconButton(
+                        CompactIconButton(
                             modifier = Modifier.size(32.dp),
                             onClick = {
                                 if (!inLauncherScreen) {
@@ -399,7 +400,7 @@ private fun <E: TitledNavKey> TopBar(
                 //XOYO: nút ẩn nội dung Tổng quan, nằm ngay trước tên launcher
                 if (inLauncherScreen) {
                     val overviewHidden = LauncherSettings.launcherHomeOverviewHidden.state
-                    IconButton(
+                    CompactIconButton(
                         modifier = Modifier.size(32.dp),
                         onClick = {
                             LauncherSettings.launcherHomeOverviewHidden.save(!overviewHidden)
