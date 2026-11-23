@@ -4,7 +4,6 @@
 
 package com.movtery.zalithlauncher.ui.screens.splash
 
-import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -28,22 +27,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -67,10 +61,14 @@ data class SplashLoadingState(
     val error: String? = null,
 )
 
+/** Màu lấy từ logo khối lập phương: xanh chính và viền sáng xanh lơ. */
+private val LogoBlue = Color(0xFF0059F8)
+private val LogoCyan = Color(0xFF22C7FF)
+
 /**
  * Màn hình chờ XOYO: logo ở giữa, thanh tiến trình kèm phần trăm,
- * tên ứng dụng và phiên bản ở phía dưới. Màu sắc lấy từ theme nên
- * tự đổi theo Light/Dark Mode.
+ * tên ứng dụng và phiên bản ở phía dưới. Logo hiện ngay, không có hiệu ứng xuất hiện.
+ * Màu tiến trình lấy từ logo; nền vẫn theo theme nên tự đổi theo Light/Dark Mode.
  */
 @Composable
 fun SplashLoadingScreen(
@@ -79,17 +77,6 @@ fun SplashLoadingScreen(
     onRetry: () -> Unit = {},
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    // Hiệu ứng xuất hiện: mờ dần và phóng nhẹ, chạy một lần.
-    var started by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { started = true }
-    val entrance by animateFloatAsState(
-        targetValue = if (started) 1f else 0f,
-        animationSpec = tween(
-            durationMillis = 650,
-            easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)
-        ),
-        label = "SplashEntrance"
-    )
 
     // Chuyển động lơ lửng rất nhẹ của logo.
     val floatOffset by rememberInfiniteTransition(label = "SplashFloat").animateFloat(
@@ -122,8 +109,8 @@ fun SplashLoadingScreen(
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
-                            colorScheme.primary.copy(alpha = 0.16f),
-                            colorScheme.primary.copy(alpha = 0.04f),
+                            LogoBlue.copy(alpha = 0.18f),
+                            LogoBlue.copy(alpha = 0.04f),
                             colorScheme.background.copy(alpha = 0f)
                         ),
                         center = Offset.Unspecified,
@@ -136,14 +123,7 @@ fun SplashLoadingScreen(
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxWidth()
-                .padding(horizontal = 32.dp)
-                .graphicsLayer {
-                    alpha = entrance
-                    val scale = 0.9f + 0.1f * entrance
-                    scaleX = scale
-                    scaleY = scale
-                    translationY = (1f - entrance) * 32.dp.toPx()
-                },
+                .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
@@ -153,15 +133,7 @@ fun SplashLoadingScreen(
                     }
             ) {
                 Image(
-                    modifier = Modifier
-                        .size(128.dp)
-                        .shadow(
-                            elevation = 20.dp,
-                            shape = RoundedCornerShape(28.dp),
-                            ambientColor = colorScheme.primary.copy(alpha = 0.45f),
-                            spotColor = colorScheme.primary.copy(alpha = 0.55f)
-                        )
-                        .clip(RoundedCornerShape(28.dp)),
+                    modifier = Modifier.size(128.dp),
                     painter = painterResource(R.drawable.img_launcher),
                     contentDescription = null
                 )
@@ -195,7 +167,7 @@ fun SplashLoadingScreen(
                             text = stringResource(R.string.splash_loading_percent, percent),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
-                            color = colorScheme.primary
+                            color = LogoBlue
                         )
                     }
 
@@ -229,7 +201,7 @@ fun SplashLoadingScreen(
                                     .clip(trackShape)
                                     .background(
                                         Brush.horizontalGradient(
-                                            listOf(colorScheme.primary, colorScheme.tertiary)
+                                            listOf(LogoBlue, LogoCyan)
                                         )
                                     )
                             )
@@ -241,7 +213,7 @@ fun SplashLoadingScreen(
                                     .clip(trackShape)
                                     .background(
                                         Brush.horizontalGradient(
-                                            listOf(colorScheme.primary, colorScheme.tertiary)
+                                            listOf(LogoBlue, LogoCyan)
                                         )
                                     )
                             )
@@ -254,8 +226,7 @@ fun SplashLoadingScreen(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 36.dp)
-                .graphicsLayer { alpha = entrance },
+                .padding(bottom = 36.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
