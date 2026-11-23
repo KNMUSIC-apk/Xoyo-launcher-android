@@ -215,7 +215,7 @@ Lưu bằng MMKV. UI đọc bằng `LauncherSettings.<thuộc tính>.state` và 
 | `launcherQuickActions` | `launcherQuickActions` | String, danh sách CSV | `CREATE_PROFILE,MANAGE_VERSIONS,INSTALL_MODS,INSTALL_SHADERS,INSTALL_RESOURCE_PACKS,MANAGE_WORLDS,PERFORMANCE,OPEN_GAME_FOLDER` |
 | `performanceCustomPresets` | `performanceCustomPresets` | String, JSON | `[]` |
 | `launcherBackgroundOpacity` | `launcherBackgroundOpacity` | Int, 20..100 | `80` |
-| `launcherTextOpacity` | `launcherTextOpacity` | Int, 20..100 | `50` |
+| `launcherTextOpacity` | `launcherTextOpacity` | Int, 20..100 (từ 45 trở lên chữ rõ tối đa; dưới 45 chữ mờ dần) | `45` |
 | `launcherLiquidGlass` | `launcherLiquidGlass` | Boolean | `true` |
 | `launcherCustomFontPath` | `launcherCustomFontPath` | String, đường dẫn file font trong `filesDir/fonts/` (rỗng = font mặc định) | `""` |
 | `launcherHomeOverviewHidden` | `launcherHomeOverviewHidden` | Boolean | `false` |
