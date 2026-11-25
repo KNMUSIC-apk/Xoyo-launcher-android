@@ -59,6 +59,19 @@ jobs:
       - name: Cài cargo-ndk
         run: cargo install cargo-ndk --locked
 
+      - name: Đặt khóa ký cố định cho APK (nếu có secret)
+        # Có secret XOYO_KEYSTORE_BASE64 thì mọi bản build được ký bằng cùng một khóa,
+        # nên bản mới cài đè lên bản cũ được, không phải gỡ app. Không có secret thì dùng khóa tạm như trước.
+        env:
+          KEYSTORE_B64: ${{ secrets.XOYO_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            printf '%s' "$KEYSTORE_B64" | base64 -d > ZalithLauncher/xoyo_release.jks
+            echo "Đã đặt khóa ký cố định."
+          else
+            echo "Chưa có secret XOYO_KEYSTORE_BASE64: APK dùng khóa tạm nên mỗi lần build có chữ ký khác nhau."
+          fi
+
       - name: Chạy unit test và build bản debug
         env:
           # Client ID là public, nhưng đưa qua secret để không phải commit vào repo.
@@ -67,6 +80,10 @@ jobs:
           # Khóa CurseForge để tải mod, world, shader, modpack. Đặt secret trong Settings → Secrets and variables → Actions.
           # Chưa đặt secret thì APK vẫn build, nhưng phần tải từ CurseForge không hoạt động.
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          # Thông số khóa ký cố định (xem bước "Đặt khóa ký cố định"). Thiếu secret thì bản debug vẫn ký bằng khóa tạm.
+          STORE_PASSWORD: ${{ secrets.XOYO_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.XOYO_KEY_ALIAS || 'xoyo_release' }}
+          KEY_PASSWORD: ${{ secrets.XOYO_KEY_PASSWORD }}
         # -Darch=arm64: chỉ đóng gói native lib và runtime Java cho arm64.
         # Bản "all" đóng gói cả 4 ABI và mọi runtime, nặng khoảng 400 MB.
         run: ./gradlew testDebugUnitTest assembleDebug -Darch=arm64 --stacktrace
