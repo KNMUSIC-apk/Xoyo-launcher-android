@@ -351,8 +351,9 @@ private fun <E: TitledNavKey> TopBar(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        // XOYO: nút quay lại và home cùng cỡ 40dp với nút Cài đặt (icon 24dp), không còn nhỏ hơn
                         CompactIconButton(
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(40.dp),
                             onClick = {
                                 if (!inLauncherScreen) {
                                     //不在主屏幕时才允许返回.
@@ -362,14 +363,14 @@ private fun <E: TitledNavKey> TopBar(
                             }
                         ) {
                             Icon(
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(24.dp),
                                 painter = painterResource(R.drawable.ic_arrow_back),
                                 contentDescription = stringResource(R.string.generic_back)
                             )
                         }
 
                         CompactIconButton(
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(40.dp),
                             onClick = {
                                 if (!inLauncherScreen) {
                                     //不在主屏幕时才允许回到主页面
@@ -378,7 +379,7 @@ private fun <E: TitledNavKey> TopBar(
                             }
                         ) {
                             Icon(
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(24.dp),
                                 painter = painterResource(R.drawable.ic_home_filled),
                                 contentDescription = stringResource(R.string.generic_main_menu)
                             )

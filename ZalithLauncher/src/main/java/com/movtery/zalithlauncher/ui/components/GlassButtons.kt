@@ -40,6 +40,7 @@ import androidx.compose.material3.ButtonElevation
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -50,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 
 /*
  * Các nút dưới đây cùng tên và cùng chữ ký với nút Material. Các file trong ui/ chỉ đổi import sang file này,
@@ -191,15 +193,19 @@ fun IconButton(
     content: @Composable () -> Unit
 ) {
     val liquid = isLiquidGlassEnabled()
-    androidx.compose.material3.IconButton(
-        onClick = onClick,
-        modifier = if (liquid) modifier.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else modifier,
-        enabled = enabled,
-        shape = shape,
-        colors = if (liquid) colors.copy(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent) else colors,
-        interactionSource = interactionSource,
-        content = content
-    )
+    // XOYO: không ép vùng chạm tối thiểu 48dp của Material. Nút đặt 34dp thì vẽ đúng 34dp,
+    // nên các nút cạnh nhau (ví dụ nút tải và nút mũi tên trong thẻ cài đặt) không bị chồng lên nhau.
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+        androidx.compose.material3.IconButton(
+            onClick = onClick,
+            modifier = if (liquid) modifier.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else modifier,
+            enabled = enabled,
+            shape = shape,
+            colors = if (liquid) colors.copy(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent) else colors,
+            interactionSource = interactionSource,
+            content = content
+        )
+    }
 }
 
 /**
