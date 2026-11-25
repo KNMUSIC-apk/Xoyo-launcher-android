@@ -19,6 +19,8 @@
 package com.movtery.zalithlauncher.ui.screens.main
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -63,6 +65,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -84,6 +88,7 @@ import com.movtery.zalithlauncher.ui.AndroidStringText
 import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.CardTitleLayout
+import com.movtery.zalithlauncher.ui.components.TextRailItem
 import com.movtery.zalithlauncher.ui.components.isLiquidGlassEnabled
 import com.movtery.zalithlauncher.ui.components.liquidGlass
 import com.movtery.zalithlauncher.ui.guide.sendStartGuideOnce
@@ -176,15 +181,15 @@ fun MainScreen(
         ?: if (mainScreenKey is NestedNavKey.Download) screenBackStackModel.downloadDestination() else null
     var showMoreSheet by remember { mutableStateOf(false) }
     val onNavigate: (NavDestination) -> Unit = { destination ->
-        if (destination == NavDestination.FILES) {
-            eventViewModel.sendEvent(
-                EventViewModel.Event.OpenFileManager(
-                    rootPath = PathManager.DIR_FILES_EXTERNAL.absolutePath
-                )
+        screenBackStackModel.navigateToDestination(destination)
+    }
+    // XOYO: Tệp nằm ở cụm nút bên phải thanh trên như trước, mở trình quản lý tệp hệ thống
+    val openFileManager: () -> Unit = {
+        eventViewModel.sendEvent(
+            EventViewModel.Event.OpenFileManager(
+                rootPath = PathManager.DIR_FILES_EXTERNAL.absolutePath
             )
-        } else {
-            screenBackStackModel.navigateToDestination(destination)
-        }
+        )
     }
 
     val isBackgroundValid = LocalBackgroundViewModel.current?.isValid == true
@@ -204,7 +209,13 @@ fun MainScreen(
             val compact = maxWidth < CompactWidthThreshold
 
             Row(modifier = Modifier.fillMaxSize()) {
-                if (!compact) {
+                // XOYO: trong Cài đặt ẩn sidebar để phần chỉnh sửa full màn hình; thoát Cài đặt thì hiện lại
+                val inSettings = mainScreenKey is NestedNavKey.Settings
+                AnimatedVisibility(
+                    visible = !compact && !inSettings,
+                    enter = expandHorizontally(expandFrom = Alignment.Start) + fadeIn(),
+                    exit = shrinkHorizontally(shrinkTowards = Alignment.Start) + fadeOut()
+                ) {
                     AppSidebar(
                         selected = currentDestination,
                         onNavigate = onNavigate
@@ -239,12 +250,8 @@ fun MainScreen(
                             }
                         },
                         toMainScreen = toMainScreen,
-                        showSidebarToggle = !compact,
-                        onToggleSidebar = {
-                            LauncherSettings.launcherSidebarExpanded.save(
-                                !LauncherSettings.launcherSidebarExpanded.flow.value
-                            )
-                        },
+                        toSettingsScreen = { onNavigate(NavDestination.SETTINGS) },
+                        openFileManager = openFileManager,
                         changeExpandedState = {
                             changeTasksExpandedState()
                         },
@@ -312,11 +319,12 @@ private fun <E: TitledNavKey> TopBar(
     contentColor: Color,
     onScreenBack: () -> Unit,
     toMainScreen: () -> Unit,
-    showSidebarToggle: Boolean,
-    onToggleSidebar: () -> Unit,
+    toSettingsScreen: () -> Unit,
+    openFileManager: () -> Unit,
     changeExpandedState: () -> Unit,
 ) {
     val festivals = LocalFestivals.current
+    val inSettingsScreen = mainScreenKey is NestedNavKey.Settings
 
     CompositionLocalProvider(
         LocalContentColor provides contentColor
@@ -336,25 +344,6 @@ private fun <E: TitledNavKey> TopBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                //XOYO: nút ẩn/mở nội dung menu, đặt phía trên trước tên launcher
-                if (showSidebarToggle) {
-                    val sidebarExpanded = LauncherSettings.launcherSidebarExpanded.state
-                    CompactIconButton(
-                        modifier = Modifier.size(32.dp),
-                        onClick = onToggleSidebar
-                    ) {
-                        Icon(
-                            modifier = Modifier.size(20.dp),
-                            painter = painterResource(
-                                if (sidebarExpanded) R.drawable.ic_menu_open else R.drawable.ic_menu
-                            ),
-                            contentDescription = stringResource(
-                                if (sidebarExpanded) R.string.nav_collapse else R.string.nav_expand
-                            )
-                        )
-                    }
-                }
-
                 AnimatedVisibility(
                     visible = !inLauncherScreen
                 ) {
@@ -502,9 +491,69 @@ private fun <E: TitledNavKey> TopBar(
                     }
                 }
 
+                IconButton(
+                    onClick = openFileManager
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_folder_filled),
+                        contentDescription = null
+                    )
+                }
+
+                TopBarRailItem(
+                    selected = inSettingsScreen,
+                    painter = painterResource(R.drawable.ic_settings_filled),
+                    text = stringResource(R.string.generic_setting),
+                    onClick = {
+                        if (!inSettingsScreen) toSettingsScreen()
+                    },
+                )
             }
         }
     }
+}
+
+@Composable
+private fun TopBarRailItem(
+    selected: Boolean,
+    painter: Painter,
+    text: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
+    textStyle: TextStyle = MaterialTheme.typography.labelMedium
+) {
+    // Nút trên góc phải dùng liquid glass giống các nút khác; pill đang chọn cũng bán trong suốt.
+    val liquid = isLiquidGlassEnabled()
+    val glassShape = MaterialTheme.shapes.extraLarge
+    TextRailItem(
+        modifier = if (liquid) modifier.liquidGlass(glassShape, Color.Transparent) else modifier,
+        backgroundColor = if (liquid) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+        } else {
+            MaterialTheme.colorScheme.secondaryContainer
+        },
+        onClick = onClick,
+        text = {
+            AnimatedVisibility(visible = selected) {
+                Row {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = text,
+                        style = textStyle
+                    )
+                }
+            }
+        },
+        icon = {
+            Icon(
+                painter = painter,
+                contentDescription = text
+            )
+        },
+        selected = selected,
+        selectedPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        unSelectedPadding = PaddingValues(all = 8.dp),
+    )
 }
 
 @Composable

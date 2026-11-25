@@ -272,9 +272,11 @@ Thêm lớp mới được phép. Đổi hoặc xóa lớp đã có phải sửa
   - Chính: Trang chủ, Thư viện, Phiên bản.
   - Nội dung: Trò chơi, Mod, Modpack, Gói tài nguyên, Shader, Thế giới, Tìm kiếm theo ID, Yêu thích.
   - Tải về: Tải mod, Tải modpack, Tải gói tài nguyên, Tải shader, Tải thế giới.
-  - Kết nối: Máy chủ, Tài khoản.
+  - Kết nối: Máy chủ, Tài khoản, Chơi LAN.
   - Hệ thống: Hiệu năng, Cài đặt.
-  - Các nhóm Nội dung, Tải về, Kết nối, Hệ thống thu gọn thành một nút. Cùng cách này áp dụng cho sheet "Thêm" trên màn hình hẹp.
+  - Nút 3 gạch (ẩn/mở sidebar) nằm ở đầu sidebar. Trên thanh trên, bên phải, có thêm nút Tệp (mở trình quản lý tệp) và nút Cài đặt.
+  - Các nhóm Nội dung, Tải về thu gọn thành một nút. Kết nối và Hệ thống mở sẵn. Cùng cách này áp dụng cho sheet "Thêm" trên màn hình hẹp.
+  - Trong Cài đặt: sidebar ẩn để phần chỉnh sửa full màn hình, danh mục Cài đặt nằm thành hàng ngang. Thoát Cài đặt thì sidebar hiện lại.
 - Nút quay lại trên thanh trên dùng `onBack`, không thoát launcher.
 - Thao tác nhanh trên trang chủ (`launcherQuickActions`).
 - Cài đặt ngôn ngữ, chủ đề, hiệu ứng lễ hội, giảm chuyển động (`launcherReducedMotion`).

@@ -18,36 +18,54 @@
 
 package com.movtery.zalithlauncher.ui.screens.content
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.movtery.zalithlauncher.setting.LauncherSettings
+import kotlin.math.roundToInt
 import androidx.navigation3.runtime.entryProvider
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.AnimatedDirection
-import com.movtery.zalithlauncher.ui.components.MarqueeText
 import com.movtery.zalithlauncher.ui.components.animated
-import com.movtery.zalithlauncher.ui.components.fadeEdge
 import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
 import com.movtery.zalithlauncher.ui.screens.NestedNavDisplay
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
@@ -83,9 +101,10 @@ fun SettingsScreen(
         currentKey = backStackViewModel.mainScreen.currentKey
     ) { isVisible ->
 
-        Row(modifier = Modifier.fillMaxSize()) {
+        // XOYO: danh mục cài đặt nằm thành hàng ngang phía trên, phần chỉnh sửa chiếm toàn bộ chiều rộng
+        Column(modifier = Modifier.fillMaxSize()) {
             TabMenu(
-                modifier = Modifier.fillMaxHeight(),
+                modifier = Modifier.fillMaxWidth(),
                 isVisible = isVisible,
                 settingsScreenKey = backStackViewModel.settingsScreen.currentKey,
                 navigateTo = { settingKey ->
@@ -102,7 +121,9 @@ fun SettingsScreen(
                 openLicenseScreen = openLicenseScreen,
                 eventViewModel = eventViewModel,
                 submitError = submitError,
-                modifier = Modifier.fillMaxHeight()
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
             )
         }
     }
@@ -127,46 +148,109 @@ private fun TabMenu(
     navigateTo: (TitledNavKey) -> Unit
 ) {
     val ctx = rememberAnimatedContext(isVisible = isVisible)
-
+    val reducedMotion = LauncherSettings.launcherReducedMotion.state
     val scrollState = rememberScrollState()
-    Column(
+    val density = LocalDensity.current
+
+    // Vị trí và độ rộng của từng mục trong hàng (px), để nền đánh dấu trượt tới mục đang chọn
+    val itemX = remember { mutableStateMapOf<TitledNavKey, Float>() }
+    val itemWidth = remember { mutableStateMapOf<TitledNavKey, Float>() }
+    val indicatorSpec: AnimationSpec<Float> = if (reducedMotion) {
+        snap()
+    } else {
+        spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+    }
+    val indicatorX by animateFloatAsState(
+        targetValue = settingsScreenKey?.let { itemX[it] } ?: 0f,
+        animationSpec = indicatorSpec,
+        label = "settingsTabIndicatorX"
+    )
+    val indicatorWidth by animateFloatAsState(
+        targetValue = settingsScreenKey?.let { itemWidth[it] } ?: 0f,
+        animationSpec = indicatorSpec,
+        label = "settingsTabIndicatorWidth"
+    )
+
+    Box(
         modifier = modifier
-            .fadeEdge(scrollState)
-            .width(IntrinsicSize.Min)
-            .padding(start = 8.dp)
-            .animated(ctx, from = AnimatedDirection.Left)
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 8.dp, vertical = 8.dp)
+            .animated(ctx, from = AnimatedDirection.Top)
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
-        settingItems.forEach { item ->
-            if (item.division) {
-                HorizontalDivider(
+        Box(modifier = Modifier.horizontalScroll(scrollState)) {
+            if (indicatorWidth > 0f) {
+                Box(
                     modifier = Modifier
-                        .padding(vertical = 12.dp)
-                        .fillMaxWidth(0.4f)
-                        .alpha(0.4f),
-                    color = MaterialTheme.colorScheme.onSurface
+                        .offset { IntOffset(indicatorX.roundToInt(), 0) }
+                        .width(with(density) { indicatorWidth.toDp() })
+                        .height(40.dp)
+                        .clip(MaterialTheme.shapes.large)
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
                 )
             }
 
-            NavigationRailItem(
-                selected = settingsScreenKey == item.key,
-                onClick = {
-                    navigateTo(item.key)
-                },
-                icon = {
-                    item.icon()
-                },
-                label = {
-                    MarqueeText(
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                settingItems.forEach { item ->
+                    if (item.division) {
+                        VerticalDivider(
+                            modifier = Modifier
+                                .padding(horizontal = 6.dp)
+                                .height(24.dp)
+                                .alpha(0.4f),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    CategoryTab(
+                        modifier = Modifier.onGloballyPositioned { coordinates ->
+                            itemX[item.key] = coordinates.positionInParent().x
+                            itemWidth[item.key] = coordinates.size.width.toFloat()
+                        },
+                        selected = settingsScreenKey == item.key,
+                        icon = item.icon,
                         text = stringResource(item.textRes),
-                        style = MaterialTheme.typography.labelMedium
+                        onClick = { navigateTo(item.key) }
                     )
                 }
-            )
+            }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(8.dp))
+@Composable
+private fun CategoryTab(
+    modifier: Modifier = Modifier,
+    selected: Boolean,
+    icon: @Composable () -> Unit,
+    text: String,
+    onClick: () -> Unit
+) {
+    val contentColor by animateColorAsState(
+        targetValue = if (selected) {
+            MaterialTheme.colorScheme.onSecondaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        animationSpec = tween(durationMillis = 200),
+        label = "settingsTabContent"
+    )
+
+    Row(
+        modifier = modifier
+            .height(40.dp)
+            .clip(MaterialTheme.shapes.large)
+            .clickable(role = Role.Tab, onClick = onClick)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
+            icon()
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                softWrap = false
+            )
         }
     }
 }
