@@ -18,7 +18,15 @@
 
 package com.movtery.zalithlauncher.ui.components
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.graphicsLayer
+import com.movtery.zalithlauncher.setting.LauncherSettings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -214,11 +222,30 @@ fun CompactIconButton(
         Modifier.background(if (enabled) containerColor else Color.Transparent, shape)
     }
     val iconColor = if (enabled) contentColor else contentColor.copy(alpha = 0.38f)
+    // XOYO: nút co nhẹ khi nhấn bằng lò xo; tắt khi bật "Giảm chuyển động"
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val reducedMotion = LauncherSettings.launcherReducedMotion.state
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed && enabled && !reducedMotion) 0.88f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "compactIconPressScale"
+    )
     Box(
         modifier = modifier
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
             .clip(shape)
             .then(fill)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                enabled = enabled,
+                role = Role.Button,
+                onClick = onClick
+            ),
         contentAlignment = Alignment.Center
     ) {
         CompositionLocalProvider(LocalContentColor provides iconColor) {

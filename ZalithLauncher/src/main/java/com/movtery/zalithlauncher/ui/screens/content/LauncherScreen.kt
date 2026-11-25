@@ -585,7 +585,13 @@ private fun PetModelContent(
 
     // XOYO: bỏ nút xoay, kéo trực tiếp trên mô hình để xoay skin theo ý muốn
     PetModelView(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            // XOYO: phóng to model skin ở sảnh thêm 15%
+            .graphicsLayer {
+                scaleX = 1.15f
+                scaleY = 1.15f
+            },
         skin = skinBytes,
         cape = capeBytes,
         arm = armModel,
