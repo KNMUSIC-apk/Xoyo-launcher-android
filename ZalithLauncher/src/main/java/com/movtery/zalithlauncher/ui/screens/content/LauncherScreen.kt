@@ -19,6 +19,7 @@
 package com.movtery.zalithlauncher.ui.screens.content
 
 import android.view.WindowManager
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -64,6 +65,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -583,23 +585,42 @@ private fun PetModelContent(
         }
     }
 
-    // XOYO: bỏ nút xoay, kéo trực tiếp trên mô hình để xoay skin theo ý muốn
-    PetModelView(
-        modifier = modifier
-            .fillMaxSize()
-            // XOYO: phóng to model skin ở sảnh thêm 15%
-            .graphicsLayer {
-                scaleX = 1.15f
-                scaleY = 1.15f
-            },
-        skin = skinBytes,
-        cape = capeBytes,
-        arm = armModel,
-        yaw = yaw,
-        animation = PetAnimation.Idle,
-        tapReaction = PetTapReaction.Interact,
-        dragYaw = true
-    )
+    // XOYO: tên account nằm ngay trên đầu model skin. Model để nhỏ lại (scale 1.0), kéo trực tiếp để xoay skin.
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        val accountName = account?.username
+        if (!accountName.isNullOrEmpty()) {
+            Text(
+                modifier = Modifier
+                    .padding(top = 6.dp, bottom = 2.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f),
+                        shape = MaterialTheme.shapes.small
+                    )
+                    .padding(horizontal = 10.dp, vertical = 2.dp),
+                text = accountName,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        PetModelView(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            skin = skinBytes,
+            cape = capeBytes,
+            arm = armModel,
+            yaw = yaw,
+            animation = PetAnimation.Idle,
+            tapReaction = PetTapReaction.Interact,
+            dragYaw = true
+        )
+    }
 }
 
 @Composable
