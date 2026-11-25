@@ -21,13 +21,17 @@ package com.movtery.zalithlauncher.ui.screens.content.elements
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -42,7 +46,6 @@ import com.movtery.zalithlauncher.ui.components.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.DefaultAlpha
@@ -671,6 +675,30 @@ fun CleanupOperation(
     }
 }
 
+/**
+ * Ảnh nền theo thế hệ Minecraft của phiên bản đã cài. Cùng quy tắc với danh sách tải phiên bản.
+ */
+@Composable
+private fun installedVersionBanner(minecraftVersion: String?): Painter {
+    val numbers = minecraftVersion?.let { Regex("^(\\d+)\\.(\\d+)").find(it) }
+    val major = numbers?.groupValues?.getOrNull(1)?.toIntOrNull()
+    val minor = numbers?.groupValues?.getOrNull(2)?.toIntOrNull()
+    val drawableId = when {
+        major == null || minor == null -> R.drawable.img_ver_classic
+        major >= 2 || minor >= 21 -> R.drawable.img_ver_trial
+        minor == 20 -> R.drawable.img_ver_cherry
+        minor == 19 -> R.drawable.img_ver_wild
+        minor == 18 || minor == 17 -> R.drawable.img_ver_caves
+        minor == 16 -> R.drawable.img_ver_nether
+        else -> R.drawable.img_ver_classic
+    }
+    return painterResource(drawableId)
+}
+
+/**
+ * Thẻ phiên bản đã cài, theo bố cục ảnh tham chiếu: ảnh nền theo thế hệ, logo phiên bản,
+ * nhãn phiên bản và "Đã chọn", thông tin loader, và nút "Chọn" ở dưới. Phiên bản đang chọn có viền sáng.
+ */
 @Composable
 fun VersionItemLayout(
     version: Version,
@@ -693,182 +721,284 @@ fun VersionItemLayout(
     LaunchedEffect(Unit) {
         scale.animateTo(targetValue = 1f, animationSpec = getAnimateTween())
     }
+    val shape = MaterialTheme.shapes.large
+    val isValid = remember(version) { version.isValid() }
+    val versionInfo = remember(version) { version.getVersionInfo() }
+    val banner = installedVersionBanner(versionInfo?.minecraftVersion)
+
     Surface(
         modifier = modifier.graphicsLayer(scaleY = scale.value, scaleX = scale.value),
         color = color,
         contentColor = contentColor,
-        shape = MaterialTheme.shapes.large,
+        shape = shape,
+        // XOYO: phiên bản đang chọn có viền sáng
+        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
         onClick = {
             if (selected) return@Surface
             onSelected()
         }
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(shape = MaterialTheme.shapes.large)
+                .clip(shape = shape)
                 .backgroundGlass(blur, color, influencedByBackground)
-                .padding(all = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
         ) {
-            RadioButton(
-                selected = selected,
-                onClick = {
-                    if (selected) return@RadioButton
-                    onSelected()
-                }
-            )
-            CommonVersionInfoLayout(
-                modifier = Modifier.weight(1f),
-                version = version
-            )
-
-            IconButton(
-                onClick = {
-                    val currentValue = version.pinnedState
-                    runCatching {
-                        version.setPinnedAndSave(!currentValue)
-                    }.onFailure { e ->
-                        Logger.error(TAG, "Failed to save version config!", e)
-                        submitError(
-                            ErrorViewModel.ThrowableMessage(
-                                title = androidText(R.string.versions_config_failed_to_save),
-                                message = androidText(e.getMessageOrToString())
+            // Ảnh nền, logo phiên bản và nhãn
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(96.dp)
+            ) {
+                Image(
+                    modifier = Modifier.matchParentSize(),
+                    painter = banner,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Black.copy(alpha = 0.15f),
+                                    Color.Black.copy(alpha = 0.7f)
+                                )
                             )
                         )
-                    }.onSuccess {
-                        onPinned()
-                    }
-                },
-                enabled = version.isValid()
-            ) {
-                Crossfade(
-                    targetState = version.pinnedState
-                ) { pinned ->
-                    val icon = if (pinned) {
-                        painterResource(R.drawable.ic_pinned_filled)
-                    } else {
-                        painterResource(R.drawable.ic_pinned_outlined)
-                    }
-                    Icon(
-                        modifier = Modifier.rotate(45.0f),
-                        painter = icon,
-                        contentDescription = stringResource(R.string.versions_manage_pin)
-                    )
-                }
-            }
+                )
 
-            IconButton(
-                onClick = onSettingsClick,
-                enabled = version.isValid()
-            ) {
-                Icon(
-                    modifier = Modifier.size(24.dp),
-                    painter = painterResource(R.drawable.ic_settings_filled),
-                    contentDescription = stringResource(R.string.versions_manage_settings)
+                versionInfo?.minecraftVersion?.let { mcVersion ->
+                    Box(modifier = Modifier.align(Alignment.TopStart).padding(all = 10.dp)) {
+                        LittleTextLabel(
+                            text = mcVersion,
+                            color = Color.Black.copy(alpha = 0.45f),
+                            contentColor = Color.White,
+                            textStyle = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+
+                if (selected) {
+                    Box(modifier = Modifier.align(Alignment.TopEnd).padding(all = 10.dp)) {
+                        LittleTextLabel(
+                            text = stringResource(R.string.versions_manage_selected),
+                            color = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            textStyle = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+
+                // Logo phiên bản, có thể đổi trong cài đặt phiên bản
+                VersionIconImage(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 12.dp, bottom = 10.dp)
+                        .size(44.dp),
+                    version = version
                 )
             }
 
-            Row {
-                var menuExpanded by remember { mutableStateOf(false) }
-
-                IconButton(onClick = { menuExpanded = !menuExpanded }) {
-                    Icon(
-                        modifier = Modifier.size(24.dp),
-                        painter = painterResource(R.drawable.ic_more_horiz),
-                        contentDescription = stringResource(R.string.generic_more)
+            // Tên, loader và các nút phụ
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 4.dp, top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    MarqueeText(
+                        text = version.getVersionName(),
+                        style = MaterialTheme.typography.titleSmall
                     )
-                }
-
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    shape = MaterialTheme.shapes.large,
-                    shadowElevation = 3.dp,
-                    onDismissRequest = { menuExpanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(R.string.generic_rename)) },
-                        leadingIcon = {
-                            Icon(
-                                modifier = Modifier.size(20.dp),
-                                painter = painterResource(R.drawable.ic_edit_filled),
-                                contentDescription = stringResource(R.string.generic_rename)
-                            )
-                        },
-                        onClick = {
-                            onRenameClick()
-                            menuExpanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(R.string.generic_copy)) },
-                        leadingIcon = {
-                            Icon(
-                                modifier = Modifier.size(20.dp),
-                                painter = painterResource(R.drawable.ic_file_copy_filled),
-                                contentDescription = stringResource(R.string.generic_copy)
-                            )
-                        },
-                        onClick = {
-                            onCopyClick()
-                            menuExpanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(R.string.versions_export)) },
-                        leadingIcon = {
-                            Icon(
-                                modifier = Modifier.size(20.dp),
-                                painter = painterResource(R.drawable.ic_folder_zip_filled),
-                                contentDescription = stringResource(R.string.versions_export)
-                            )
-                        },
-                        onClick = {
-                            onExportClick()
-                            menuExpanded = false
-                        }
-                    )
-                    //添加卡片到主界面
-                    val cardExists by remember(version) {
-                        VersionCardManager.cards.map { states ->
-                            states.any {
-                                it.record.versionName == version.getVersionName() &&
-                                        it.record.dir == VersionCardDir.fromGameHome(version.getGameHome())
+                    if (isValid) {
+                        versionInfo?.let { info ->
+                            val loaderText = info.loaderInfos.joinToString(separator = "  ") { loaderInfo ->
+                                "${loaderInfo.loader.displayName} ${loaderInfo.version}"
+                            }
+                            if (loaderText.isNotBlank()) {
+                                MarqueeText(
+                                    text = loaderText,
+                                    style = MaterialTheme.typography.labelMedium
+                                )
                             }
                         }
-                    }.collectAsStateWithLifecycle(
-                        VersionCardManager.hasCard(version.getVersionName(), version.getGameHome())
-                    )
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(R.string.home_add_version_card)) },
-                        leadingIcon = {
-                            Icon(
-                                modifier = Modifier.size(20.dp),
-                                painter = painterResource(R.drawable.ic_add_box_filled),
-                                contentDescription = stringResource(R.string.home_add_version_card)
+                    } else {
+                        LittleTextLabel(
+                            text = stringResource(R.string.versions_manage_invalid),
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                            textStyle = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+
+                IconButton(
+                    onClick = {
+                        val currentValue = version.pinnedState
+                        runCatching {
+                            version.setPinnedAndSave(!currentValue)
+                        }.onFailure { e ->
+                            Logger.error(TAG, "Failed to save version config!", e)
+                            submitError(
+                                ErrorViewModel.ThrowableMessage(
+                                    title = androidText(R.string.versions_config_failed_to_save),
+                                    message = androidText(e.getMessageOrToString())
+                                )
                             )
-                        },
-                        enabled = version.isValid() && !cardExists,
-                        onClick = {
-                            VersionCardManager.addCard(version)
-                            menuExpanded = false
+                        }.onSuccess {
+                            onPinned()
                         }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(R.string.generic_delete)) },
-                        leadingIcon = {
-                            Icon(
-                                modifier = Modifier.size(20.dp),
-                                painter = painterResource(R.drawable.ic_delete_filled),
-                                contentDescription = stringResource(R.string.generic_delete)
-                            )
-                        },
-                        onClick = {
-                            onDeleteClick()
-                            menuExpanded = false
+                    },
+                    enabled = version.isValid()
+                ) {
+                    Crossfade(
+                        targetState = version.pinnedState
+                    ) { pinned ->
+                        val icon = if (pinned) {
+                            painterResource(R.drawable.ic_pinned_filled)
+                        } else {
+                            painterResource(R.drawable.ic_pinned_outlined)
                         }
+                        Icon(
+                            modifier = Modifier.rotate(45.0f),
+                            painter = icon,
+                            contentDescription = stringResource(R.string.versions_manage_pin)
+                        )
+                    }
+                }
+
+                IconButton(
+                    onClick = onSettingsClick,
+                    enabled = version.isValid()
+                ) {
+                    Icon(
+                        modifier = Modifier.size(24.dp),
+                        painter = painterResource(R.drawable.ic_settings_filled),
+                        contentDescription = stringResource(R.string.versions_manage_settings)
                     )
                 }
+
+                Row {
+                    var menuExpanded by remember { mutableStateOf(false) }
+
+                    IconButton(onClick = { menuExpanded = !menuExpanded }) {
+                        Icon(
+                            modifier = Modifier.size(24.dp),
+                            painter = painterResource(R.drawable.ic_more_horiz),
+                            contentDescription = stringResource(R.string.generic_more)
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        shape = MaterialTheme.shapes.large,
+                        shadowElevation = 3.dp,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.generic_rename)) },
+                            leadingIcon = {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    painter = painterResource(R.drawable.ic_edit_filled),
+                                    contentDescription = stringResource(R.string.generic_rename)
+                                )
+                            },
+                            onClick = {
+                                onRenameClick()
+                                menuExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.generic_copy)) },
+                            leadingIcon = {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    painter = painterResource(R.drawable.ic_file_copy_filled),
+                                    contentDescription = stringResource(R.string.generic_copy)
+                                )
+                            },
+                            onClick = {
+                                onCopyClick()
+                                menuExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.versions_export)) },
+                            leadingIcon = {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    painter = painterResource(R.drawable.ic_folder_zip_filled),
+                                    contentDescription = stringResource(R.string.versions_export)
+                                )
+                            },
+                            onClick = {
+                                onExportClick()
+                                menuExpanded = false
+                            }
+                        )
+                        //添加卡片到主界面
+                        val cardExists by remember(version) {
+                            VersionCardManager.cards.map { states ->
+                                states.any {
+                                    it.record.versionName == version.getVersionName() &&
+                                            it.record.dir == VersionCardDir.fromGameHome(version.getGameHome())
+                                }
+                            }
+                        }.collectAsStateWithLifecycle(
+                            VersionCardManager.hasCard(version.getVersionName(), version.getGameHome())
+                        )
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.home_add_version_card)) },
+                            leadingIcon = {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    painter = painterResource(R.drawable.ic_add_box_filled),
+                                    contentDescription = stringResource(R.string.home_add_version_card)
+                                )
+                            },
+                            enabled = version.isValid() && !cardExists,
+                            onClick = {
+                                VersionCardManager.addCard(version)
+                                menuExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.generic_delete)) },
+                            leadingIcon = {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    painter = painterResource(R.drawable.ic_delete_filled),
+                                    contentDescription = stringResource(R.string.generic_delete)
+                                )
+                            },
+                            onClick = {
+                                onDeleteClick()
+                                menuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            // Nút chọn phiên bản, thay cho nút tròn cũ
+            Button(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp),
+                onClick = {
+                    if (selected) return@Button
+                    onSelected()
+                }
+            ) {
+                Text(
+                    text = stringResource(
+                        if (selected) R.string.versions_manage_selected else R.string.versions_manage_select
+                    )
+                )
             }
         }
     }

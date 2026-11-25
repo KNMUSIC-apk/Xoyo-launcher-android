@@ -1324,6 +1324,8 @@
     <string name="versions_manage_install_new">Install New</string>
     <!-- Accessibility label of the settings icon that opens a version's settings -->
     <string name="versions_manage_settings">Version Settings</string>
+    <string name="versions_manage_select">Select</string>
+    <string name="versions_manage_selected">Selected</string>
     <!-- Button and dialog title for cleaning up unused game files -->
     <string name="versions_manage_cleanup">Clean up game files</string>
     <!-- Explanation in the cleanup dialog of how unused game files are found -->

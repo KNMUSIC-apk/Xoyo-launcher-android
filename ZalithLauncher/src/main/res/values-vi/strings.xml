@@ -494,6 +494,8 @@
     <string name="versions_manage_task_error">Lỗi khi thao tác phiên bản</string>
     <string name="versions_manage_install_new">Cài game mới</string>
     <string name="versions_manage_settings">Cài đặt</string>
+    <string name="versions_manage_select">Chọn</string>
+    <string name="versions_manage_selected">Đã chọn</string>
     <string name="versions_settings_overview">Tổng quan</string>
     <string name="versions_settings_overview_management">Quản lý</string>
     <string name="versions_settings_overview_quick_actions">Thao tác nhanh</string>
