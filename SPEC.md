@@ -316,6 +316,12 @@ Câu hỏi mở cho người duyệt:
 5. Mục Mod: giữ danh sách mod đã cài (đang chọn), hay chuyển thẳng sang trang tải như nhánh `fix/ui-scroll-skin-mod`?
 6. Có nên đổi nhánh mặc định `main` (khung dự án khác) để trỏ về nhánh có code Zalith không?
 
+Yêu cầu mới, ngày 2026-11-26 (chưa có người duyệt trả lời):
+- [2026-11-26] [A.I #1] cần [A.I #2]: vào launcher nhanh hơn. (a) `PluginLoader.loadAllPlugins` đang chạy trên main thread trong `MainActivity.kt` (khoảng dòng 201), quét mọi app cài trên máy. Cần chuyển sang IO, hoặc hoãn sau khi màn hình chính hiện. (b) `SplashActivity.kt` `checkState()` chạy tuần tự từng mục; cần chạy song song được thì làm. (c) `BaseScreen.kt` (dòng 140-143) chờ `awaitEnterStart` khoảng 140 ms khi chuyển từ Welcome hoặc Unpacking sang Loading; cần bỏ chờ ở màn splash. lý do: người dùng thấy loading xuất hiện chậm. Phần UI đã làm (commit 8443811): icon splash trong suốt, bỏ hiệu ứng trượt của màn loading.
+- [2026-11-26] [A.I #1] cần [A.I #2]: nền riêng cho từng phiên bản. Mỗi phiên bản có một ảnh nền lưu trong thư mục phiên bản, và khi chọn phiên bản thì nền và logo trên trang chủ đổi theo. Hiện `BackgroundViewModel` và `PathManager.FILE_LAUNCHER_BACKGROUND` chỉ có một ảnh nền chung. lý do: người dùng muốn thẻ phiên bản giống ảnh tham chiếu (nền và logo theo phiên bản). Phần UI thẻ phiên bản đã làm (commit f5cd6bd) và dùng ảnh nền theo thế hệ làm mặc định.
+- [2026-11-26] [Người duyệt] câu hỏi: nút icon trong `ui.components.IconButton` nay không còn vùng chạm tối thiểu 48dp (`LocalMinimumInteractiveComponentSize = 0`), nên nút 34dp và 36dp đúng kích thước đặt. Có chấp nhận không? lý do: để các nút cạnh nhau không chồng lên nhau, theo yêu cầu người dùng.
+- [2026-11-26] [Người duyệt] câu hỏi: danh sách phiên bản đã cài nay dùng nút Chọn / Đã chọn thay cho RadioButton (commit f5cd6bd). Có giữ không?
+
 ---
 
 ## 8. Quy trình làm việc
