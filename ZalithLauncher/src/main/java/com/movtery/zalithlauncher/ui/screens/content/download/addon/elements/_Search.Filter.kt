@@ -37,8 +37,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -87,8 +87,20 @@ import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.utils.animation.getAnimateTween
 import org.jackhuang.hmcl.addon.AddonProjectInfo
 
+/** Chiều rộng mỗi ô lọc trên thanh lọc ngang. Các mục tải về dùng chung chiều rộng này. */
+val SearchFilterItemWidth: Dp = 240.dp
+
+/** Ô tên và ô tìm kiếm rộng hơn các ô khác một chút. */
+private val SearchFilterWideWidth: Dp = 300.dp
+
+/** Khoảng cách giữa các ô lọc trên thanh lọc ngang. */
+private val SearchFilterGap: Dp = 10.dp
+
 /**
  * 搜索资源过滤器UI
+ *
+ * XOYO: bộ lọc nằm thành thanh ngang phía trên danh sách kết quả, giống các launcher PC.
+ * Các ô tự xuống dòng khi hết chỗ, nên không còn cột lọc bên phải.
  * @param enablePlatform 是否允许更改目标平台
  * @param searchPlatform 目标平台
  * @param searchName 搜索名称
@@ -102,7 +114,7 @@ import org.jackhuang.hmcl.addon.AddonProjectInfo
  * @param modloaders 可用模组加载器列表
  * @param modloader 模组加载器
  * @param onModLoaderChange 模组加载器变更时
- * @param extraFilter 额外的过滤器UI
+ * @param extraFilter 额外的过滤器UI, ví dụ nút nhập modpack
  */
 @Composable
 fun SearchFilter(
@@ -127,130 +139,121 @@ fun SearchFilter(
     modloaders: List<PlatformDisplayLabel> = emptyList(),
     modloader: PlatformDisplayLabel? = null,
     onModLoaderChange: (PlatformDisplayLabel?) -> Unit = {},
-    extraFilter: (LazyListScope.() -> Unit)? = null
+    extraFilter: (@Composable () -> Unit)? = null
 ) {
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = contentPadding,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    FlowRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(contentPadding),
+        horizontalArrangement = Arrangement.spacedBy(SearchFilterGap),
+        verticalArrangement = Arrangement.spacedBy(SearchFilterGap)
     ) {
-        item {
-            SuggestionsText(
-                value = searchName,
-                onValueChange = onSearchNameChange,
-                label = stringResource(R.string.download_addon_filter_search_name),
-                onSearch = onSearch,
-                suggestions = searchedMcMods,
-                suggestionLabel = { item ->
+        SuggestionsText(
+            modifier = Modifier.width(SearchFilterWideWidth),
+            value = searchName,
+            onValueChange = onSearchNameChange,
+            label = stringResource(R.string.download_addon_filter_search_name),
+            onSearch = onSearch,
+            suggestions = searchedMcMods,
+            suggestionLabel = { item ->
+                Text(
+                    item.mainName(),
+                    style = MaterialTheme.typography.labelMedium
+                )
+                //英文名/次要名称
+                if (item.subName().isNotBlank()) {
                     Text(
-                        item.mainName(),
-                        style = MaterialTheme.typography.labelMedium
+                        modifier = Modifier.alpha(0.7f),
+                        text = item.subName(),
+                        style = MaterialTheme.typography.labelSmall
                     )
-                    //英文名/次要名称
-                    if (item.subName().isNotBlank()) {
-                        Text(
-                            modifier = Modifier.alpha(0.7f),
-                            text = item.subName(),
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    }
-                },
-                onSuggestionClick = { item ->
-                    onSearchNameChange(
-                        item.subName().ifEmpty { item.abbrName() }
-                    )
-                    onSearch()
-                    onSearch()
                 }
-            )
-        }
+            },
+            onSuggestionClick = { item ->
+                onSearchNameChange(
+                    item.subName().ifEmpty { item.abbrName() }
+                )
+                onSearch()
+            }
+        )
 
-        item {
-            SuggestionsText(
-                value = gameVersion,
-                onValueChange = onGameVersionChange,
-                label = stringResource(R.string.download_addon_filter_game_version),
-                onSearch = onSearch,
-                suggestions = searchedVersions,
-                suggestionLabel = { item ->
-                    Text(
-                        text = item,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                },
-                onSuggestionClick = { item ->
-                    onGameVersionChange(item)
-                    onSearch()
-                }
-            )
-        }
+        SuggestionsText(
+            modifier = Modifier.width(SearchFilterItemWidth),
+            value = gameVersion,
+            onValueChange = onGameVersionChange,
+            label = stringResource(R.string.download_addon_filter_game_version),
+            onSearch = onSearch,
+            suggestions = searchedVersions,
+            suggestionLabel = { item ->
+                Text(
+                    text = item,
+                    style = MaterialTheme.typography.labelMedium
+                )
+            },
+            onSuggestionClick = { item ->
+                onGameVersionChange(item)
+                onSearch()
+            }
+        )
 
-        extraFilter?.invoke(this@LazyColumn)
+        extraFilter?.invoke()
 
         if (enablePlatform) {
-            item {
-                PlatformListLayout(
-                    modifier = Modifier.fillMaxWidth(),
-                    searchPlatform = searchPlatform,
-                    onPlatformChange = onPlatformChange,
-                )
-            }
-        }
-
-        item {
-            FilterListLayout(
-                modifier = Modifier.fillMaxWidth(),
-                items = PlatformSortField.entries,
-                selectionMode = FilterSelectionMode.Single,
-                selectedItems = listOfNotNull(sortField),
-                onSelectionChange = { new ->
-                    new.first().takeIf { it != sortField }?.let { value ->
-                        onSortFieldChange(value)
-                    }
-                },
-                getItemLabel = { item ->
-                    stringResource(item.getDisplayName())
-                },
-                title = stringResource(R.string.sort_by),
-                cancelable = false
+            PlatformListLayout(
+                modifier = Modifier.width(SearchFilterItemWidth),
+                searchPlatform = searchPlatform,
+                onPlatformChange = onPlatformChange,
             )
         }
 
-        item {
-            FilterListLayout(
-                modifier = Modifier.fillMaxWidth(),
-                items = allCategories,
-                selectionMode = FilterSelectionMode.Multiple,
-                selectedItems = categories,
-                onSelectionChange = { news ->
-                    news.takeIf { it.toSet() != categories.toSet() }?.let { value ->
-                        onCategoryChanged(value)
-                    }
-                },
-                getItemLabel = { item ->
-                    stringResource(item.getDisplayName())
-                },
-                title = stringResource(R.string.download_addon_filter_category)
-            )
-        }
+        FilterListLayout(
+            modifier = Modifier.width(SearchFilterItemWidth),
+            items = PlatformSortField.entries,
+            selectionMode = FilterSelectionMode.Single,
+            selectedItems = listOfNotNull(sortField),
+            onSelectionChange = { new ->
+                new.first().takeIf { it != sortField }?.let { value ->
+                    onSortFieldChange(value)
+                }
+            },
+            getItemLabel = { item ->
+                stringResource(item.getDisplayName())
+            },
+            title = stringResource(R.string.sort_by),
+            cancelable = false
+        )
+
+        FilterListLayout(
+            modifier = Modifier.width(SearchFilterItemWidth),
+            items = allCategories,
+            selectionMode = FilterSelectionMode.Multiple,
+            selectedItems = categories,
+            onSelectionChange = { news ->
+                news.takeIf { it.toSet() != categories.toSet() }?.let { value ->
+                    onCategoryChanged(value)
+                }
+            },
+            getItemLabel = { item ->
+                stringResource(item.getDisplayName())
+            },
+            title = stringResource(R.string.download_addon_filter_category)
+        )
 
         if (enableModLoader) {
-            item {
-                FilterListLayout(
-                    modifier = Modifier.fillMaxWidth(),
-                    items = modloaders,
-                    selectionMode = FilterSelectionMode.Single,
-                    selectedItems = listOfNotNull(modloader),
-                    onSelectionChange = { new ->
-                        val value = new.firstOrNull()
-                        if (value != modloader) onModLoaderChange(value)
-                    },
-                    getItemLabel = { item ->
-                        item.getDisplayName()
-                    },
-                    title = stringResource(R.string.download_addon_filter_modloader)
-                )
-            }
+            FilterListLayout(
+                modifier = Modifier.width(SearchFilterItemWidth),
+                items = modloaders,
+                selectionMode = FilterSelectionMode.Single,
+                selectedItems = listOfNotNull(modloader),
+                onSelectionChange = { new ->
+                    val value = new.firstOrNull()
+                    if (value != modloader) onModLoaderChange(value)
+                },
+                getItemLabel = { item ->
+                    item.getDisplayName()
+                },
+                title = stringResource(R.string.download_addon_filter_modloader)
+            )
         }
     }
 }
@@ -278,7 +281,7 @@ private fun <E> SuggestionsText(
     suggestions: List<E>,
     suggestionLabel: @Composable FlowRowScope.(E) -> Unit,
     onSuggestionClick: (E) -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.fillMaxWidth(),
 ) {
     val focusManager = LocalFocusManager.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -298,8 +301,8 @@ private fun <E> SuggestionsText(
             else RoundedCornerShape(16.0.dp)
         )
         OwnOutlinedTextField(
+            // Chiều rộng do người gọi quyết định (mặc định fillMaxWidth), để không ghi đè Modifier.width của thanh lọc
             modifier = modifier
-                .fillMaxWidth()
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
             value = value,
             onValueChange = onValueChange,
