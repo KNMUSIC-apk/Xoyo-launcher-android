@@ -28,10 +28,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import com.movtery.zalithlauncher.components.InstallableItem
 import com.movtery.zalithlauncher.legal.AvailableAgreement
-import com.movtery.zalithlauncher.ui.base.BaseScreen
-import com.movtery.zalithlauncher.ui.components.AnimatedDirection
-import com.movtery.zalithlauncher.ui.components.animated
-import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
 import com.movtery.zalithlauncher.ui.screens.NavStateHost
 import com.movtery.zalithlauncher.ui.screens.NestedNavDisplay
 import com.movtery.zalithlauncher.ui.screens.rememberTransitionSpec
@@ -103,7 +99,6 @@ private fun NavigationUI(
             entryProvider = entryProvider {
                 entry<SplashOperation.Loading> {
                     LoadingScreen(
-                        screenViewModel = screenViewModel,
                         loadingState = loadingState,
                         onRetryLoading = onRetryLoading
                     )
@@ -136,23 +131,20 @@ private fun NavigationUI(
     }
 }
 
+/**
+ * XOYO: màn loading hiện ngay, không bọc trong BaseScreen và không trượt/hiện dần,
+ * nên không còn khoảng chờ giữa logo và thanh tiến trình.
+ */
 @Composable
 private fun LoadingScreen(
-    screenViewModel: SplashBackStackViewModel,
     loadingState: StateFlow<SplashLoadingState>,
     onRetryLoading: () -> Unit
 ) {
-    BaseScreen(
-        screenKey = SplashOperation.Loading,
-        currentKey = screenViewModel.splashScreen.currentKey
-    ) { isVisible ->
-        val ctx = rememberAnimatedContext(isVisible = isVisible)
-        val state by loadingState.collectAsStateWithLifecycle()
+    val state by loadingState.collectAsStateWithLifecycle()
 
-        SplashLoadingScreen(
-            modifier = Modifier.animated(ctx, from = AnimatedDirection.Bottom),
-            state = state,
-            onRetry = onRetryLoading
-        )
-    }
+    SplashLoadingScreen(
+        modifier = Modifier.fillMaxSize(),
+        state = state,
+        onRetry = onRetryLoading
+    )
 }
