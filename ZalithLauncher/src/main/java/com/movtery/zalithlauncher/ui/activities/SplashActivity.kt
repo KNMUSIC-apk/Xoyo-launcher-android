@@ -41,6 +41,8 @@ import com.movtery.zalithlauncher.components.jre.UnpackJnaTask
 import com.movtery.zalithlauncher.components.jre.UnpackJreTask
 import com.movtery.zalithlauncher.context.readAssetFile
 import com.movtery.zalithlauncher.legal.AvailableAgreement
+import com.movtery.zalithlauncher.game.plugin.PluginLoader
+import com.movtery.zalithlauncher.game.renderer.Renderers
 import com.movtery.zalithlauncher.path.GLOBAL_JSON
 import com.movtery.zalithlauncher.setting.GameSettings
 import com.movtery.zalithlauncher.setting.launcherMMKV
@@ -58,6 +60,9 @@ import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.viewmodel.SplashBackStackViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -194,13 +199,21 @@ class SplashActivity : BaseAppCompatActivity() {
                 }
 
                 withContext(Dispatchers.IO) {
-                    checkAllTask { checked, total, itemName ->
-                        _loadingState.update {
-                            it.copy(
-                                progress = 0.08f + 0.62f * checked / total.coerceAtLeast(1),
-                                message = getString(R.string.splash_loading_checking, itemName)
-                            )
+                    coroutineScope {
+                        // XOYO: nạp renderer và plugin song song với kiểm tra tài nguyên,
+                        // để MainActivity không phải quét plugin trên luồng chính
+                        val pluginJob = async { loadPluginsOffMain() }
+                        val checkJob = async {
+                            checkAllTask { checked, total, itemName ->
+                                _loadingState.update {
+                                    it.copy(
+                                        progress = 0.08f + 0.62f * checked / total.coerceAtLeast(1),
+                                        message = getString(R.string.splash_loading_checking, itemName)
+                                    )
+                                }
+                            }
                         }
+                        awaitAll(pluginJob, checkJob)
                     }
                 }
 
@@ -291,6 +304,18 @@ class SplashActivity : BaseAppCompatActivity() {
         unpackItems.sort()
     }
 
+    /**
+     * XOYO: nạp renderer và plugin ở luồng nền. Renderers và driver chỉ đọc cấu hình tĩnh
+     * và thư mục native của app, không cần file đã giải nén, nên có thể chạy trong lúc chờ.
+     * Khi MainActivity gọi lại, PluginLoader đã khởi tạo nên bỏ qua.
+     */
+    private fun loadPluginsOffMain() {
+        runCatching {
+            Renderers.init()
+            PluginLoader.loadAllPlugins(applicationContext, false)
+        }.onFailure { Logger.error(TAG, "Failed to load plugins on splash", it) }
+    }
+
     private suspend fun checkAllTask(
         onItemChecked: (checked: Int, total: Int, itemName: String) -> Unit = { _, _, _ -> }
     ) {
@@ -300,13 +325,19 @@ class SplashActivity : BaseAppCompatActivity() {
         }
 
         val total = unpackItems.size
-        unpackItems.forEachIndexed { index, item ->
-            val state = item.task.checkState()
-            item.updateState(state)
-            if (state == InstallableItem.State.FINISHED) {
-                finishedTaskCount.incrementAndGet()
-            }
-            onItemChecked(index + 1, total, item.name)
+        val checked = AtomicInteger(0)
+        // XOYO: kiểm tra từng mục song song. Tiến độ đếm theo số mục đã xong.
+        coroutineScope {
+            unpackItems.map { item ->
+                async {
+                    val state = item.task.checkState()
+                    item.updateState(state)
+                    if (state == InstallableItem.State.FINISHED) {
+                        finishedTaskCount.incrementAndGet()
+                    }
+                    onItemChecked(checked.incrementAndGet(), total, item.name)
+                }
+            }.awaitAll()
         }
     }
 
