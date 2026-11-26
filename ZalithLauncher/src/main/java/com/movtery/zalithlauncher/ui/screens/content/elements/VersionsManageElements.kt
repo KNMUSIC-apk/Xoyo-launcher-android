@@ -104,6 +104,18 @@ import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.string.getMessageOrToString
 import com.movtery.zalithlauncher.utils.string.isNotEmptyOrBlank
 import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+
+import androidx.compose.runtime.rememberCoroutineScope
+
+import androidx.compose.ui.platform.LocalContext
+
+import com.movtery.zalithlauncher.contract.MediaPickerContract
+
+import com.movtery.zalithlauncher.viewmodel.LocalBackgroundViewModel
+
+import kotlinx.coroutines.launch
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 
@@ -883,6 +895,28 @@ fun VersionItemLayout(
                 Row {
                     var menuExpanded by remember { mutableStateOf(false) }
 
+                    // XOYO: chọn ảnh hoặc video làm nền riêng cho phiên bản này
+                    val bgViewModel = LocalBackgroundViewModel.current
+                    val bgContext = LocalContext.current
+                    val bgScope = rememberCoroutineScope()
+                    val backgroundPicker = rememberLauncherForActivityResult(
+                        contract = MediaPickerContract(allowImages = true, allowVideos = true, allowMultiple = false)
+                    ) { result ->
+                        val uri = result?.firstOrNull() ?: return@rememberLauncherForActivityResult
+                        bgScope.launch(Dispatchers.IO) {
+                            runCatching {
+                                bgViewModel?.importVersionBackground(bgContext, uri, version)
+                            }.onFailure { th ->
+                                submitError(
+                                    ErrorViewModel.ThrowableMessage(
+                                        title = androidText(R.string.error_import_image),
+                                        message = androidText(th.getMessageOrToString())
+                                    )
+                                )
+                            }
+                        }
+                    }
+
                     IconButton(onClick = { menuExpanded = !menuExpanded }) {
                         Icon(
                             modifier = Modifier.size(24.dp),
@@ -936,6 +970,37 @@ fun VersionItemLayout(
                             },
                             onClick = {
                                 onExportClick()
+                                menuExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(text = stringResource(R.string.versions_manage_set_background)) },
+                            leadingIcon = {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    painter = painterResource(R.drawable.ic_photo_library_outlined),
+                                    contentDescription = stringResource(R.string.versions_manage_set_background)
+                                )
+                            },
+                            onClick = {
+                                backgroundPicker.launch(Unit)
+                                menuExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            enabled = version.getBackgroundFile().exists(),
+                            text = { Text(text = stringResource(R.string.versions_manage_reset_background)) },
+                            leadingIcon = {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    painter = painterResource(R.drawable.ic_delete_filled),
+                                    contentDescription = stringResource(R.string.versions_manage_reset_background)
+                                )
+                            },
+                            onClick = {
+                                bgScope.launch(Dispatchers.IO) {
+                                    bgViewModel?.clearVersionBackground(version)
+                                }
                                 menuExpanded = false
                             }
                         )

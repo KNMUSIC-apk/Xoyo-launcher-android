@@ -3346,4 +3346,6 @@
     <string name="settings_launcher_font_import_error">Could not import font</string>
     <string name="home_overview_hide">Hide overview</string>
     <string name="home_overview_show">Show overview</string>
+    <string name="versions_manage_set_background">Set custom background</string>
+    <string name="versions_manage_reset_background">Remove custom background</string>
 </resources>

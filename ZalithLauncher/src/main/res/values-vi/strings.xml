@@ -1825,4 +1825,6 @@
     <string name="settings_launcher_font_import_error">Không nhập được font</string>
     <string name="home_overview_hide">Ẩn tổng quan</string>
     <string name="home_overview_show">Hiện tổng quan</string>
+    <string name="versions_manage_set_background">Đặt nền riêng</string>
+    <string name="versions_manage_reset_background">Bỏ nền riêng</string>
 </resources>
