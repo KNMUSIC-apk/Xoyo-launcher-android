@@ -50,6 +50,13 @@ import com.movtery.zalithlauncher.game.versioninfo.MinecraftVersion
 import com.movtery.zalithlauncher.game.versioninfo.MinecraftVersions
 import com.movtery.zalithlauncher.game.versioninfo.popularVersions
 import com.movtery.zalithlauncher.ui.base.BaseScreen
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import com.movtery.zalithlauncher.ui.components.DownloadRailTarget
+import com.movtery.zalithlauncher.ui.components.DownloadTypeRail
+import com.movtery.zalithlauncher.ui.components.LocalDownloadRailSwitch
+import com.movtery.zalithlauncher.ui.screens.main.CompactWidthThreshold
+import androidx.compose.ui.platform.LocalConfiguration
 import com.movtery.zalithlauncher.ui.components.AnimatedDirection
 import com.movtery.zalithlauncher.ui.components.animated
 import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
@@ -295,7 +302,18 @@ fun SearchAddonScreen(
         Triple(parentScreenKey, parentCurrentKey, false),
         Triple(screenKey, currentKey, false)
     ) { isVisible ->
-        Column(modifier = Modifier.fillMaxSize()) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            // XOYO: rail loại tải bên trái, chỉ hiện trong màn Tải về
+            val railSwitch = LocalDownloadRailSwitch.current
+            if (railSwitch != null) {
+                DownloadTypeRail(
+                    selected = platformClasses.toRailTarget(),
+                    onSelect = railSwitch,
+                    compact = LocalConfiguration.current.screenWidthDp.dp < CompactWidthThreshold,
+                    modifier = Modifier.fillMaxHeight()
+                )
+            }
+            Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
             // XOYO: thanh lọc nằm trên cùng, danh sách kết quả chiếm phần còn lại bên dưới
             val filterCtx = rememberAnimatedContext(isVisible = isVisible)
             val searchedMcMods by viewModel.searchedMcMods.collectAsStateWithLifecycle()
@@ -410,6 +428,16 @@ fun SearchAddonScreen(
                     )
                 }
             )
+            }
         }
     }
+}
+
+/** Loại tải trên rail tương ứng với loại tìm kiếm đang mở */
+private fun PlatformClasses.toRailTarget(): DownloadRailTarget? = when (this) {
+    PlatformClasses.MOD -> DownloadRailTarget.MOD
+    PlatformClasses.MOD_PACK -> DownloadRailTarget.MODPACK
+    PlatformClasses.RESOURCE_PACK -> DownloadRailTarget.RESOURCE_PACK
+    PlatformClasses.SHADERS -> DownloadRailTarget.SHADER
+    PlatformClasses.SAVES -> DownloadRailTarget.WORLD
 }
