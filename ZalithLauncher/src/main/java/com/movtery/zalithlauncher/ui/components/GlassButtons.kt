@@ -27,6 +27,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.graphicsLayer
 import com.movtery.zalithlauncher.setting.LauncherSettings
+import com.movtery.zalithlauncher.ui.theme.pressScale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -81,16 +82,19 @@ fun Button(
 ) {
     val liquid = isLiquidGlassEnabled()
     val defaultSource = remember { MutableInteractionSource() }
+    val source = interactionSource ?: defaultSource
+    // XOYO: nút co nhẹ khi nhấn bằng lò xo; tắt khi bật "Giảm chuyển động"
+    val pressable = modifier.pressScale(source, enabled = enabled && !LauncherSettings.launcherReducedMotion.state)
     androidx.compose.material3.Button(
         onClick = onClick,
-        modifier = if (liquid) modifier.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else modifier,
+        modifier = if (liquid) pressable.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else pressable,
         enabled = enabled,
         shape = shape,
         colors = if (liquid) colors.copy(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent) else colors,
         elevation = elevation,
         border = border,
         contentPadding = contentPadding,
-        interactionSource = interactionSource ?: defaultSource,
+        interactionSource = source,
         content = content
     )
 }
@@ -110,16 +114,19 @@ fun FilledTonalButton(
 ) {
     val liquid = isLiquidGlassEnabled()
     val defaultSource = remember { MutableInteractionSource() }
+    val source = interactionSource ?: defaultSource
+    // XOYO: nút co nhẹ khi nhấn bằng lò xo; tắt khi bật "Giảm chuyển động"
+    val pressable = modifier.pressScale(source, enabled = enabled && !LauncherSettings.launcherReducedMotion.state)
     androidx.compose.material3.FilledTonalButton(
         onClick = onClick,
-        modifier = if (liquid) modifier.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else modifier,
+        modifier = if (liquid) pressable.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else pressable,
         enabled = enabled,
         shape = shape,
         colors = if (liquid) colors.copy(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent) else colors,
         elevation = elevation,
         border = border,
         contentPadding = contentPadding,
-        interactionSource = interactionSource ?: defaultSource,
+        interactionSource = source,
         content = content
     )
 }
@@ -139,16 +146,19 @@ fun OutlinedButton(
 ) {
     val liquid = isLiquidGlassEnabled()
     val defaultSource = remember { MutableInteractionSource() }
+    val source = interactionSource ?: defaultSource
+    // XOYO: nút co nhẹ khi nhấn bằng lò xo; tắt khi bật "Giảm chuyển động"
+    val pressable = modifier.pressScale(source, enabled = enabled && !LauncherSettings.launcherReducedMotion.state)
     androidx.compose.material3.OutlinedButton(
         onClick = onClick,
-        modifier = if (liquid) modifier.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else modifier,
+        modifier = if (liquid) pressable.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else pressable,
         enabled = enabled,
         shape = shape,
         colors = if (liquid) colors.copy(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent) else colors,
         elevation = elevation,
         border = border,
         contentPadding = contentPadding,
-        interactionSource = interactionSource ?: defaultSource,
+        interactionSource = source,
         content = content
     )
 }
@@ -168,16 +178,19 @@ fun TextButton(
 ) {
     val liquid = isLiquidGlassEnabled()
     val defaultSource = remember { MutableInteractionSource() }
+    val source = interactionSource ?: defaultSource
+    // XOYO: nút co nhẹ khi nhấn bằng lò xo; tắt khi bật "Giảm chuyển động"
+    val pressable = modifier.pressScale(source, enabled = enabled && !LauncherSettings.launcherReducedMotion.state)
     androidx.compose.material3.TextButton(
         onClick = onClick,
-        modifier = if (liquid) modifier.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else modifier,
+        modifier = if (liquid) pressable.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else pressable,
         enabled = enabled,
         shape = shape,
         colors = if (liquid) colors.copy(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent) else colors,
         elevation = elevation,
         border = border,
         contentPadding = contentPadding,
-        interactionSource = interactionSource ?: defaultSource,
+        interactionSource = source,
         content = content
     )
 }
@@ -193,16 +206,20 @@ fun IconButton(
     content: @Composable () -> Unit
 ) {
     val liquid = isLiquidGlassEnabled()
+    // Luôn gọi remember, không gọi có điều kiện, để trạng thái nhấn không lệch khi tham số đổi
+    val defaultSource = remember { MutableInteractionSource() }
+    val source = interactionSource ?: defaultSource
+    val pressable = modifier.pressScale(source, enabled = enabled && !LauncherSettings.launcherReducedMotion.state)
     // XOYO: không ép vùng chạm tối thiểu 48dp của Material. Nút đặt 34dp thì vẽ đúng 34dp,
     // nên các nút cạnh nhau (ví dụ nút tải và nút mũi tên trong thẻ cài đặt) không bị chồng lên nhau.
     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
         androidx.compose.material3.IconButton(
             onClick = onClick,
-            modifier = if (liquid) modifier.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else modifier,
+            modifier = if (liquid) pressable.liquidGlass(shape, glassTint(colors.containerColor, enabled), enabled) else pressable,
             enabled = enabled,
             shape = shape,
             colors = if (liquid) colors.copy(containerColor = Color.Transparent, disabledContainerColor = Color.Transparent) else colors,
-            interactionSource = interactionSource,
+            interactionSource = source,
             content = content
         )
     }

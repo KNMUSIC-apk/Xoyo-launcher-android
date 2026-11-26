@@ -19,7 +19,6 @@
 package com.movtery.zalithlauncher.ui.screens.content
 
 import android.view.WindowManager
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -59,7 +58,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInParent
@@ -585,7 +588,8 @@ private fun PetModelContent(
         }
     }
 
-    // XOYO: tên account nằm ngay trên đầu model skin. Model để nhỏ lại (scale 1.0), kéo trực tiếp để xoay skin.
+    // XOYO: tên account nằm giữa phía trên đầu model, nền trong suốt, có bóng chữ để dễ đọc.
+    // Model nằm giữa khung nên tên không lệch khi skin xoay.
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -594,15 +598,18 @@ private fun PetModelContent(
         if (!accountName.isNullOrEmpty()) {
             Text(
                 modifier = Modifier
-                    .padding(top = 6.dp, bottom = 2.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f),
-                        shape = MaterialTheme.shapes.small
-                    )
-                    .padding(horizontal = 10.dp, vertical = 2.dp),
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 4.dp),
                 text = accountName,
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleSmall.copy(
+                    shadow = Shadow(
+                        color = Color.Black.copy(alpha = 0.6f),
+                        offset = Offset(0f, 2f),
+                        blurRadius = 8f
+                    )
+                ),
                 color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

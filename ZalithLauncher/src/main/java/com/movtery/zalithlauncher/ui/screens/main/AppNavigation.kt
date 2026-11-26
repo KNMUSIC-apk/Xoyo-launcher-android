@@ -75,6 +75,19 @@ import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import com.movtery.zalithlauncher.ui.theme.XoyoMotion
+import com.movtery.zalithlauncher.ui.theme.pressScale
 
 /** Chiều rộng màn hình (dp) dưới ngưỡng này sẽ dùng thanh điều hướng dưới thay cho sidebar */
 val CompactWidthThreshold = 720.dp
@@ -225,6 +238,10 @@ fun ScreenBackStackViewModel.downloadDestination(): NavDestination = when (downl
 
 /**
  * Sidebar cho màn hình rộng. Thu gọn chỉ còn icon, mở rộng hiện tên.
+ *
+ * XOYO: mặt kính nổi, bo góc lớn và bóng mềm (Liquid Glass khi bật). Chiều rộng đổi bằng lò xo.
+ * Mục đang chọn có thanh nhấn trượt vào và icon nảy nhẹ. Hover đổi nền, nhấn thu nhỏ nhẹ.
+ * Vuốt ngang trên sidebar để mở hoặc thu gọn.
  * Trạng thái mở rộng được lưu lại trong cài đặt.
  */
 @Composable
@@ -235,6 +252,7 @@ fun AppSidebar(
 ) {
     val expanded = LauncherSettings.launcherSidebarExpanded.state
     val reducedMotion = LauncherSettings.launcherReducedMotion.state
+    val liquid = isLiquidGlassEnabled()
 
     //Trạng thái mở của từng nhóm thu gọn. Mặc định đóng, trừ các nhóm trong DefaultOpenNavGroups.
     val openGroups = remember { mutableStateListOf(*DefaultOpenNavGroups.toTypedArray()) }
@@ -249,16 +267,41 @@ fun AppSidebar(
 
     val width by animateDpAsState(
         targetValue = if (expanded) SidebarExpandedWidth else SidebarCollapsedWidth,
-        animationSpec = if (reducedMotion) snap() else tween(durationMillis = 220),
+        animationSpec = if (reducedMotion) snap() else XoyoMotion.soft(),
         label = "sidebarWidth"
     )
+
+    val panelShape = RoundedCornerShape(28.dp)
+
+    // Vuốt ngang: kéo sang phải thì mở, sang trái thì thu. Ngưỡng 48dp để tránh chạm nhầm.
+    val swipeThresholdPx = with(LocalDensity.current) { 48.dp.toPx() }
+    val swipeModifier = Modifier.pointerInput(Unit) {
+        var dragTotal = 0f
+        detectHorizontalDragGestures(
+            onDragStart = { dragTotal = 0f },
+            onDragEnd = {
+                when {
+                    dragTotal > swipeThresholdPx -> LauncherSettings.launcherSidebarExpanded.save(true)
+                    dragTotal < -swipeThresholdPx -> LauncherSettings.launcherSidebarExpanded.save(false)
+                }
+            },
+            onDragCancel = { dragTotal = 0f }
+        ) { _, dragAmount ->
+            dragTotal += dragAmount
+        }
+    }
 
     Surface(
         modifier = modifier
             .width(width)
-            .fillMaxHeight(),
-        color = cardColor(true),
-        contentColor = onCardColor()
+            .fillMaxHeight()
+            .padding(6.dp)
+            .then(if (liquid) Modifier.liquidGlass(panelShape, cardColor(true)) else Modifier)
+            .then(swipeModifier),
+        shape = panelShape,
+        color = if (liquid) Color.Transparent else cardColor(true),
+        contentColor = onCardColor(),
+        shadowElevation = if (liquid) 8.dp else 0.dp
     ) {
         Column(
             modifier = Modifier
@@ -333,8 +376,12 @@ fun AppSidebar(
                         )
                         AnimatedVisibility(
                             visible = open,
-                            enter = if (reducedMotion) EnterTransition.None else expandVertically() + fadeIn(),
-                            exit = if (reducedMotion) ExitTransition.None else shrinkVertically() + fadeOut()
+                            enter = if (reducedMotion) EnterTransition.None else expandVertically(
+                                animationSpec = XoyoMotion.soft()
+                            ) + fadeIn(),
+                            exit = if (reducedMotion) ExitTransition.None else shrinkVertically(
+                                animationSpec = XoyoMotion.soft()
+                            ) + fadeOut()
                         ) {
                             Column(
                                 modifier = Modifier.padding(start = if (expanded) 12.dp else 0.dp),
@@ -393,23 +440,42 @@ private fun SidebarGroupHeader(
     onClick: () -> Unit,
 ) {
     val title = stringResource(group.titleRes)
+    val source = remember { MutableInteractionSource() }
+    val hovered by source.collectIsHoveredAsState()
     val contentColor = if (containsSelected) {
         MaterialTheme.colorScheme.primary
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
+    val hoverColor by animateColorAsState(
+        targetValue = if (hovered) {
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f)
+        } else {
+            Color.Transparent
+        },
+        animationSpec = if (reducedMotion) snap() else XoyoMotion.soft(),
+        label = "sidebarGroupHover"
+    )
     val chevronRotation by animateFloatAsState(
         targetValue = if (open) 180f else 0f,
-        animationSpec = if (reducedMotion) snap() else tween(durationMillis = 180),
+        animationSpec = if (reducedMotion) snap() else XoyoMotion.bouncy(),
         label = "sidebarGroupChevron"
     )
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(40.dp)
+            .height(44.dp)
+            .pressScale(source, enabled = !reducedMotion)
             .clip(MaterialTheme.shapes.large)
-            .clickable(role = Role.Button, onClick = onClick)
+            .background(hoverColor)
+            .hoverable(source)
+            .clickable(
+                interactionSource = source,
+                indication = LocalIndication.current,
+                role = Role.Button,
+                onClick = onClick
+            )
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -450,15 +516,30 @@ private fun SidebarItem(
     onClick: () -> Unit,
 ) {
     val title = stringResource(destination.titleRes)
-    val targetBackground = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        Color.Transparent
+    val source = remember { MutableInteractionSource() }
+    val hovered by source.collectIsHoveredAsState()
+
+    val targetBackground = when {
+        selected -> MaterialTheme.colorScheme.primaryContainer
+        hovered -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f)
+        else -> Color.Transparent
     }
     val background by animateColorAsState(
         targetValue = targetBackground,
-        animationSpec = if (reducedMotion) snap() else tween(durationMillis = 160),
+        animationSpec = if (reducedMotion) snap() else XoyoMotion.soft(),
         label = "sidebarItemBackground"
+    )
+    // Thanh nhấn bên trái: trượt dài ra khi chọn, co lại khi bỏ chọn
+    val indicatorHeight by animateDpAsState(
+        targetValue = if (selected) 22.dp else 0.dp,
+        animationSpec = if (reducedMotion) snap() else XoyoMotion.bouncy(),
+        label = "sidebarIndicator"
+    )
+    // Icon nảy nhẹ khi được chọn
+    val iconScale by animateFloatAsState(
+        targetValue = if (selected) 1.08f else 1f,
+        animationSpec = if (reducedMotion) snap() else XoyoMotion.bouncy(),
+        label = "sidebarIconScale"
     )
     val contentColor = if (selected) {
         MaterialTheme.colorScheme.onPrimaryContainer
@@ -466,37 +547,58 @@ private fun SidebarItem(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(40.dp)
-            .clip(MaterialTheme.shapes.large)
-            .background(background)
-            .selectable(
-                selected = selected,
-                onClick = onClick,
-                role = Role.Tab
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+                .pressScale(source, enabled = !reducedMotion)
+                .clip(MaterialTheme.shapes.large)
+                .background(background)
+                .hoverable(source)
+                .selectable(
+                    selected = selected,
+                    interactionSource = source,
+                    indication = LocalIndication.current,
+                    role = Role.Tab,
+                    onClick = onClick
+                )
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                modifier = Modifier
+                    .size(22.dp)
+                    .graphicsLayer {
+                        scaleX = iconScale
+                        scaleY = iconScale
+                    },
+                painter = painterResource(destination.iconRes),
+                contentDescription = if (expanded) null else title,
+                tint = contentColor
             )
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Icon(
-            modifier = Modifier.size(22.dp),
-            painter = painterResource(destination.iconRes),
-            contentDescription = if (expanded) null else title,
-            tint = contentColor
-        )
-        if (expanded) {
-            Text(
-                modifier = Modifier.weight(1f),
-                text = title,
-                color = contentColor,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            if (expanded) {
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = title,
+                    color = contentColor,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 4.dp)
+                .width(3.dp)
+                .height(indicatorHeight)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary)
+        )
     }
 }
 
