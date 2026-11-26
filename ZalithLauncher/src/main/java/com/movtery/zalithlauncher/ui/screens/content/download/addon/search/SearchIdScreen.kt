@@ -366,8 +366,6 @@ private fun ResultLayout(
     val title = remember(project) { project.platformTitle() }
     val description = remember(project) { project.platformSummary() }
     val iconUrl = remember(project) { project.platformIconUrl() }
-    val authors = remember(project) { project.platformAuthors() }
-    val downloads = remember(project) { project.platformDownloadCount() }
     val modloaders = remember(project) { project.platformModLoaders() }
     val classes = remember(project) { project.platformClasses(defaultClasses) }
     val categories = remember(project, classes) { project.platformCategories(classes) }
@@ -383,13 +381,9 @@ private fun ResultLayout(
         item {
             ResultProjectLayout(
                 modifier = Modifier.fillMaxWidth(),
-                platform = platform,
                 title = mcmod.getMcmodTitle(title, context),
                 description = description,
-                classes = classes,
                 iconUrl = iconUrl,
-                authors = authors,
-                downloads = downloads,
                 modloaders = modloaders,
                 categories = categories?.sortedWith { o1, o2 -> o1.index() - o2.index() },
 //                isFavorite = FavoriteProjectsRepository.isFavorite(platform, project.platformId()),

@@ -166,6 +166,13 @@
     <string name="download_addon_filter_sort_by_total_downloads">Tổng lượt tải</string>
     <string name="download_addon_filter_sort_by_popularity">Phổ biến</string>
     <string name="download_addon_filter_sort_by_recently_created">Mới tạo</string>
+    <string name="download_addon_filter_instance">Phiên bản</string>
+    <string name="download_addon_filter_auto">Tự động</string>
+    <string name="download_addon_filter_all">Tất cả</string>
+    <string name="download_addon_installed">Đã cài</string>
+    <string name="download_addon_installing">Đang cài</string>
+    <string name="download_addon_no_compatible_version">Không tìm thấy phiên bản tương thích với phiên bản đang chọn.</string>
+    <string name="download_addon_install_fetch_versions_failed">Không lấy được danh sách phiên bản. Thử lại sau.</string>
     <string name="download_addon_filter_sort_by_recently_updated">Mới cập nhật</string>
     <string name="download_addon_result_previous_page">Trang trước</string>
     <string name="download_addon_result_next_page">Trang sau</string>

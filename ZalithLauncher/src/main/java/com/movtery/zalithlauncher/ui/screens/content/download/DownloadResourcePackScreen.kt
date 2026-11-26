@@ -109,7 +109,8 @@ fun DownloadResourcePackScreen(
                         mainScreenKey = mainScreenKey,
                         downloadScreenKey = downloadScreenKey,
                         downloadResourcePackScreenKey = key,
-                        downloadResourcePackScreenCurrentKey = downloadResourcePackScreenKey
+                        downloadResourcePackScreenCurrentKey = downloadResourcePackScreenKey,
+                        submitError = submitError
                     ) { platform, projectId, _ ->
                         backStack.navigateTo(
                             NormalNavKey.DownloadAddon(platform, projectId, PlatformClasses.RESOURCE_PACK)

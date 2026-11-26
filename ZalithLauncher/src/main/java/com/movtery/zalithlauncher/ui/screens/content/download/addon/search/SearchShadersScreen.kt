@@ -28,6 +28,7 @@ import com.movtery.zalithlauncher.game.download.addon.platform.modrinth.models.M
 import com.movtery.zalithlauncher.setting.MiscSettings
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
+import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
 
 @Composable
 fun SearchShadersScreen(
@@ -35,6 +36,7 @@ fun SearchShadersScreen(
     downloadScreenKey: TitledNavKey?,
     downloadShadersScreenKey: TitledNavKey,
     downloadShadersScreenCurrentKey: TitledNavKey?,
+    submitError: (ErrorViewModel.ThrowableMessage) -> Unit = {},
     swapToDownload: (Platform, projectId: String, iconUrl: String?) -> Unit = { _, _, _ -> }
 ) {
     val initialPlatform = remember {
@@ -68,6 +70,7 @@ fun SearchShadersScreen(
                 }
             }
         },
-        swapToDownload = swapToDownload
+        swapToDownload = swapToDownload,
+        submitError = submitError
     )
 }

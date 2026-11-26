@@ -450,6 +450,14 @@
     <!-- Sort option in the download search filter panel -->
     <string name="download_addon_filter_sort_by_recently_created">Recently Created</string>
     <!-- Sort option in the download search filter panel -->
+    <!-- XOYO: nhãn cho các viên lọc và nút cài trên trang tìm tài nguyên -->
+    <string name="download_addon_filter_instance">Instance</string>
+    <string name="download_addon_filter_auto">Auto</string>
+    <string name="download_addon_filter_all">All</string>
+    <string name="download_addon_installed">Installed</string>
+    <string name="download_addon_installing">Installing</string>
+    <string name="download_addon_no_compatible_version">No version compatible with the selected instance was found.</string>
+    <string name="download_addon_install_fetch_versions_failed">Could not retrieve the version list. Please try again later.</string>
     <string name="download_addon_filter_sort_by_recently_updated">Recently Updated</string>
     <!-- Label of the favorite toggle on project cards and detail pages -->
     <string name="favorite_add">Favorite</string>

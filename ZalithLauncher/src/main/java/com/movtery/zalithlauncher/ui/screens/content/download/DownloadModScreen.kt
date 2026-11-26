@@ -130,7 +130,12 @@ fun DownloadModScreen(
                         onPlatformChange = {
                             installedViewModel.onPlatformChanged(it)
                         },
-                        installedInfo = installedViewModel::checkProject
+                        installedInfo = installedViewModel::checkProject,
+                        submitError = submitError,
+                        onInstalled = {
+                            //资源文件已复制到模组目录，重新扫描以便标注“Đã cài”
+                            installedViewModel.scan(VersionsManager.currentVersion.value)
+                        }
                     ) { platform, projectId, _ ->
                         backStack.navigateTo(
                             NormalNavKey.DownloadAddon(platform, projectId, PlatformClasses.MOD)
