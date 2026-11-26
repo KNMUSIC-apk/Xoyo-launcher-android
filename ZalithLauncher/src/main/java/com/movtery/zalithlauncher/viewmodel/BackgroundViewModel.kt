@@ -36,6 +36,10 @@ import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.movtery.zalithlauncher.context.copyLocalFile
+import com.movtery.zalithlauncher.game.version.installed.Version
+
+import com.movtery.zalithlauncher.game.version.installed.VersionsManager
+
 import com.movtery.zalithlauncher.path.PathManager
 import com.movtery.zalithlauncher.setting.LauncherSettings
 import com.movtery.zalithlauncher.setting.enums.BackgroundBlur
@@ -52,7 +56,12 @@ import java.io.File
  * 启动器背景管理
  */
 class BackgroundViewModel: ViewModel() {
-    val backgroundFile: File = PathManager.FILE_LAUNCHER_BACKGROUND
+    /** Nền chung của launcher, do người dùng đặt trong Cài đặt */
+    private val globalBackgroundFile: File = PathManager.FILE_LAUNCHER_BACKGROUND
+
+    /** File nền đang hiển thị: nền riêng của phiên bản đang chọn, không có thì dùng nền chung */
+    var backgroundFile: File by mutableStateOf(globalBackgroundFile)
+        private set
 
     /**
      * 背景文件是否有效（存在，且是有效的视频或图片）
@@ -82,7 +91,7 @@ class BackgroundViewModel: ViewModel() {
     var backgroundBounds by mutableStateOf(Rect.Zero)
         private set
 
-    private val glassBlur = BackgroundGlassBlur(backgroundFile)
+    private val glassBlur = BackgroundGlassBlur(globalBackgroundFile)
 
     /**
      * Android 12+ 上由背景捕获节点维护的共享预模糊 GPU 层
@@ -140,6 +149,10 @@ class BackgroundViewModel: ViewModel() {
         viewModelScope.launch(Dispatchers.Main) {
             updateState()
         }
+        // XOYO: theo phiên bản đang chọn, đổi nền sang nền riêng của phiên bản đó
+        viewModelScope.launch {
+            VersionsManager.currentVersion.collect { applyVersion(it) }
+        }
 
         viewModelScope.launch {
             snapshotFlow {
@@ -164,20 +177,66 @@ class BackgroundViewModel: ViewModel() {
         }
     }
 
+    /**
+     * Đổi nền theo phiên bản đang chọn. Có nền riêng thì dùng, không thì quay về nền chung.
+     * @param force vẽ lại ngay cả khi đường dẫn không đổi (nền riêng vừa được thay)
+     */
+    private fun applyVersion(version: Version?, force: Boolean = false) {
+        val versionFile = version?.getBackgroundFile()?.takeIf { it.exists() }
+        val target = versionFile ?: globalBackgroundFile
+        if (target == backgroundFile && !force) return
+        backgroundFile = target
+        glassBlur.useFile(target)
+        viewModelScope.launch(Dispatchers.Main) { updateState() }
+    }
+
+    /** Vẽ lại nền nếu phiên bản vừa sửa đang được chọn */
+    private fun refreshIfCurrent(version: Version) {
+        val current = VersionsManager.currentVersion.value ?: return
+        if (current.getVersionName() == version.getVersionName()) {
+            applyVersion(current, force = true)
+        }
+    }
+
+    /**
+     * Đặt nền riêng cho một phiên bản. Có hiệu lực ngay nếu phiên bản đó đang được chọn.
+     */
+    suspend fun importVersionBackground(context: Context, result: Uri, version: Version) {
+        withContext(Dispatchers.IO) {
+            val target = version.getBackgroundFile()
+            target.parentFile?.mkdirs()
+            FileUtils.deleteQuietly(target)
+            context.copyLocalFile(result, target)
+            if (!target.isImageFile() && !target.isVideoFile()) {
+                FileUtils.deleteQuietly(target)
+                error("The selected file is not an image or a video!")
+            }
+        }
+        withContext(Dispatchers.Main) { refreshIfCurrent(version) }
+    }
+
+    /** Bỏ nền riêng của một phiên bản, quay về nền chung */
+    suspend fun clearVersionBackground(version: Version) {
+        withContext(Dispatchers.IO) {
+            FileUtils.deleteQuietly(version.getBackgroundFile())
+        }
+        withContext(Dispatchers.Main) { refreshIfCurrent(version) }
+    }
+
     suspend fun delete() {
         withContext(Dispatchers.IO) {
-            FileUtils.deleteQuietly(backgroundFile)
+            FileUtils.deleteQuietly(globalBackgroundFile)
             updateState()
         }
     }
 
     suspend fun import(context: Context, result: Uri) {
         withContext(Dispatchers.IO) {
-            FileUtils.deleteQuietly(backgroundFile)
-            context.copyLocalFile(result, backgroundFile)
-            if (!backgroundFile.isImageFile() && !backgroundFile.isVideoFile()) {
+            FileUtils.deleteQuietly(globalBackgroundFile)
+            context.copyLocalFile(result, globalBackgroundFile)
+            if (!globalBackgroundFile.isImageFile() && !globalBackgroundFile.isVideoFile()) {
                 //不是媒体类文件
-                FileUtils.deleteQuietly(backgroundFile)
+                FileUtils.deleteQuietly(globalBackgroundFile)
                 error("The selected file is not an image or a video!")
             }
             updateState()

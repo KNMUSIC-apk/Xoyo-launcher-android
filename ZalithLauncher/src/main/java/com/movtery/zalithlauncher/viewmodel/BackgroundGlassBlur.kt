@@ -48,7 +48,7 @@ private const val TAG = "BackgroundGlassBlur"
 /**
  * 背景玻璃模糊管线
  */
-class BackgroundGlassBlur(private val backgroundFile: File) {
+class BackgroundGlassBlur(private var backgroundFile: File) {
     var glassLayer by mutableStateOf<GraphicsLayer?>(null)
         private set
 
@@ -71,6 +71,12 @@ class BackgroundGlassBlur(private val backgroundFile: File) {
 
     fun attachCaptureLayer(layer: GraphicsLayer?) {
         captureLayer = layer
+    }
+
+    /** Đổi sang ảnh nền khác (nền riêng của phiên bản). Xóa bản mờ cũ để vẽ lại từ file mới. */
+    fun useFile(file: File) {
+        backgroundFile = file
+        clearBlurredBackground()
     }
 
     fun clearBlurredBackground() {
