@@ -46,6 +46,9 @@ import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
 import com.movtery.zalithlauncher.viewmodel.EventViewModel
 import com.movtery.zalithlauncher.viewmodel.ModpackImportViewModel
 import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
+import androidx.compose.runtime.CompositionLocalProvider
+import com.movtery.zalithlauncher.ui.components.DownloadRailTarget
+import com.movtery.zalithlauncher.ui.components.LocalDownloadRailSwitch
 
 /**
  * 导航至DownloadScreen
@@ -129,12 +132,17 @@ private fun NavigationUI(
     modifier: Modifier = Modifier
 ) {
     val backStack = key.backStack
+    // XOYO: rail trái trên trang tải chuyển loại tải qua màn Tải về, giống nhóm Tải về trên sidebar
+    val railSwitch: (DownloadRailTarget) -> Unit = { target ->
+        backScreenViewModel.navigateToDownload(backScreenViewModel.railTargetScreen(target))
+    }
     val stackTopKey = backStack.lastOrNull()
     LaunchedEffect(stackTopKey) {
         backScreenViewModel.downloadScreen.currentKey = stackTopKey
     }
 
     if (backStack.isNotEmpty()) {
+        CompositionLocalProvider(LocalDownloadRailSwitch provides railSwitch) {
         NestedNavDisplay(
             ownerKey = key,
             backStack = backStack,
@@ -250,7 +258,17 @@ private fun NavigationUI(
                 }
             }
         )
+        }
     } else {
         Box(modifier)
     }
+}
+
+/** Màn tải tương ứng với mục trên rail trái */
+private fun ScreenBackStackViewModel.railTargetScreen(target: DownloadRailTarget): TitledNavKey = when (target) {
+    DownloadRailTarget.MOD -> downloadModScreen
+    DownloadRailTarget.MODPACK -> downloadModPackScreen
+    DownloadRailTarget.RESOURCE_PACK -> downloadResourcePackScreen
+    DownloadRailTarget.SHADER -> downloadShadersScreen
+    DownloadRailTarget.WORLD -> downloadSavesScreen
 }
