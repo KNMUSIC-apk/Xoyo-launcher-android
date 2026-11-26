@@ -109,7 +109,8 @@ fun DownloadShadersScreen(
                         mainScreenKey = mainScreenKey,
                         downloadScreenKey = downloadScreenKey,
                         downloadShadersScreenKey = key,
-                        downloadShadersScreenCurrentKey = downloadShadersScreenKey
+                        downloadShadersScreenCurrentKey = downloadShadersScreenKey,
+                        submitError = submitError
                     ) { platform, projectId, _ ->
                         backStack.navigateTo(
                             NormalNavKey.DownloadAddon(platform, projectId, PlatformClasses.SHADERS)

@@ -22,15 +22,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import com.movtery.zalithlauncher.components.InstallableItem
 import com.movtery.zalithlauncher.legal.AvailableAgreement
-import com.movtery.zalithlauncher.ui.base.BaseScreen
-import com.movtery.zalithlauncher.ui.components.AnimatedDirection
-import com.movtery.zalithlauncher.ui.components.animated
-import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
-import com.movtery.zalithlauncher.ui.screens.EmptyLoadingScreen
 import com.movtery.zalithlauncher.ui.screens.NavStateHost
 import com.movtery.zalithlauncher.ui.screens.NestedNavDisplay
 import com.movtery.zalithlauncher.ui.screens.rememberTransitionSpec
@@ -43,6 +40,8 @@ import kotlinx.coroutines.flow.StateFlow
  * @param onExitClick 架构不匹配屏幕的退出按钮
  * @param availableAgreement 完整的可用协议数据
  * @param unpackItems 解压任务列表
+ * @param loadingState 启动初始化的真实进度与错误状态
+ * @param onRetryLoading 启动失败后的重试回调
  */
 @Composable
 fun SplashScreen(
@@ -51,7 +50,9 @@ fun SplashScreen(
     onExitClick: () -> Unit = {},
     availableAgreement: StateFlow<AvailableAgreement?>,
     unpackItems: List<InstallableItem>,
-    screenViewModel: SplashBackStackViewModel
+    screenViewModel: SplashBackStackViewModel,
+    loadingState: StateFlow<SplashLoadingState>,
+    onRetryLoading: () -> Unit = {}
 ) {
     NavStateHost(rootKey = screenViewModel.splashScreen) {
         NavigationUI(
@@ -61,7 +62,9 @@ fun SplashScreen(
             onExitClick = onExitClick,
             availableAgreement = availableAgreement,
             unpackItems = unpackItems,
-            screenViewModel = screenViewModel
+            screenViewModel = screenViewModel,
+            loadingState = loadingState,
+            onRetryLoading = onRetryLoading
         )
     }
 }
@@ -74,7 +77,9 @@ private fun NavigationUI(
     onExitClick: () -> Unit = {},
     availableAgreement: StateFlow<AvailableAgreement?>,
     unpackItems: List<InstallableItem>,
-    screenViewModel: SplashBackStackViewModel
+    screenViewModel: SplashBackStackViewModel,
+    loadingState: StateFlow<SplashLoadingState>,
+    onRetryLoading: () -> Unit = {}
 ) {
     val backStack = screenViewModel.splashScreen.backStack
 
@@ -93,7 +98,10 @@ private fun NavigationUI(
             popTransitionSpec = rememberTransitionSpec(),
             entryProvider = entryProvider {
                 entry<SplashOperation.Loading> {
-                    LoadingScreen(screenViewModel = screenViewModel)
+                    LoadingScreen(
+                        loadingState = loadingState,
+                        onRetryLoading = onRetryLoading
+                    )
                 }
                 entry<SplashOperation.Welcome> {
                     WelcomeScreen(
@@ -123,18 +131,20 @@ private fun NavigationUI(
     }
 }
 
+/**
+ * XOYO: màn loading hiện ngay, không bọc trong BaseScreen và không trượt/hiện dần,
+ * nên không còn khoảng chờ giữa logo và thanh tiến trình.
+ */
 @Composable
 private fun LoadingScreen(
-    screenViewModel: SplashBackStackViewModel
+    loadingState: StateFlow<SplashLoadingState>,
+    onRetryLoading: () -> Unit
 ) {
-    BaseScreen(
-        screenKey = SplashOperation.Loading,
-        currentKey = screenViewModel.splashScreen.currentKey
-    ) { isVisible ->
-        val ctx = rememberAnimatedContext(isVisible = isVisible)
+    val state by loadingState.collectAsStateWithLifecycle()
 
-        EmptyLoadingScreen(
-            modifier = Modifier.animated(ctx, from = AnimatedDirection.Bottom)
-        )
-    }
+    SplashLoadingScreen(
+        modifier = Modifier.fillMaxSize(),
+        state = state,
+        onRetry = onRetryLoading
+    )
 }

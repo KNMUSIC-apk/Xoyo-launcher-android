@@ -86,6 +86,14 @@
     <string name="splash_screen_unpack_desc">Trình khởi chạy cần giải nén mấy thứ này thì Minecraft mới chạy được. Chúng đã có sẵn trong ứng dụng, cần giải phóng ra. Bấm nút bên dưới để tiến hành và cập nhật.</string>
     <string name="splash_screen_installing">Trình khởi chạy đang giải nén, xong sẽ tự vào màn hình chính. Chờ tí nhé.</string>
     <string name="splash_screen_agree">Cài đặt</string>
+    <string name="splash_loading_preparing">Đang chuẩn bị…</string>
+    <string name="splash_loading_checking">Đang kiểm tra %1$s…</string>
+    <string name="splash_loading_agreement">Đang tải thỏa thuận…</string>
+    <string name="splash_loading_finishing">Đang hoàn tất…</string>
+    <string name="splash_loading_percent">%1$d%%</string>
+    <string name="splash_loading_version">Phiên bản %1$s</string>
+    <string name="splash_loading_error_title">Không thể hoàn tất khởi động</string>
+    <string name="splash_loading_retry">Thử lại</string>
     <string name="splash_arch_mismatch_title">Có vẻ bạn đã cài đặt sai phiên bản!</string>
     <string name="splash_arch_mismatch_package_arch">Kiến trúc bản dựng của trình khởi chạy đã cài đặt: %s</string>
     <string name="splash_arch_mismatch_device_arch">Kiến trúc thiết bị của bạn: %s</string>
@@ -158,6 +166,13 @@
     <string name="download_addon_filter_sort_by_total_downloads">Tổng lượt tải</string>
     <string name="download_addon_filter_sort_by_popularity">Phổ biến</string>
     <string name="download_addon_filter_sort_by_recently_created">Mới tạo</string>
+    <string name="download_addon_filter_instance">Phiên bản</string>
+    <string name="download_addon_filter_auto">Tự động</string>
+    <string name="download_addon_filter_all">Tất cả</string>
+    <string name="download_addon_installed">Đã cài</string>
+    <string name="download_addon_installing">Đang cài</string>
+    <string name="download_addon_no_compatible_version">Không tìm thấy phiên bản tương thích với phiên bản đang chọn.</string>
+    <string name="download_addon_install_fetch_versions_failed">Không lấy được danh sách phiên bản. Thử lại sau.</string>
     <string name="download_addon_filter_sort_by_recently_updated">Mới cập nhật</string>
     <string name="download_addon_result_previous_page">Trang trước</string>
     <string name="download_addon_result_next_page">Trang sau</string>
@@ -486,6 +501,8 @@
     <string name="versions_manage_task_error">Lỗi khi thao tác phiên bản</string>
     <string name="versions_manage_install_new">Cài game mới</string>
     <string name="versions_manage_settings">Cài đặt</string>
+    <string name="versions_manage_select">Chọn</string>
+    <string name="versions_manage_selected">Đã chọn</string>
     <string name="versions_settings_overview">Tổng quan</string>
     <string name="versions_settings_overview_management">Quản lý</string>
     <string name="versions_settings_overview_quick_actions">Thao tác nhanh</string>
@@ -1607,6 +1624,8 @@
     <string name="nav_accounts">Tài khoản</string>
     <string name="nav_performance">Hiệu năng</string>
     <string name="nav_settings">Cài đặt</string>
+    <string name="nav_files">Tệp</string>
+    <string name="nav_lan">Chơi LAN</string>
     <string name="nav_collapse">Thu gọn menu</string>
     <string name="nav_expand">Mở rộng menu</string>
     <string name="nav_more">Thêm</string>
@@ -1802,4 +1821,17 @@
     <string name="world_backup_action">Sao lưu thế giới</string>
     <string name="world_backup_success">Đã sao lưu thế giới vào %1$s</string>
     <string name="world_backup_failed">Sao lưu thế giới thất bại</string>
+
+    <!-- XOYO: độ mờ chữ, Liquid Glass, font tùy chỉnh, ẩn/hiện tổng quan trên trang chủ -->
+    <string name="settings_launcher_text_opacity_title">Độ mờ chữ</string>
+    <string name="settings_launcher_text_opacity_summary">Kéo tăng để chữ rõ hơn và không bị chìm vào nền. Kéo giảm để chữ trong suốt hơn.</string>
+    <string name="settings_launcher_liquid_glass_title">Liquid Glass</string>
+    <string name="settings_launcher_liquid_glass_summary">Nút, thanh trượt và thẻ có hiệu ứng kính. Tắt để dùng giao diện Material gốc.</string>
+    <string name="settings_launcher_font_title">Font chữ</string>
+    <string name="settings_launcher_font_summary">Chọn file .ttf hoặc .otf để dùng cho toàn bộ launcher. Bấm Đặt lại để về font mặc định.</string>
+    <string name="settings_launcher_font_import_error">Không nhập được font</string>
+    <string name="home_overview_hide">Ẩn tổng quan</string>
+    <string name="home_overview_show">Hiện tổng quan</string>
+    <string name="versions_manage_set_background">Đặt nền riêng</string>
+    <string name="versions_manage_reset_background">Bỏ nền riêng</string>
 </resources>

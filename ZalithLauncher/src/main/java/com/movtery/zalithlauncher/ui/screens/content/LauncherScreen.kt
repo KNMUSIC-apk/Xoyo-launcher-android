@@ -36,12 +36,11 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
+import com.movtery.zalithlauncher.ui.components.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.movtery.zalithlauncher.ui.components.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -53,10 +52,11 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
@@ -80,7 +80,6 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.movtery.cardgrid.state.rememberCardGridState
 import com.movtery.guide.GuideSide
 import com.movtery.guide.LocalGuideStep
 import com.movtery.guide.guideNode
@@ -101,6 +100,8 @@ import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.CutoutBox
 import com.movtery.zalithlauncher.ui.components.MarqueeText
 import com.movtery.zalithlauncher.ui.components.PetModelView
+import com.movtery.zalithlauncher.ui.components.rememberShootingStarsState
+import com.movtery.zalithlauncher.ui.components.ShootingStarsOverlay
 import com.movtery.zalithlauncher.ui.components.animated
 import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
 import com.movtery.zalithlauncher.ui.guide.GuideKeys
@@ -111,7 +112,6 @@ import com.movtery.zalithlauncher.ui.screens.content.elements.CommonVersionInfoL
 import com.movtery.zalithlauncher.ui.screens.content.elements.PlayerFace
 import com.movtery.zalithlauncher.ui.screens.content.elements.VersionIconImage
 import com.movtery.zalithlauncher.ui.screens.content.home.DashboardOverview
-import com.movtery.zalithlauncher.ui.screens.content.home.HomeGrid
 import com.movtery.zalithlauncher.ui.screens.content.home.LocalActionMenuDrag
 import com.movtery.zalithlauncher.ui.screens.content.home.QuickAction
 import com.movtery.zalithlauncher.ui.screens.content.home.actionMenuDragAnchor
@@ -168,11 +168,23 @@ fun LauncherScreen(
             if (!isVisible) dragState.onDragCancel()
         }
 
+        // Theo dõi tương tác để bật sao băng khi sảnh rảnh (xem ShootingStars.kt).
+        val shootingStars = rememberShootingStarsState()
+
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .onGloballyPositioned { coordinates ->
                     dragState.parentOrigin = coordinates.positionInRoot()
+                }
+                .pointerInput(shootingStars) {
+                    // Chỉ quan sát ở lượt Initial, không tiêu thụ sự kiện nên các nút vẫn hoạt động bình thường.
+                    awaitPointerEventScope {
+                        while (true) {
+                            awaitPointerEvent(PointerEventPass.Initial)
+                            shootingStars.notifyInteraction()
+                        }
+                    }
                 }
         ) {
             val parentWidthPx = constraints.maxWidth.toFloat()
@@ -226,7 +238,6 @@ fun LauncherScreen(
                             )
                             .weight(ContentWeight)
                             .offset { IntOffset(x = dragState.previewShift.value.roundToInt(), y = 0) },
-                        isVisible = isVisible,
                         onLaunchGame = { version ->
                             onLaunchGame(version)
                         },
@@ -271,16 +282,19 @@ fun LauncherScreen(
                     )
                 }
             }
+
+            // Sao băng khi sảnh không có tương tác; lớp này không nhận chạm.
+            ShootingStarsOverlay(
+                state = shootingStars,
+                enabled = isVisible,
+                modifier = Modifier.matchParentSize()
+            )
         }
     }
 }
 
-/** Hai chế độ của trang chủ: Tổng quan (XOYO) và Thẻ (giao diện thẻ có sẵn) */
-private enum class HomeTab { OVERVIEW, CARDS }
-
 @Composable
 private fun ContentMenu(
-    isVisible: Boolean,
     onLaunchGame: (Version) -> Unit,
     onQuickPlayServer: (Version?, String) -> Unit,
     onOpenVersionSettings: (Version) -> Unit,
@@ -289,9 +303,8 @@ private fun ContentMenu(
     onOpenLink: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val ctx = rememberAnimatedContext(isVisible = isVisible)
-    val gridState = rememberCardGridState()
-    var tab by rememberSaveable { mutableStateOf(HomeTab.OVERVIEW) }
+    // Nút ẩn/hiện Tổng quan để nhìn rõ nền phía sau. Trạng thái được lưu lại cho lần mở sau.
+    val overviewHidden = LauncherSettings.launcherHomeOverviewHidden.state
 
     CompositionLocalProvider(
         LocalHomeCardLauncher provides onLaunchGame,
@@ -300,30 +313,13 @@ private fun ContentMenu(
     ) {
         Box(modifier = modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = tab == HomeTab.OVERVIEW,
-                        onClick = { tab = HomeTab.OVERVIEW },
-                        label = { Text(stringResource(R.string.home_tab_overview)) }
-                    )
-                    FilterChip(
-                        selected = tab == HomeTab.CARDS,
-                        onClick = { tab = HomeTab.CARDS },
-                        label = { Text(stringResource(R.string.home_tab_cards)) }
-                    )
-                }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    when (tab) {
-                        HomeTab.OVERVIEW -> DashboardOverview(
+                    if (!overviewHidden) {
+                        DashboardOverview(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(horizontal = 12.dp),
@@ -332,13 +328,6 @@ private fun ContentMenu(
                             onQuickAction = onQuickAction,
                             onNavigate = onNavigate,
                             onOpenLink = onOpenLink
-                        )
-                        HomeTab.CARDS -> HomeGrid(
-                            state = gridState,
-                            isVisible = isVisible,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .animated(ctx)
                         )
                     }
                 }
@@ -594,31 +583,22 @@ private fun PetModelContent(
         }
     }
 
-    // XOYO: nút xoay mô hình, mỗi lần xoay 45 độ
-    var yawStep by remember { mutableIntStateOf(0) }
-    val yawWithStep = yaw + Math.toRadians(yawStep.toDouble()).toFloat()
-
-    Box(modifier = modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         PetModelView(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
             skin = skinBytes,
             cape = capeBytes,
             arm = armModel,
-            yaw = yawWithStep,
+            yaw = yaw,
             animation = PetAnimation.Idle,
             tapReaction = PetTapReaction.Interact,
-            dragYaw = false
+            dragYaw = true
         )
-        IconButton(
-            modifier = Modifier.align(Alignment.TopEnd),
-            onClick = { yawStep = (yawStep + 45) % 360 }
-        ) {
-            Icon(
-                modifier = Modifier.size(20.dp),
-                painter = painterResource(R.drawable.ic_refresh),
-                contentDescription = stringResource(R.string.hero_rotate_model)
-            )
-        }
     }
 }
 

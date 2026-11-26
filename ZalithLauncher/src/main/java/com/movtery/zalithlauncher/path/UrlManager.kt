@@ -79,8 +79,8 @@ private fun isCurseForgeHost(host: String): Boolean =
 private val CURSEFORGE_INTERCEPTOR = Interceptor { chain ->
     val request = chain.request()
     if (isCurseForgeHost(request.url.host)) {
-        val apiKey = BuildKeys.CURSEFORGE_API
-        if (apiKey.isNotBlank()) {
+        val apiKey = curseForgeApiKey()
+        if (apiKey != null) {
             val newRequest = request.newBuilder()
                 .header("x-api-key", apiKey)
                 .build()
@@ -88,6 +88,19 @@ private val CURSEFORGE_INTERCEPTOR = Interceptor { chain ->
         }
     }
     chain.proceed(request)
+}
+
+/**
+ * Khóa CurseForge dùng cho header `x-api-key`.
+ *
+ * Khóa lấy từ biến môi trường hoặc GitHub secret có thể dính khoảng trắng hoặc ký tự xuống dòng.
+ * OkHttp sẽ ném lỗi khi gắn một header có ký tự điều khiển, khiến *mọi* yêu cầu CurseForge thất bại.
+ * Vì vậy khóa được làm sạch trước. Nếu sau khi làm sạch vẫn còn ký tự không hợp lệ thì coi như không có khóa.
+ */
+fun curseForgeApiKey(): String? {
+    val key = BuildKeys.CURSEFORGE_API.trim()
+    if (key.isEmpty() || key.any { it.code < 0x20 || it.code > 0x7E }) return null
+    return key
 }
 
 /**
@@ -144,8 +157,7 @@ val GLOBAL_CLIENT = HttpClient(OkHttp) {
 }.apply {
     requestPipeline.intercept(HttpRequestPipeline.State) {
         if (isCurseForgeHost(context.url.host)) {
-            val apiKey = BuildKeys.CURSEFORGE_API
-            if (apiKey.isNotBlank()) {
+            curseForgeApiKey()?.let { apiKey ->
                 context.header("x-api-key", apiKey)
             }
         }

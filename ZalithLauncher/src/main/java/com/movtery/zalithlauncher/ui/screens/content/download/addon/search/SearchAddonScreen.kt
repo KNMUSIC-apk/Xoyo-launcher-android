@@ -18,39 +18,51 @@
 
 package com.movtery.zalithlauncher.ui.screens.content.download.addon.search
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.movtery.zalithlauncher.R
+import com.movtery.zalithlauncher.game.download.addon.DependencyRequest
+import com.movtery.zalithlauncher.game.download.addon.downloadDependenciesForVersions
+import com.movtery.zalithlauncher.game.download.addon.downloadSingleForVersions
 import com.movtery.zalithlauncher.game.download.addon.platform.Platform
 import com.movtery.zalithlauncher.game.download.addon.platform.PlatformClasses
+import com.movtery.zalithlauncher.game.download.addon.platform.PlatformDependencyType
 import com.movtery.zalithlauncher.game.download.addon.platform.PlatformDisplayLabel
 import com.movtery.zalithlauncher.game.download.addon.platform.PlatformFilterCode
 import com.movtery.zalithlauncher.game.download.addon.platform.PlatformSearchFilter
 import com.movtery.zalithlauncher.game.download.addon.platform.PlatformSearchResult
+import com.movtery.zalithlauncher.game.download.addon.platform.getVersions
 import com.movtery.zalithlauncher.game.download.addon.platform.navigatePage
 import com.movtery.zalithlauncher.game.download.addon.platform.nextPage
 import com.movtery.zalithlauncher.game.download.addon.platform.previousPage
 import com.movtery.zalithlauncher.game.download.addon.platform.searchAddons
 import com.movtery.zalithlauncher.game.download.addon.utils.searchMcMods
+import com.movtery.zalithlauncher.game.version.installed.VersionsManager
 import com.movtery.zalithlauncher.game.version.mod.InstalledMod
 import com.movtery.zalithlauncher.game.versioninfo.MinecraftVersion
 import com.movtery.zalithlauncher.game.versioninfo.MinecraftVersions
 import com.movtery.zalithlauncher.game.versioninfo.popularVersions
 import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.AnimatedDirection
+import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import com.movtery.zalithlauncher.ui.components.animated
 import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
@@ -59,7 +71,10 @@ import com.movtery.zalithlauncher.ui.screens.content.download.addon.elements.Add
 import com.movtery.zalithlauncher.ui.screens.content.download.addon.elements.ResultListLayout
 import com.movtery.zalithlauncher.ui.screens.content.download.addon.elements.SearchAddonState
 import com.movtery.zalithlauncher.ui.screens.content.download.addon.elements.SearchFilter
+import com.movtery.zalithlauncher.ui.screens.content.download.addon.elements.initAll
+import com.movtery.zalithlauncher.ui.screens.content.download.addon.elements.mapWithVersions
 import com.movtery.zalithlauncher.utils.logging.Logger
+import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -253,6 +268,8 @@ private fun rememberSearchAddonViewModel(
  * @param mapCategories 通过平台获取类别本地化信息
  * @param swapToDownload 跳转到下载详情页
  * @param installedInfo 查询项目本地是否已安装，键为平台与平台项目ID
+ * @param submitError 提交安装错误
+ * @param onInstalled 资源文件已复制到版本目录，通知外部刷新已安装标注
  * @param extraFilter 额外的过滤器UI
  */
 @Composable
@@ -272,7 +289,9 @@ fun SearchAddonScreen(
     mapCategories: (Platform, String) -> PlatformFilterCode?,
     swapToDownload: (Platform, projectId: String, iconUrl: String?) -> Unit = { _, _, _ -> },
     installedInfo: ((Platform, projectId: String) -> InstalledMod?)? = null,
-    extraFilter: (LazyListScope.() -> Unit)? = null
+    submitError: (ErrorViewModel.ThrowableMessage) -> Unit = {},
+    onInstalled: () -> Unit = {},
+    extraFilter: (@Composable () -> Unit)? = null
 ) {
     val viewModel: SearchScreenViewModel = rememberSearchAddonViewModel(
         navKey = screenKey,
@@ -288,6 +307,79 @@ fun SearchAddonScreen(
         getModloaders(viewModel.searchPlatform)
     }
 
+    val scope = rememberCoroutineScope()
+    //正在安装的项目，键为平台与平台项目ID
+    var installingKey by remember { mutableStateOf<String?>(null) }
+    //安装前检查失败的提示
+    var installMessage by remember { mutableStateOf<Int?>(null) }
+
+    /**
+     * 一键安装：取与当前版本适配的最新资源版本，下载到当前版本对应目录
+     * 模组还要带上必装依赖；整合包需要单独安装整个版本，这里不处理
+     */
+    fun installAddon(platform: Platform, projectId: String, classes: PlatformClasses) {
+        val targetVersion = VersionsManager.currentVersion.value
+        if (targetVersion == null) {
+            installMessage = R.string.download_addon_no_installed_versions
+            return
+        }
+        if (classes == PlatformClasses.MOD_PACK) return
+
+        installingKey = "${platform.name}:$projectId"
+        scope.launch {
+            try {
+                val versions = getVersions(projectID = projectId, platform = platform)
+                val adapt = versions.initAll(projectId)
+                    .mapWithVersions(classes)
+                    .firstOrNull { it.isAdapt }
+                    ?.versions
+                    ?.firstOrNull()
+                if (adapt == null) {
+                    installMessage = R.string.download_addon_no_compatible_version
+                    return@launch
+                }
+
+                downloadSingleForVersions(
+                    version = adapt,
+                    versions = listOf(targetVersion),
+                    folder = classes.versionFolder.folderName,
+                    onFileCopied = { _, _ ->
+                        //回调在下载任务的线程上执行，切回主线程再刷新已安装标注
+                        withContext(Dispatchers.Main) { onInstalled() }
+                    },
+                    submitError = submitError
+                )
+
+                if (classes == PlatformClasses.MOD) {
+                    val dependencies = adapt.platformDependencies()
+                        .filter { it.type == PlatformDependencyType.REQUIRED }
+                        .mapNotNull { dependency ->
+                            val dependencyProjectId = dependency.projectId ?: return@mapNotNull null
+                            DependencyRequest(
+                                platform = dependency.platform,
+                                projectId = dependencyProjectId,
+                                versionId = dependency.versionId,
+                                classes = PlatformClasses.MOD,
+                                projectTitle = dependencyProjectId
+                            )
+                        }
+                    downloadDependenciesForVersions(
+                        requests = dependencies,
+                        versions = listOf(targetVersion),
+                        submitError = submitError
+                    )
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                Logger.warning(TAG, "Failed to install the addon $projectId", e)
+                installMessage = R.string.download_addon_install_fetch_versions_failed
+            } finally {
+                installingKey = null
+            }
+        }
+    }
+
     BaseScreen(
         levels1 = listOf(
             Pair(NestedNavKey.Download::class.java, mainScreenKey)
@@ -295,120 +387,140 @@ fun SearchAddonScreen(
         Triple(parentScreenKey, parentCurrentKey, false),
         Triple(screenKey, currentKey, false)
     ) { isVisible ->
-        Row {
-            val resultCtx = rememberAnimatedContext(isVisible = isVisible)
-            ResultListLayout(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .weight(7f)
-                    .animated(resultCtx),
-                classes = platformClasses,
-                searchState = viewModel.searchResult,
-                onReload = {
-                    viewModel.search()
-                },
-                swapToDownload = swapToDownload,
-                installedInfo = installedInfo,
-                onPreviousPage = { pageNumber ->
-                    previousPage(
-                        pageNumber = pageNumber,
-                        pages = viewModel.pages,
-                        index = viewModel.searchFilter.index,
-                        limit = viewModel.searchFilter.limit,
-                        onSuccess = { previousPage ->
-                            viewModel.searchResult = SearchAddonState.Success(previousPage)
-                        },
-                        onSearch = { newIndex ->
-                            viewModel.searchFilter = viewModel.searchFilter.copy(index = newIndex)
-                            viewModel.search() //搜索上一页
-                        }
-                    )
-                },
-                onNextPage = { pageNumber, isLastPage ->
-                    nextPage(
-                        pageNumber = pageNumber,
-                        isLastPage = isLastPage,
-                        pages = viewModel.pages,
-                        index = viewModel.searchFilter.index,
-                        limit = viewModel.searchFilter.limit,
-                        onSuccess = { nextPage ->
-                            viewModel.searchResult = SearchAddonState.Success(nextPage)
-                        },
-                        onSearch = { newIndex ->
-                            viewModel.searchFilter = viewModel.searchFilter.copy(index = newIndex)
-                            viewModel.search() //搜索下一页
-                        }
-                    )
-                },
-                onNavigatePage = { pageNumber ->
-                    navigatePage(
-                        pageNumber = pageNumber,
-                        pages = viewModel.pages,
-                        limit = viewModel.searchFilter.limit,
-                        onSuccess = { nextPage ->
-                            viewModel.searchResult = SearchAddonState.Success(nextPage)
-                        },
-                        onSearch = { newIndex ->
-                            viewModel.searchFilter = viewModel.searchFilter.copy(index = newIndex)
-                            viewModel.search() //搜索目标页
-                        }
-                    )
-                }
-            )
+        Row(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                // XOYO: thanh lọc nằm trên cùng, danh sách kết quả chiếm phần còn lại bên dưới
+                val filterCtx = rememberAnimatedContext(isVisible = isVisible)
+                val searchedMcMods by viewModel.searchedMcMods.collectAsStateWithLifecycle()
+                val searchedVersions by viewModel.searchedVersions.collectAsStateWithLifecycle()
+                SearchFilter(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animated(filterCtx, from = AnimatedDirection.Top),
+                    contentPadding = PaddingValues(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 4.dp),
+                    enablePlatform = enablePlatform,
+                    searchPlatform = viewModel.searchPlatform,
+                    onPlatformChange = {
+                        viewModel.searchPlatform = it
+                        viewModel.researchWithFilter(
+                            viewModel.searchFilter.copy(categories = emptyList(), modloader = null)
+                        )
+                        onPlatformChange(it)
+                    },
+                    searchName = viewModel.searchFilter.searchName,
+                    onSearchNameChange = {
+                        viewModel.updateNameFilter(it)
+                    },
+                    onSearch = {
+                        viewModel.resetSearch()
+                    },
+                    searchedMcMods = searchedMcMods,
+                    searchedVersions = searchedVersions,
+                    gameVersion = viewModel.searchFilter.gameVersion,
+                    onGameVersionChange = {
+                        viewModel.updateVersionFilter(it)
+                    },
+                    sortField = viewModel.searchFilter.sortField,
+                    onSortFieldChange = {
+                        viewModel.researchWithFilter(
+                            viewModel.searchFilter.copy(sortField = it)
+                        )
+                    },
+                    allCategories = categories,
+                    categories = viewModel.searchFilter.categories,
+                    onCategoryChanged = { categories ->
+                        viewModel.researchWithFilter(
+                            viewModel.searchFilter.copy(categories = categories)
+                        )
+                    },
+                    enableModLoader = enableModLoader,
+                    modloaders = modloaders,
+                    modloader = viewModel.searchFilter.modloader,
+                    onModLoaderChange = {
+                        viewModel.researchWithFilter(
+                            viewModel.searchFilter.copy(modloader = it)
+                        )
+                    },
+                    extraFilter = extraFilter
+                )
 
-            val filterCtx = rememberAnimatedContext(isVisible = isVisible)
-            val searchedMcMods by viewModel.searchedMcMods.collectAsStateWithLifecycle()
-            val searchedVersions by viewModel.searchedVersions.collectAsStateWithLifecycle()
-            SearchFilter(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .weight(3f)
-                    .animated(filterCtx, from = AnimatedDirection.Right),
-                contentPadding = PaddingValues(top = 12.dp, bottom = 12.dp, end = 12.dp),
-                enablePlatform = enablePlatform,
-                searchPlatform = viewModel.searchPlatform,
-                onPlatformChange = {
-                    viewModel.searchPlatform = it
-                    viewModel.researchWithFilter(
-                        viewModel.searchFilter.copy(categories = emptyList(), modloader = null)
-                    )
-                    onPlatformChange(it)
-                },
-                searchName = viewModel.searchFilter.searchName,
-                onSearchNameChange = {
-                    viewModel.updateNameFilter(it)
-                },
-                onSearch = {
-                    viewModel.resetSearch()
-                },
-                searchedMcMods = searchedMcMods,
-                searchedVersions = searchedVersions,
-                gameVersion = viewModel.searchFilter.gameVersion,
-                onGameVersionChange = {
-                    viewModel.updateVersionFilter(it)
-                },
-                sortField = viewModel.searchFilter.sortField,
-                onSortFieldChange = {
-                    viewModel.researchWithFilter(
-                        viewModel.searchFilter.copy(sortField = it)
-                    )
-                },
-                allCategories = categories,
-                categories = viewModel.searchFilter.categories,
-                onCategoryChanged = { categories ->
-                    viewModel.researchWithFilter(
-                        viewModel.searchFilter.copy(categories = categories)
-                    )
-                },
-                enableModLoader = enableModLoader,
-                modloaders = modloaders,
-                modloader = viewModel.searchFilter.modloader,
-                onModLoaderChange = {
-                    viewModel.researchWithFilter(
-                        viewModel.searchFilter.copy(modloader = it)
-                    )
-                },
-                extraFilter = extraFilter
+                val resultCtx = rememberAnimatedContext(isVisible = isVisible)
+                ResultListLayout(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .animated(resultCtx),
+                    classes = platformClasses,
+                    searchState = viewModel.searchResult,
+                    onReload = {
+                        viewModel.search()
+                    },
+                    swapToDownload = swapToDownload,
+                    installedInfo = installedInfo,
+                    installingKey = installingKey,
+                    onInstall = if (platformClasses != PlatformClasses.MOD_PACK) {
+                        { platform, projectId, classes -> installAddon(platform, projectId, classes) }
+                    } else {
+                        //整合包需要安装整个版本，走项目详情页
+                        null
+                    },
+                    onPreviousPage = { pageNumber ->
+                        previousPage(
+                            pageNumber = pageNumber,
+                            pages = viewModel.pages,
+                            index = viewModel.searchFilter.index,
+                            limit = viewModel.searchFilter.limit,
+                            onSuccess = { previousPage ->
+                                viewModel.searchResult = SearchAddonState.Success(previousPage)
+                            },
+                            onSearch = { newIndex ->
+                                viewModel.searchFilter = viewModel.searchFilter.copy(index = newIndex)
+                                viewModel.search() //搜索上一页
+                            }
+                        )
+                    },
+                    onNextPage = { pageNumber, isLastPage ->
+                        nextPage(
+                            pageNumber = pageNumber,
+                            isLastPage = isLastPage,
+                            pages = viewModel.pages,
+                            index = viewModel.searchFilter.index,
+                            limit = viewModel.searchFilter.limit,
+                            onSuccess = { nextPage ->
+                                viewModel.searchResult = SearchAddonState.Success(nextPage)
+                            },
+                            onSearch = { newIndex ->
+                                viewModel.searchFilter = viewModel.searchFilter.copy(index = newIndex)
+                                viewModel.search() //搜索下一页
+                            }
+                        )
+                    },
+                    onNavigatePage = { pageNumber ->
+                        navigatePage(
+                            pageNumber = pageNumber,
+                            pages = viewModel.pages,
+                            limit = viewModel.searchFilter.limit,
+                            onSuccess = { nextPage ->
+                                viewModel.searchResult = SearchAddonState.Success(nextPage)
+                            },
+                            onSearch = { newIndex ->
+                                viewModel.searchFilter = viewModel.searchFilter.copy(index = newIndex)
+                                viewModel.search() //搜索目标页
+                            }
+                        )
+                    }
+                )
+            }
+        }
+
+        installMessage?.let { message ->
+            SimpleAlertDialog(
+                title = stringResource(R.string.generic_warning),
+                text = stringResource(message),
+                confirmText = stringResource(R.string.generic_got_it),
+                onDismiss = {
+                    installMessage = null
+                }
             )
         }
     }

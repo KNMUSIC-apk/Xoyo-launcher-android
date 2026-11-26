@@ -254,6 +254,12 @@ android {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            // XOYO: ký bản debug bằng khóa cố định để mọi bản build cài đè lên bản trước, không phải gỡ app.
+            // Không có file xoyo_release.jks thì không gán gì, AGP tự dùng khóa debug mặc định như trước
+            // (gán null sẽ làm APK không có chữ ký và CI báo lỗi).
+            if (file("xoyo_release.jks").isFile) {
+                signingConfig = signingConfigs.getByName("releaseBuild")
+            }
         }
     }
 

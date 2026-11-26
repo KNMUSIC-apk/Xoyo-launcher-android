@@ -19,21 +19,24 @@
 package com.movtery.zalithlauncher.ui.components
 
 import androidx.annotation.IntRange
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
@@ -42,9 +45,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.movtery.zalithlauncher.R
@@ -97,6 +103,10 @@ fun SimpleTextSlider(
         }
     }
 
+    val liquid = isLiquidGlassEnabled()
+    val pillShape = RoundedCornerShape(percent = 50)
+    val pillColor = MaterialTheme.colorScheme.surfaceContainerHighest
+
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
@@ -119,80 +129,131 @@ fun SimpleTextSlider(
                 onValueChangeFinished = onValueChangeFinished,
                 valueRange = valueRange,
                 steps = steps,
+                colors = glassSliderColors(),
                 modifier = Modifier.weight(1f)
             )
         }
-        Surface(
+        // Nhãn giá trị và hai nút ±: một viên kính duy nhất, không dùng vùng chạm tối thiểu
+        // của Material (48dp) nên các phần tử không đè lên nhau.
+        Row(
             modifier = Modifier
-                .alpha(alpha = if (enabled) 1f else DisabledAlpha)
                 .padding(start = 12.dp)
-                .align(Alignment.CenterVertically),
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
+                .alpha(alpha = if (enabled) 1f else DisabledAlpha)
+                .align(Alignment.CenterVertically)
+                .then(
+                    if (liquid) {
+                        Modifier.liquidGlass(pillShape, pillColor.copy(alpha = 0.5f), enabled)
+                    } else {
+                        Modifier.background(pillColor, pillShape)
+                    }
+                )
+                .padding(PaddingValues(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
-                modifier = Modifier.padding(PaddingValues(horizontal = 8.dp, vertical = 4.dp)),
+                modifier = Modifier
+                    .defaultMinSize(minWidth = 40.dp)
+                    .then(
+                        if (onTextClick != null) {
+                            Modifier.clickable(enabled = enabled, onClick = onTextClick)
+                        } else Modifier
+                    ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .then(
-                            if (onTextClick != null) {
-                                Modifier.clickable(enabled = enabled, onClick = onTextClick)
-                            } else Modifier
-                        )
-                ) {
+                Text(
+                    text = getTextString(value),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                suffix?.let { text ->
                     Text(
-                        text = getTextString(value),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        text = text,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
-                    suffix?.let { text ->
-                        Text(text = text)
-                    }
                 }
-                if (fineTuningControl) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(
-                        enabled = enabled,
-                        modifier = Modifier.size(26.dp),
-                        onClick = {
-                            val newValue = value.subtractBigDecimal(fineTuningStep)
-                            if (newValue <= valueRange.start) {
-                                changeValue(valueRange.start, true)
-                            } else {
-                                changeValue(newValue, true)
-                            }
+            }
+            if (fineTuningControl) {
+                Spacer(modifier = Modifier.width(4.dp))
+                FineTuneButton(
+                    painter = painterResource(R.drawable.ic_arrow_left_rounded),
+                    enabled = enabled,
+                    onClick = {
+                        val newValue = value.subtractBigDecimal(fineTuningStep)
+                        if (newValue <= valueRange.start) {
+                            changeValue(valueRange.start, true)
+                        } else {
+                            changeValue(newValue, true)
                         }
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_arrow_left_rounded),
-                            contentDescription = null
-                        )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(
-                        enabled = enabled,
-                        modifier = Modifier.size(26.dp),
-                        onClick = {
-                            val newValue = value.addBigDecimal(fineTuningStep)
-                            if (newValue >= valueRange.endInclusive) {
-                                changeValue(valueRange.endInclusive, true)
-                            } else {
-                                changeValue(newValue, true)
-                            }
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                FineTuneButton(
+                    painter = painterResource(R.drawable.ic_arrow_right_rounded),
+                    enabled = enabled,
+                    onClick = {
+                        val newValue = value.addBigDecimal(fineTuningStep)
+                        if (newValue >= valueRange.endInclusive) {
+                            changeValue(valueRange.endInclusive, true)
+                        } else {
+                            changeValue(newValue, true)
                         }
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_arrow_right_rounded),
-                            contentDescription = null
-                        )
                     }
-                }
+                )
             }
         }
         appendContent()
     }
+}
+
+/**
+ * Nút tăng/giảm nhỏ (28dp) cho thanh trượt. Tự dựng bằng Box thay cho IconButton để không bị
+ * vùng chạm tối thiểu 48dp của Material làm nở bố cục.
+ */
+@Composable
+private fun FineTuneButton(
+    painter: Painter,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val liquid = isLiquidGlassEnabled()
+    val surface = MaterialTheme.colorScheme.surfaceContainerHighest
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .then(
+                if (liquid) {
+                    Modifier.liquidGlass(CircleShape, Color.Transparent, enabled)
+                } else {
+                    Modifier.background(surface, CircleShape)
+                }
+            )
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            modifier = Modifier.size(16.dp),
+            painter = painter,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+/**
+ * Màu thanh trượt hợp với Liquid Glass: rãnh mờ, phần đã kéo tô bằng màu chủ đề.
+ * Tắt Liquid Glass thì dùng màu Material gốc.
+ */
+@Composable
+fun glassSliderColors(): SliderColors {
+    if (!isLiquidGlassEnabled()) return SliderDefaults.colors()
+    val primary = MaterialTheme.colorScheme.primary
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    return SliderDefaults.colors(
+        thumbColor = primary,
+        activeTrackColor = primary.copy(alpha = 0.85f),
+        activeTickColor = primary.copy(alpha = 0.5f),
+        inactiveTrackColor = onSurface.copy(alpha = 0.16f),
+        inactiveTickColor = onSurface.copy(alpha = 0.3f),
+    )
 }
 
 @Composable
@@ -205,7 +266,7 @@ fun IndicatorSlider(
     onValueChangeFinished: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     @IntRange(from = 0) steps: Int = 0,
-    colors: SliderColors = SliderDefaults.colors()
+    colors: SliderColors = glassSliderColors()
 ) {
     /** Slider顶部需要裁切的像素 */
     val sliderTopCut = with(LocalDensity.current) { 8.dp.toPx().toInt() }

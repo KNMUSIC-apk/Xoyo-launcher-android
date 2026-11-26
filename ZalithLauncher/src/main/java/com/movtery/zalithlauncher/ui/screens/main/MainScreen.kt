@@ -19,6 +19,8 @@
 package com.movtery.zalithlauncher.ui.screens.main
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -45,7 +47,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.movtery.zalithlauncher.ui.components.CompactIconButton
+import com.movtery.zalithlauncher.ui.components.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -62,12 +65,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -86,6 +89,8 @@ import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.CardTitleLayout
 import com.movtery.zalithlauncher.ui.components.TextRailItem
+import com.movtery.zalithlauncher.ui.components.isLiquidGlassEnabled
+import com.movtery.zalithlauncher.ui.components.liquidGlass
 import com.movtery.zalithlauncher.ui.guide.sendStartGuideOnce
 import com.movtery.zalithlauncher.ui.screens.BackStackNavKey
 import com.movtery.zalithlauncher.ui.screens.NavStateHost
@@ -178,6 +183,14 @@ fun MainScreen(
     val onNavigate: (NavDestination) -> Unit = { destination ->
         screenBackStackModel.navigateToDestination(destination)
     }
+    // XOYO: Tệp nằm ở cụm nút bên phải thanh trên như trước, mở trình quản lý tệp hệ thống
+    val openFileManager: () -> Unit = {
+        eventViewModel.sendEvent(
+            EventViewModel.Event.OpenFileManager(
+                rootPath = PathManager.DIR_FILES_EXTERNAL.absolutePath
+            )
+        )
+    }
 
     val isBackgroundValid = LocalBackgroundViewModel.current?.isValid == true
     val launcherBackgroundOpacity = LauncherSettings.launcherBackgroundOpacity.state.toFloat() / 100f
@@ -196,7 +209,13 @@ fun MainScreen(
             val compact = maxWidth < CompactWidthThreshold
 
             Row(modifier = Modifier.fillMaxSize()) {
-                if (!compact) {
+                // XOYO: trong Cài đặt ẩn sidebar để phần chỉnh sửa full màn hình; thoát Cài đặt thì hiện lại
+                val inSettings = mainScreenKey is NestedNavKey.Settings
+                AnimatedVisibility(
+                    visible = !compact && !inSettings,
+                    enter = expandHorizontally(expandFrom = Alignment.Start) + fadeIn(),
+                    exit = shrinkHorizontally(shrinkTowards = Alignment.Start) + fadeOut()
+                ) {
                     AppSidebar(
                         selected = currentDestination,
                         onNavigate = onNavigate
@@ -218,29 +237,21 @@ fun MainScreen(
                         isTasksExpanded = isTaskMenuExpanded,
                         contentColor = onBackgroundColor(),
                         onScreenBack = {
-                            //XOYO: dùng cùng logic với nút Back hệ thống (kể cả ngăn xếp lồng nhau), không xoá màn hình gốc
-                            onBack(screenBackStackModel.mainScreen.backStack)
+                            //XOYO: không bao giờ để ngăn xếp màn hình gốc rỗng.
+                            //Ngăn xếp rỗng làm cả app hiện màn hình trắng và nút Back hệ thống đóng launcher.
+                            //Hết lịch sử thì quay về Trang chủ, giống nút Home.
+                            val backStack = screenBackStackModel.mainScreen.backStack
+                            val topKey = backStack.lastOrNull()
+                            val nestedCanPop = topKey is BackStackNavKey<*> && topKey.backStack.size > 1
+                            if (backStack.size <= 1 && !nestedCanPop) {
+                                toMainScreen()
+                            } else {
+                                onBack(backStack)
+                            }
                         },
                         toMainScreen = toMainScreen,
-                        toSettingsScreen = {
-                            screenBackStackModel.mainScreen.removeAndNavigateTo(
-                                removes = screenBackStackModel.clearBeforeNavKeys,
-                                screenKey = screenBackStackModel.settingsScreen
-                            )
-                        },
-                        toMultiplayerScreen = {
-                            screenBackStackModel.mainScreen.removeAndNavigateTo(
-                                removes = screenBackStackModel.clearBeforeNavKeys,
-                                screenKey = NormalNavKey.Multiplayer
-                            )
-                        },
-                        openFileManager = {
-                            eventViewModel.sendEvent(
-                                EventViewModel.Event.OpenFileManager(
-                                    rootPath = PathManager.DIR_FILES_EXTERNAL.absolutePath
-                                )
-                            )
-                        },
+                        toSettingsScreen = { onNavigate(NavDestination.SETTINGS) },
+                        openFileManager = openFileManager,
                         changeExpandedState = {
                             changeTasksExpandedState()
                         },
@@ -309,13 +320,10 @@ private fun <E: TitledNavKey> TopBar(
     onScreenBack: () -> Unit,
     toMainScreen: () -> Unit,
     toSettingsScreen: () -> Unit,
-    toMultiplayerScreen: () -> Unit,
     openFileManager: () -> Unit,
     changeExpandedState: () -> Unit,
 ) {
     val festivals = LocalFestivals.current
-
-    val inMultiplayerScreen = mainScreenKey is NormalNavKey.Multiplayer
     val inSettingsScreen = mainScreenKey is NestedNavKey.Settings
 
     CompositionLocalProvider(
@@ -332,15 +340,20 @@ private fun <E: TitledNavKey> TopBar(
                         bottom.linkTo(parent.bottom)
                     }
                     .fillMaxHeight()
+                    .padding(start = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 AnimatedVisibility(
                     visible = !inLauncherScreen
                 ) {
-                    Row(modifier = Modifier.fillMaxHeight()) {
-                        Spacer(Modifier.width(12.dp))
-
-                        IconButton(
-                            modifier = Modifier.fillMaxHeight(),
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        // XOYO: nút quay lại và home cùng cỡ 40dp với nút Cài đặt (icon 24dp), không còn nhỏ hơn
+                        CompactIconButton(
+                            modifier = Modifier.size(40.dp),
                             onClick = {
                                 if (!inLauncherScreen) {
                                     //不在主屏幕时才允许返回.
@@ -356,8 +369,8 @@ private fun <E: TitledNavKey> TopBar(
                             )
                         }
 
-                        IconButton(
-                            modifier = Modifier.fillMaxHeight(),
+                        CompactIconButton(
+                            modifier = Modifier.size(40.dp),
                             onClick = {
                                 if (!inLauncherScreen) {
                                     //不在主屏幕时才允许回到主页面
@@ -366,10 +379,34 @@ private fun <E: TitledNavKey> TopBar(
                             }
                         ) {
                             Icon(
+                                modifier = Modifier.size(24.dp),
                                 painter = painterResource(R.drawable.ic_home_filled),
                                 contentDescription = stringResource(R.string.generic_main_menu)
                             )
                         }
+                    }
+                }
+
+                //XOYO: nút ẩn nội dung Tổng quan, nằm ngay trước tên launcher
+                if (inLauncherScreen) {
+                    val overviewHidden = LauncherSettings.launcherHomeOverviewHidden.state
+                    CompactIconButton(
+                        modifier = Modifier.size(32.dp),
+                        onClick = {
+                            LauncherSettings.launcherHomeOverviewHidden.save(!overviewHidden)
+                        }
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(20.dp),
+                            painter = painterResource(
+                                if (overviewHidden) R.drawable.ic_visibility_off_outlined
+                                else R.drawable.ic_visibility_outlined
+                            ),
+                            contentDescription = stringResource(
+                                if (overviewHidden) R.string.home_overview_show
+                                else R.string.home_overview_hide
+                            )
+                        )
                     }
                 }
             }
@@ -379,7 +416,7 @@ private fun <E: TitledNavKey> TopBar(
             Crossfade(
                 modifier = Modifier.constrainAs(title) {
                     centerVerticallyTo(parent)
-                    start.linkTo(backCenter.end, margin = 16.dp)
+                    start.linkTo(backCenter.end, margin = 10.dp)
                 },
                 targetState = parentRes to childRes
             ) { (parent, child) ->
@@ -465,15 +502,6 @@ private fun <E: TitledNavKey> TopBar(
                 }
 
                 TopBarRailItem(
-                    selected = inMultiplayerScreen,
-                    painter = painterResource(R.drawable.ic_group_filled),
-                    text = stringResource(R.string.terracotta),
-                    onClick = {
-                        if (!inMultiplayerScreen) toMultiplayerScreen()
-                    },
-                )
-
-                TopBarRailItem(
                     selected = inSettingsScreen,
                     painter = painterResource(R.drawable.ic_settings_filled),
                     text = stringResource(R.string.generic_setting),
@@ -495,8 +523,16 @@ private fun TopBarRailItem(
     onClick: () -> Unit = {},
     textStyle: TextStyle = MaterialTheme.typography.labelMedium
 ) {
+    // Nút trên góc phải dùng liquid glass giống các nút khác; pill đang chọn cũng bán trong suốt.
+    val liquid = isLiquidGlassEnabled()
+    val glassShape = MaterialTheme.shapes.extraLarge
     TextRailItem(
-        modifier = modifier,
+        modifier = if (liquid) modifier.liquidGlass(glassShape, Color.Transparent) else modifier,
+        backgroundColor = if (liquid) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+        } else {
+            MaterialTheme.colorScheme.secondaryContainer
+        },
         onClick = onClick,
         text = {
             AnimatedVisibility(visible = selected) {

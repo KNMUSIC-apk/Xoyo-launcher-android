@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -58,6 +59,7 @@ import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.content.download.addon.elements.BaseFilterLayout
+import com.movtery.zalithlauncher.ui.screens.content.download.addon.elements.SearchFilterItemWidth
 import com.movtery.zalithlauncher.viewmodel.AllSupportPackDisplay
 import com.movtery.zalithlauncher.viewmodel.EventViewModel
 import com.movtery.zalithlauncher.viewmodel.ModpackImportOperation
@@ -163,31 +165,29 @@ fun SearchModPackScreen(
         },
         swapToDownload = swapToDownload,
         extraFilter = {
-            //新增导入整合包按钮
-            item {
-                BaseFilterLayout(
+            //新增导入整合包按钮, XOYO: nằm trong thanh lọc ngang nên có chiều rộng cố định
+            BaseFilterLayout(
+                modifier = Modifier
+                    .width(SearchFilterItemWidth)
+                    .semantics { role = Role.Button },
+                onClick = {
+                    if (viewModel.importOperation == ModpackImportOperation.None) {
+                        //先警告用户关于整合包的兼容性问题
+                        modpackViewModel.selectOperation = SelectUriOperation.Warning
+                    }
+                }
+            ) {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .semantics { role = Role.Button },
-                    onClick = {
-                        if (viewModel.importOperation == ModpackImportOperation.None) {
-                            //先警告用户关于整合包的兼容性问题
-                            modpackViewModel.selectOperation = SelectUriOperation.Warning
-                        }
-                    }
+                        .padding(all = 16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(all = 16.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        MarqueeText(
-                            text = stringResource(R.string.import_modpack),
-                            style = MaterialTheme.typography.titleSmall
-                        )
-                    }
+                    MarqueeText(
+                        text = stringResource(R.string.import_modpack),
+                        style = MaterialTheme.typography.titleSmall
+                    )
                 }
             }
         }

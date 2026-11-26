@@ -50,7 +50,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.movtery.zalithlauncher.ui.components.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -93,7 +93,6 @@ import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.CardTitleLayout
 import com.movtery.zalithlauncher.ui.components.ContentCheckBox
 import com.movtery.zalithlauncher.ui.components.EdgeDirection
-import com.movtery.zalithlauncher.ui.components.IconTextButton
 import com.movtery.zalithlauncher.ui.components.ProgressDialog
 import com.movtery.zalithlauncher.ui.components.PullToRefreshLayout
 import com.movtery.zalithlauncher.ui.components.ScalingLabel
@@ -284,7 +283,6 @@ fun ResourcePackManageScreen(
     versionsScreenKey: TitledNavKey?,
     version: Version,
     backToMainScreen: () -> Unit,
-    swapToDownload: () -> Unit,
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit
 ) {
     if (!version.isValid()) {
@@ -380,7 +378,6 @@ fun ResourcePackManageScreen(
                     isFilesSelected = viewModel.selectedPacks.isNotEmpty(),
                     onSelectAll = { viewModel.selectAllFiles() },
                     onClearFilesSelected = { viewModel.clearSelected() },
-                    swapToDownload = swapToDownload,
                     onRefresh = {
                         viewModel.refresh()
                     },
@@ -437,7 +434,6 @@ private fun ResourcePackHeader(
     isFilesSelected: Boolean,
     onSelectAll: () -> Unit,
     onClearFilesSelected: () -> Unit,
-    swapToDownload: () -> Unit,
     onRefresh: () -> Unit,
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit,
     inputFieldColor: Color = itemColor(),
@@ -586,13 +582,6 @@ private fun ResourcePackHeader(
                                 taskBuilder(uris)
                             )
                         }
-                    )
-
-                    IconTextButton(
-                        onClick = swapToDownload,
-                        painter = painterResource(R.drawable.ic_download_2_filled),
-                        text = stringResource(R.string.generic_download),
-                        enabled = enabled,
                     )
 
                     IconButton(

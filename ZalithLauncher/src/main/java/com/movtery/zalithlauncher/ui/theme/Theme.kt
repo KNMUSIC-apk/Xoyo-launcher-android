@@ -23,6 +23,7 @@ import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -35,7 +36,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamicColorScheme
 import com.movtery.zalithlauncher.setting.LauncherSettings
@@ -46,6 +51,7 @@ import com.movtery.zalithlauncher.utils.festival.LocalFestivals
 import com.movtery.zalithlauncher.viewmodel.BackgroundViewModel
 import com.movtery.zalithlauncher.viewmodel.LocalBackgroundViewModel
 import top.yukonga.miuix.kmp.utils.MiuixOverscrollFactory
+import java.io.File
 
 private val embermireLight = lightColorScheme(
     primary = primaryLight.embermire,
@@ -679,16 +685,105 @@ fun ZalithLauncherTheme(
         }
     }
 
+    // Độ rõ của chữ (cài đặt "Độ mờ chữ"): mặc định 45 đã rõ bằng 100% của launcher cũ; chỉ đổi màu chữ, không đụng nền hay nút
+    val textOpacity = LauncherSettings.launcherTextOpacity.state / 100f
+    val displayScheme = remember(currentDisplayScheme, textOpacity) {
+        currentDisplayScheme.withTextOpacity(textOpacity)
+    }
+    // Font tùy chỉnh người dùng đã nhập; không có thì dùng font mặc định
+    val customFontPath = LauncherSettings.launcherCustomFontPath.state
+    val typography = remember(customFontPath) { launcherTypography(customFontPath) }
+
     CompositionLocalProvider(
         LocalBackgroundViewModel provides backgroundViewModel,
         LocalFestivals provides festivals,
         LocalOverscrollFactory provides MiuixOverscrollFactory,
     ) {
         MaterialExpressiveTheme(
-            colorScheme = currentDisplayScheme,
+            colorScheme = displayScheme,
             motionScheme = MotionScheme.expressive(),
-            typography = AppTypography,
+            typography = typography,
             content = content
         )
     }
+}
+
+/**
+ * Mức độ rõ "đầy đủ" của cài đặt Độ mờ chữ (mặc định 45).
+ * Ở mức này chữ rõ bằng 100% của launcher cũ.
+ */
+private const val TEXT_CLARITY_FULL = 0.45f
+
+/**
+ * Áp độ rõ của chữ lên các màu chữ chính.
+ * - Dưới [TEXT_CLARITY_FULL]: giảm alpha theo tỉ lệ, chữ càng kéo thấp càng trong suốt.
+ * - Từ [TEXT_CLARITY_FULL] trở lên: giữ alpha tối đa và kéo màu chữ về phía tương phản nhất
+ *   (trắng với nền tối, đen với nền sáng), nên kéo càng cao chữ càng rõ.
+ */
+private fun ColorScheme.withTextOpacity(opacity: Float): ColorScheme {
+    if (opacity < TEXT_CLARITY_FULL) {
+        val alpha = (opacity / TEXT_CLARITY_FULL).coerceIn(0f, 1f)
+        return copy(
+            onSurface = onSurface.copy(alpha = onSurface.alpha * alpha),
+            onSurfaceVariant = onSurfaceVariant.copy(alpha = onSurfaceVariant.alpha * alpha),
+            onBackground = onBackground.copy(alpha = onBackground.alpha * alpha),
+        )
+    }
+    val boost = ((opacity - TEXT_CLARITY_FULL) / (1f - TEXT_CLARITY_FULL)).coerceIn(0f, 1f)
+    if (boost <= 0f) return this
+    val target = if (background.luminance() < 0.5f) Color.White else Color.Black
+    return copy(
+        onSurface = lerp(onSurface, target, boost * 0.6f),
+        onSurfaceVariant = lerp(onSurfaceVariant, target, boost * 0.6f),
+        onBackground = lerp(onBackground, target, boost * 0.6f),
+    )
+}
+
+/**
+ * Typography của launcher. Có font tùy chỉnh thì dùng font đó cho mọi kiểu chữ.
+ * Đường dẫn rỗng, file đã bị xóa hoặc file hỏng thì rơi về font mặc định, không làm sập app.
+ */
+private fun launcherTypography(fontPath: String): Typography {
+    if (fontPath.isBlank()) return AppTypography
+    val file = File(fontPath)
+    val family = runCatching {
+        // createFromFile ném lỗi ngay nếu file không phải font hợp lệ
+        android.graphics.Typeface.createFromFile(file)
+        FontFamily(Font(file))
+    }.getOrNull() ?: return AppTypography
+    // Phiên bản Material3 này không có tham số defaultFontFamily nữa,
+    // nên gắn font vào từng kiểu chữ, giữ nguyên cỡ chữ và độ đậm của AppTypography.
+    val b = AppTypography
+    return Typography(
+        displayLarge = b.displayLarge.copy(fontFamily = family),
+        displayMedium = b.displayMedium.copy(fontFamily = family),
+        displaySmall = b.displaySmall.copy(fontFamily = family),
+        headlineLarge = b.headlineLarge.copy(fontFamily = family),
+        headlineMedium = b.headlineMedium.copy(fontFamily = family),
+        headlineSmall = b.headlineSmall.copy(fontFamily = family),
+        titleLarge = b.titleLarge.copy(fontFamily = family),
+        titleMedium = b.titleMedium.copy(fontFamily = family),
+        titleSmall = b.titleSmall.copy(fontFamily = family),
+        bodyLarge = b.bodyLarge.copy(fontFamily = family),
+        bodyMedium = b.bodyMedium.copy(fontFamily = family),
+        bodySmall = b.bodySmall.copy(fontFamily = family),
+        labelLarge = b.labelLarge.copy(fontFamily = family),
+        labelMedium = b.labelMedium.copy(fontFamily = family),
+        labelSmall = b.labelSmall.copy(fontFamily = family),
+        displayLargeEmphasized = b.displayLargeEmphasized.copy(fontFamily = family),
+        displayMediumEmphasized = b.displayMediumEmphasized.copy(fontFamily = family),
+        displaySmallEmphasized = b.displaySmallEmphasized.copy(fontFamily = family),
+        headlineLargeEmphasized = b.headlineLargeEmphasized.copy(fontFamily = family),
+        headlineMediumEmphasized = b.headlineMediumEmphasized.copy(fontFamily = family),
+        headlineSmallEmphasized = b.headlineSmallEmphasized.copy(fontFamily = family),
+        titleLargeEmphasized = b.titleLargeEmphasized.copy(fontFamily = family),
+        titleMediumEmphasized = b.titleMediumEmphasized.copy(fontFamily = family),
+        titleSmallEmphasized = b.titleSmallEmphasized.copy(fontFamily = family),
+        bodyLargeEmphasized = b.bodyLargeEmphasized.copy(fontFamily = family),
+        bodyMediumEmphasized = b.bodyMediumEmphasized.copy(fontFamily = family),
+        bodySmallEmphasized = b.bodySmallEmphasized.copy(fontFamily = family),
+        labelLargeEmphasized = b.labelLargeEmphasized.copy(fontFamily = family),
+        labelMediumEmphasized = b.labelMediumEmphasized.copy(fontFamily = family),
+        labelSmallEmphasized = b.labelSmallEmphasized.copy(fontFamily = family),
+    )
 }

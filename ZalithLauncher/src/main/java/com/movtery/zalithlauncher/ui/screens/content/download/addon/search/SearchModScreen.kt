@@ -31,6 +31,7 @@ import com.movtery.zalithlauncher.game.version.mod.InstalledMod
 import com.movtery.zalithlauncher.setting.MiscSettings
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
+import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
 
 @Composable
 fun SearchModScreen(
@@ -40,6 +41,8 @@ fun SearchModScreen(
     downloadModScreenCurrentKey: TitledNavKey?,
     onPlatformChange: (Platform) -> Unit = {},
     installedInfo: ((Platform, projectId: String) -> InstalledMod?)? = null,
+    submitError: (ErrorViewModel.ThrowableMessage) -> Unit = {},
+    onInstalled: () -> Unit = {},
     swapToDownload: (Platform, projectId: String, iconUrl: String?) -> Unit = { _, _, _ -> }
 ) {
     val initialPlatform = remember {
@@ -82,6 +85,8 @@ fun SearchModScreen(
             }
         },
         swapToDownload = swapToDownload,
-        installedInfo = installedInfo
+        installedInfo = installedInfo,
+        submitError = submitError,
+        onInstalled = onInstalled
     )
 }

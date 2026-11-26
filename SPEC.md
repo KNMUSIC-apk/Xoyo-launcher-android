@@ -215,6 +215,10 @@ Lưu bằng MMKV. UI đọc bằng `LauncherSettings.<thuộc tính>.state` và 
 | `launcherQuickActions` | `launcherQuickActions` | String, danh sách CSV | `CREATE_PROFILE,MANAGE_VERSIONS,INSTALL_MODS,INSTALL_SHADERS,INSTALL_RESOURCE_PACKS,MANAGE_WORLDS,PERFORMANCE,OPEN_GAME_FOLDER` |
 | `performanceCustomPresets` | `performanceCustomPresets` | String, JSON | `[]` |
 | `launcherBackgroundOpacity` | `launcherBackgroundOpacity` | Int, 20..100 | `80` |
+| `launcherTextOpacity` | `launcherTextOpacity` | Int, 20..100 (từ 45 trở lên chữ rõ tối đa; dưới 45 chữ mờ dần) | `45` |
+| `launcherLiquidGlass` | `launcherLiquidGlass` | Boolean | `false` |
+| `launcherCustomFontPath` | `launcherCustomFontPath` | String, đường dẫn file font trong `filesDir/fonts/` (rỗng = font mặc định) | `""` |
+| `launcherHomeOverviewHidden` | `launcherHomeOverviewHidden` | Boolean | `false` |
 | `videoBackgroundVolume` | `videoBackgroundVolume` | Int, 0..100 | `0` |
 | `backgroundBlur` | `backgroundBlur` | Int, 0..40 | `0` |
 | `backgroundBlurType` | `backgroundBlurType` | enum `BackgroundBlur` | `Background` |
@@ -268,9 +272,11 @@ Thêm lớp mới được phép. Đổi hoặc xóa lớp đã có phải sửa
   - Chính: Trang chủ, Thư viện, Phiên bản.
   - Nội dung: Trò chơi, Mod, Modpack, Gói tài nguyên, Shader, Thế giới, Tìm kiếm theo ID, Yêu thích.
   - Tải về: Tải mod, Tải modpack, Tải gói tài nguyên, Tải shader, Tải thế giới.
-  - Kết nối: Máy chủ, Tài khoản.
+  - Kết nối: Máy chủ, Tài khoản, Chơi LAN.
   - Hệ thống: Hiệu năng, Cài đặt.
-  - Các nhóm Nội dung, Tải về, Kết nối, Hệ thống thu gọn thành một nút. Cùng cách này áp dụng cho sheet "Thêm" trên màn hình hẹp.
+  - Nút 3 gạch (ẩn/mở sidebar) nằm ở đầu sidebar. Trên thanh trên, bên phải, có thêm nút Tệp (mở trình quản lý tệp) và nút Cài đặt.
+  - Các nhóm Nội dung, Tải về thu gọn thành một nút. Kết nối và Hệ thống mở sẵn. Cùng cách này áp dụng cho sheet "Thêm" trên màn hình hẹp.
+  - Trong Cài đặt: sidebar ẩn để phần chỉnh sửa full màn hình, danh mục Cài đặt nằm thành hàng ngang. Thoát Cài đặt thì sidebar hiện lại.
 - Nút quay lại trên thanh trên dùng `onBack`, không thoát launcher.
 - Thao tác nhanh trên trang chủ (`launcherQuickActions`).
 - Cài đặt ngôn ngữ, chủ đề, hiệu ứng lễ hội, giảm chuyển động (`launcherReducedMotion`).
@@ -309,6 +315,16 @@ Câu hỏi mở cho người duyệt:
 4. Nhánh tích hợp `integrate/spec-merge` (đã xanh CI, gồm `ui/vi-localization`, `fix/ui-scroll-skin-mod`, `feat/version-banners-skin-preview`) có nên thành `zalith-base` không?
 5. Mục Mod: giữ danh sách mod đã cài (đang chọn), hay chuyển thẳng sang trang tải như nhánh `fix/ui-scroll-skin-mod`?
 6. Có nên đổi nhánh mặc định `main` (khung dự án khác) để trỏ về nhánh có code Zalith không?
+
+Yêu cầu mới, ngày 2026-11-26 (chưa có người duyệt trả lời):
+- [2026-11-26] [A.I #1] cần [A.I #2]: vào launcher nhanh hơn. (a) `PluginLoader.loadAllPlugins` đang chạy trên main thread trong `MainActivity.kt` (khoảng dòng 201), quét mọi app cài trên máy. Cần chuyển sang IO, hoặc hoãn sau khi màn hình chính hiện. (b) `SplashActivity.kt` `checkState()` chạy tuần tự từng mục; cần chạy song song được thì làm. (c) `BaseScreen.kt` (dòng 140-143) chờ `awaitEnterStart` khoảng 140 ms khi chuyển từ Welcome hoặc Unpacking sang Loading; cần bỏ chờ ở màn splash. lý do: người dùng thấy loading xuất hiện chậm. Phần UI đã làm (commit 8443811): icon splash trong suốt, bỏ hiệu ứng trượt của màn loading.
+- [2026-11-26] [A.I #1] cần [A.I #2]: nền riêng cho từng phiên bản. Mỗi phiên bản có một ảnh nền lưu trong thư mục phiên bản, và khi chọn phiên bản thì nền và logo trên trang chủ đổi theo. Hiện `BackgroundViewModel` và `PathManager.FILE_LAUNCHER_BACKGROUND` chỉ có một ảnh nền chung. lý do: người dùng muốn thẻ phiên bản giống ảnh tham chiếu (nền và logo theo phiên bản). Phần UI thẻ phiên bản đã làm (commit f5cd6bd) và dùng ảnh nền theo thế hệ làm mặc định.
+- [2026-11-26] [Người duyệt] câu hỏi: nút icon trong `ui.components.IconButton` nay không còn vùng chạm tối thiểu 48dp (`LocalMinimumInteractiveComponentSize = 0`), nên nút 34dp và 36dp đúng kích thước đặt. Có chấp nhận không? lý do: để các nút cạnh nhau không chồng lên nhau, theo yêu cầu người dùng.
+- [2026-11-26] [Người duyệt] câu hỏi: danh sách phiên bản đã cài nay dùng nút Chọn / Đã chọn thay cho RadioButton (commit f5cd6bd). Có giữ không?
+- [2026-11-26] [A.I #1] cần [A.I #2]: trang tải tài nguyên theo kiểu Amber. Rail trái gồm Modpack, Mod, Shader, Resource Pack, Datapack; thanh trên có nút quay lại, loại trang, nguồn Modrinth/CurseForge và ô tìm kiếm. Phần UI chưa làm. Cần một callback chuyển loại tải (gọi `navigateToDownload` tới `downloadModScreen`, `downloadModPackScreen`, `downloadResourcePackScreen`, `downloadShadersScreen`, `downloadSavesScreen`) để rail dùng được trong `SearchAddonScreen`. lý do: rail trái phải chuyển giữa các trang tải, mà `DownloadScreen.kt` thuộc A.I #2.
+- [2026-11-26] [A.I #1] cần [A.I #2]: chuyển trang bằng lò xo. `rememberTransitionSpec` trong `ui/screens/_Navigation.kt` (mục 2.2) đang dùng tween. Khi A.I #2 duyệt file này, đổi sang `XoyoMotion.soft()` trong `ui/theme/Motion.kt`. lý do: yêu cầu animation spring toàn ứng dụng.
+- [2026-11-26] [Người duyệt] câu hỏi: sidebar nay vuốt ngang để mở hoặc thu gọn (ngưỡng 48dp, `AppSidebar` trong `AppNavigation.kt`). Có giữ không? lý do: thêm cử chỉ, người dùng chưa nêu cụ thể.
+- [2026-11-26] [A.I #2] đã làm thay bởi Claude theo yêu cầu người dùng (A.I #2 hết token): nạp plugin song song trong splash (`SplashActivity`); kiểm tra tài nguyên song song; nền riêng theo phiên bản (`Version.getBackgroundFile`, `BackgroundViewModel`, mục menu trên thẻ phiên bản); rail loại tải nối vào `navigateToDownload` (`DownloadScreen.kt`, `DownloadTypeRail.kt`). Chưa làm: chuyển trang bằng lò xo (`SwapClock` dùng độ trễ snap để tránh chồng lớp, cần thiết kế lại có kiểm chứng trên máy); bỏ `awaitEnterStart` ở `BaseScreen` (giờ chỉ Welcome và Unpacking còn dùng, giữ để không lệch timeline chuyển trang).
 
 ---
 

@@ -128,7 +128,8 @@ fun DownloadSavesScreen(
                         mainScreenKey = mainScreenKey,
                         downloadScreenKey = downloadScreenKey,
                         downloadSavesScreenKey = key,
-                        downloadSavesScreenCurrentKey = downloadSavesScreenKey
+                        downloadSavesScreenCurrentKey = downloadSavesScreenKey,
+                        submitError = submitError
                     ) { platform, projectId, _ ->
                         backStack.navigateTo(
                             NormalNavKey.DownloadAddon(platform, projectId, PlatformClasses.SAVES)

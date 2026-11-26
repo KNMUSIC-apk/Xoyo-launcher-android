@@ -34,16 +34,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.movtery.zalithlauncher.ui.components.IconButton
+import com.movtery.zalithlauncher.ui.components.isLiquidGlassEnabled
+import com.movtery.zalithlauncher.ui.components.liquidGlass
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -52,11 +56,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.setting.LauncherSettings
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
@@ -68,6 +75,19 @@ import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import com.movtery.zalithlauncher.ui.theme.XoyoMotion
+import com.movtery.zalithlauncher.ui.theme.pressScale
 
 /** Chiều rộng màn hình (dp) dưới ngưỡng này sẽ dùng thanh điều hướng dưới thay cho sidebar */
 val CompactWidthThreshold = 720.dp
@@ -90,6 +110,11 @@ enum class NavGroup(val titleRes: Int, val iconRes: Int) {
 /** Các nhóm thu gọn được trên sidebar và trong sheet "Thêm". Nhóm Chính luôn hiện đầy đủ. */
 private val CollapsibleNavGroups = setOf(NavGroup.CONTENT, NavGroup.DOWNLOAD, NavGroup.SOCIAL, NavGroup.SYSTEM)
 
+/**
+ * Các nhóm mở sẵn khi mở menu 3 gạch: Kết nối (LAN) và Hệ thống (Cài đặt, Files) để thấy ngay mà không cần bấm thêm.
+ */
+private val DefaultOpenNavGroups = setOf(NavGroup.SOCIAL, NavGroup.SYSTEM)
+
 /** Các mục điều hướng của XOYO. Nhóm Nội dung gồm cả các mục tải xuống trước đây nằm trong thanh danh mục */
 enum class NavDestination(val iconRes: Int, val titleRes: Int, val group: NavGroup) {
     HOME(R.drawable.ic_home_filled, R.string.nav_home, NavGroup.MAIN),
@@ -110,9 +135,25 @@ enum class NavDestination(val iconRes: Int, val titleRes: Int, val group: NavGro
     DOWNLOAD_WORLDS(R.drawable.ic_public, R.string.nav_download_worlds, NavGroup.DOWNLOAD),
     SERVERS(R.drawable.ic_dns_outlined, R.string.nav_servers, NavGroup.SOCIAL),
     ACCOUNTS(R.drawable.ic_person_outlined, R.string.nav_accounts, NavGroup.SOCIAL),
+    LAN(R.drawable.ic_group_filled, R.string.nav_lan, NavGroup.SOCIAL),
     PERFORMANCE(R.drawable.ic_dashboard_outlined, R.string.nav_performance, NavGroup.SYSTEM),
     SETTINGS(R.drawable.ic_settings_filled, R.string.nav_settings, NavGroup.SYSTEM);
 }
+
+/**
+ * Nhóm Nội dung chỉ giữ những mục chưa có trong nhóm Tải về:
+ * tìm kiếm theo ID, yêu thích và trò chơi. Mod, modpack, resource pack, shader và thế giới
+ * đã có mục tải riêng nên không lặp lại ở đây.
+ */
+private val ContentGroupDestinations = setOf(
+    NavDestination.GAME_DOWNLOAD,
+    NavDestination.SEARCH_ID,
+    NavDestination.FAVORITES
+)
+
+/** Lọc bớt các mục trùng với nhóm Tải về khỏi nhóm Nội dung */
+private fun NavDestination.isVisibleIn(group: NavGroup): Boolean =
+    group != NavGroup.CONTENT || this in ContentGroupDestinations
 
 /** Các mục hiện trực tiếp trên thanh dưới khi màn hình hẹp. Phần còn lại nằm trong "Thêm". */
 val CompactPrimaryDestinations = listOf(
@@ -137,6 +178,7 @@ fun navDestinationOf(key: TitledNavKey?): NavDestination? = when (key) {
     is NormalNavKey.ServerHub -> NavDestination.SERVERS
     is NormalNavKey.AccountManager -> NavDestination.ACCOUNTS
     is NormalNavKey.PerformanceCenter -> NavDestination.PERFORMANCE
+    is NormalNavKey.Multiplayer -> NavDestination.LAN
     is NestedNavKey.Settings -> NavDestination.SETTINGS
     else -> null
 }
@@ -172,6 +214,10 @@ fun ScreenBackStackViewModel.navigateToDestination(destination: NavDestination) 
             removes = clearBeforeNavKeys,
             screenKey = settingsScreen
         )
+        NavDestination.LAN -> mainScreen.removeAndNavigateTo(
+            removes = clearBeforeNavKeys,
+            screenKey = NormalNavKey.Multiplayer
+        )
     }
 }
 
@@ -192,6 +238,10 @@ fun ScreenBackStackViewModel.downloadDestination(): NavDestination = when (downl
 
 /**
  * Sidebar cho màn hình rộng. Thu gọn chỉ còn icon, mở rộng hiện tên.
+ *
+ * XOYO: mặt kính nổi, bo góc lớn và bóng mềm (Liquid Glass khi bật). Chiều rộng đổi bằng lò xo.
+ * Mục đang chọn có thanh nhấn trượt vào và icon nảy nhẹ. Hover đổi nền, nhấn thu nhỏ nhẹ.
+ * Vuốt ngang trên sidebar để mở hoặc thu gọn.
  * Trạng thái mở rộng được lưu lại trong cài đặt.
  */
 @Composable
@@ -202,22 +252,56 @@ fun AppSidebar(
 ) {
     val expanded = LauncherSettings.launcherSidebarExpanded.state
     val reducedMotion = LauncherSettings.launcherReducedMotion.state
+    val liquid = isLiquidGlassEnabled()
 
-    //Trạng thái mở của từng nhóm thu gọn. Mặc định đều đóng.
-    val openGroups = remember { mutableStateListOf<NavGroup>() }
+    //Trạng thái mở của từng nhóm thu gọn. Mặc định đóng, trừ các nhóm trong DefaultOpenNavGroups.
+    val openGroups = remember { mutableStateListOf(*DefaultOpenNavGroups.toTypedArray()) }
+
+    //Nhóm chứa mục đang chọn luôn được mở để thấy ngay mình đang ở đâu
+    LaunchedEffect(selected) {
+        val group = selected?.group ?: return@LaunchedEffect
+        if (group in CollapsibleNavGroups && group !in openGroups) {
+            openGroups.add(group)
+        }
+    }
 
     val width by animateDpAsState(
         targetValue = if (expanded) SidebarExpandedWidth else SidebarCollapsedWidth,
-        animationSpec = if (reducedMotion) snap() else tween(durationMillis = 220),
+        animationSpec = if (reducedMotion) snap() else XoyoMotion.soft(),
         label = "sidebarWidth"
     )
+
+    val panelShape = RoundedCornerShape(28.dp)
+
+    // Vuốt ngang: kéo sang phải thì mở, sang trái thì thu. Ngưỡng 48dp để tránh chạm nhầm.
+    val swipeThresholdPx = with(LocalDensity.current) { 48.dp.toPx() }
+    val swipeModifier = Modifier.pointerInput(Unit) {
+        var dragTotal = 0f
+        detectHorizontalDragGestures(
+            onDragStart = { dragTotal = 0f },
+            onDragEnd = {
+                when {
+                    dragTotal > swipeThresholdPx -> LauncherSettings.launcherSidebarExpanded.save(true)
+                    dragTotal < -swipeThresholdPx -> LauncherSettings.launcherSidebarExpanded.save(false)
+                }
+            },
+            onDragCancel = { dragTotal = 0f }
+        ) { _, dragAmount ->
+            dragTotal += dragAmount
+        }
+    }
 
     Surface(
         modifier = modifier
             .width(width)
-            .fillMaxHeight(),
-        color = cardColor(true),
-        contentColor = onCardColor()
+            .fillMaxHeight()
+            .padding(6.dp)
+            .then(if (liquid) Modifier.liquidGlass(panelShape, cardColor(true)) else Modifier)
+            .then(swipeModifier),
+        shape = panelShape,
+        color = if (liquid) Color.Transparent else cardColor(true),
+        contentColor = onCardColor(),
+        shadowElevation = if (liquid) 8.dp else 0.dp
     ) {
         Column(
             modifier = Modifier
@@ -236,7 +320,12 @@ fun AppSidebar(
                             .weight(1f)
                             .padding(start = 8.dp),
                         text = "XOYO",
-                        style = MaterialTheme.typography.titleMedium,
+                        // XOYO: tiêu đề đậm, giãn chữ, dùng màu nhấn của theme
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 2.sp
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -259,6 +348,11 @@ fun AppSidebar(
                 }
             }
 
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
+
             // Danh sách mục điều hướng dài hơn màn hình: cho phép cuộn và hiện thanh cuộn
             val listScrollState = rememberScrollState()
             Column(
@@ -267,7 +361,8 @@ fun AppSidebar(
                     .verticalScrollWithBar(state = listScrollState),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                NavDestination.entries.groupBy { it.group }.forEach { (group, items) ->
+                NavDestination.entries.groupBy { it.group }.forEach { (group, allItems) ->
+                    val items = allItems.filter { it.isVisibleIn(group) }
                     if (group in CollapsibleNavGroups) {
                         //Mỗi nhóm chỉ hiện một nút. Bấm vào để mở hoặc đóng các mục bên trong.
                         val open = group in openGroups
@@ -281,8 +376,12 @@ fun AppSidebar(
                         )
                         AnimatedVisibility(
                             visible = open,
-                            enter = if (reducedMotion) EnterTransition.None else expandVertically() + fadeIn(),
-                            exit = if (reducedMotion) ExitTransition.None else shrinkVertically() + fadeOut()
+                            enter = if (reducedMotion) EnterTransition.None else expandVertically(
+                                animationSpec = XoyoMotion.soft()
+                            ) + fadeIn(),
+                            exit = if (reducedMotion) ExitTransition.None else shrinkVertically(
+                                animationSpec = XoyoMotion.soft()
+                            ) + fadeOut()
                         ) {
                             Column(
                                 modifier = Modifier.padding(start = if (expanded) 12.dp else 0.dp),
@@ -304,8 +403,11 @@ fun AppSidebar(
                             Text(
                                 modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 2.dp),
                                 text = stringResource(group.titleRes),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    letterSpacing = 1.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                                 maxLines = 1
                             )
                         } else {
@@ -338,14 +440,25 @@ private fun SidebarGroupHeader(
     onClick: () -> Unit,
 ) {
     val title = stringResource(group.titleRes)
+    val source = remember { MutableInteractionSource() }
+    val hovered by source.collectIsHoveredAsState()
     val contentColor = if (containsSelected) {
         MaterialTheme.colorScheme.primary
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
+    val hoverColor by animateColorAsState(
+        targetValue = if (hovered) {
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f)
+        } else {
+            Color.Transparent
+        },
+        animationSpec = if (reducedMotion) snap() else XoyoMotion.soft(),
+        label = "sidebarGroupHover"
+    )
     val chevronRotation by animateFloatAsState(
         targetValue = if (open) 180f else 0f,
-        animationSpec = if (reducedMotion) snap() else tween(durationMillis = 180),
+        animationSpec = if (reducedMotion) snap() else XoyoMotion.bouncy(),
         label = "sidebarGroupChevron"
     )
 
@@ -353,14 +466,22 @@ private fun SidebarGroupHeader(
         modifier = Modifier
             .fillMaxWidth()
             .height(44.dp)
+            .pressScale(source, enabled = !reducedMotion)
             .clip(MaterialTheme.shapes.large)
-            .clickable(role = Role.Button, onClick = onClick)
+            .background(hoverColor)
+            .hoverable(source)
+            .clickable(
+                interactionSource = source,
+                indication = LocalIndication.current,
+                role = Role.Button,
+                onClick = onClick
+            )
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Icon(
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(22.dp),
             painter = painterResource(group.iconRes),
             contentDescription = if (expanded) null else title,
             tint = contentColor
@@ -395,15 +516,30 @@ private fun SidebarItem(
     onClick: () -> Unit,
 ) {
     val title = stringResource(destination.titleRes)
-    val targetBackground = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        Color.Transparent
+    val source = remember { MutableInteractionSource() }
+    val hovered by source.collectIsHoveredAsState()
+
+    val targetBackground = when {
+        selected -> MaterialTheme.colorScheme.primaryContainer
+        hovered -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f)
+        else -> Color.Transparent
     }
     val background by animateColorAsState(
         targetValue = targetBackground,
-        animationSpec = if (reducedMotion) snap() else tween(durationMillis = 160),
+        animationSpec = if (reducedMotion) snap() else XoyoMotion.soft(),
         label = "sidebarItemBackground"
+    )
+    // Thanh nhấn bên trái: trượt dài ra khi chọn, co lại khi bỏ chọn
+    val indicatorHeight by animateDpAsState(
+        targetValue = if (selected) 22.dp else 0.dp,
+        animationSpec = if (reducedMotion) snap() else XoyoMotion.bouncy(),
+        label = "sidebarIndicator"
+    )
+    // Icon nảy nhẹ khi được chọn
+    val iconScale by animateFloatAsState(
+        targetValue = if (selected) 1.08f else 1f,
+        animationSpec = if (reducedMotion) snap() else XoyoMotion.bouncy(),
+        label = "sidebarIconScale"
     )
     val contentColor = if (selected) {
         MaterialTheme.colorScheme.onPrimaryContainer
@@ -411,37 +547,58 @@ private fun SidebarItem(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .clip(MaterialTheme.shapes.large)
-            .background(background)
-            .selectable(
-                selected = selected,
-                onClick = onClick,
-                role = Role.Tab
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+                .pressScale(source, enabled = !reducedMotion)
+                .clip(MaterialTheme.shapes.large)
+                .background(background)
+                .hoverable(source)
+                .selectable(
+                    selected = selected,
+                    interactionSource = source,
+                    indication = LocalIndication.current,
+                    role = Role.Tab,
+                    onClick = onClick
+                )
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                modifier = Modifier
+                    .size(22.dp)
+                    .graphicsLayer {
+                        scaleX = iconScale
+                        scaleY = iconScale
+                    },
+                painter = painterResource(destination.iconRes),
+                contentDescription = if (expanded) null else title,
+                tint = contentColor
             )
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Icon(
-            modifier = Modifier.size(24.dp),
-            painter = painterResource(destination.iconRes),
-            contentDescription = if (expanded) null else title,
-            tint = contentColor
-        )
-        if (expanded) {
-            Text(
-                modifier = Modifier.weight(1f),
-                text = title,
-                color = contentColor,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            if (expanded) {
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = title,
+                    color = contentColor,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 4.dp)
+                .width(3.dp)
+                .height(indicatorHeight)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary)
+        )
     }
 }
 
@@ -455,7 +612,11 @@ fun AppBottomBar(
     onMore: () -> Unit,
     moreSelected: Boolean,
 ) {
-    NavigationBar(containerColor = cardColor(true)) {
+    val liquid = isLiquidGlassEnabled()
+    NavigationBar(
+        containerColor = if (liquid) Color.Transparent else cardColor(true),
+        modifier = if (liquid) Modifier.liquidGlass(RectangleShape, cardColor(true)) else Modifier
+    ) {
         CompactPrimaryDestinations.forEach { destination ->
             NavigationBarItem(
                 selected = selected == destination,
@@ -507,7 +668,15 @@ fun MoreDestinationsSheet(
 ) {
     val sheetState = rememberModalBottomSheetState()
     val reducedMotion = LauncherSettings.launcherReducedMotion.state
-    val openGroups = remember { mutableStateListOf<NavGroup>() }
+    val openGroups = remember { mutableStateListOf(*DefaultOpenNavGroups.toTypedArray()) }
+
+    //Nhóm chứa mục đang chọn luôn được mở để thấy ngay mình đang ở đâu
+    LaunchedEffect(selected) {
+        val group = selected?.group ?: return@LaunchedEffect
+        if (group in CollapsibleNavGroups && group !in openGroups) {
+            openGroups.add(group)
+        }
+    }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
@@ -521,7 +690,8 @@ fun MoreDestinationsSheet(
             NavDestination.entries
                 .filter { it !in CompactPrimaryDestinations }
                 .groupBy { it.group }
-                .forEach { (group, items) ->
+                .forEach { (group, allItems) ->
+                    val items = allItems.filter { it.isVisibleIn(group) }
                     if (group in CollapsibleNavGroups) {
                         val open = group in openGroups
                         SheetGroupHeader(

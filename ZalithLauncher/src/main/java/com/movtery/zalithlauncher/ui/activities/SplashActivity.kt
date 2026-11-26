@@ -41,11 +41,14 @@ import com.movtery.zalithlauncher.components.jre.UnpackJnaTask
 import com.movtery.zalithlauncher.components.jre.UnpackJreTask
 import com.movtery.zalithlauncher.context.readAssetFile
 import com.movtery.zalithlauncher.legal.AvailableAgreement
+import com.movtery.zalithlauncher.game.plugin.PluginLoader
+import com.movtery.zalithlauncher.game.renderer.Renderers
 import com.movtery.zalithlauncher.path.GLOBAL_JSON
 import com.movtery.zalithlauncher.setting.GameSettings
 import com.movtery.zalithlauncher.setting.launcherMMKV
 import com.movtery.zalithlauncher.ui.base.BaseAppCompatActivity
 import com.movtery.zalithlauncher.ui.screens.navigateOnce
+import com.movtery.zalithlauncher.ui.screens.splash.SplashLoadingState
 import com.movtery.zalithlauncher.ui.screens.splash.SplashOperation
 import com.movtery.zalithlauncher.ui.screens.splash.SplashScreen
 import com.movtery.zalithlauncher.ui.theme.ZalithLauncherTheme
@@ -57,6 +60,9 @@ import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.viewmodel.SplashBackStackViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -92,6 +98,11 @@ class SplashActivity : BaseAppCompatActivity() {
     private val backStackViewModel: SplashBackStackViewModel by viewModels()
     private val _availableAgreement = MutableStateFlow<AvailableAgreement?>(null)
     private val availableAgreement = _availableAgreement.asStateFlow()
+
+    /** Tiến độ khởi tạo thật của ứng dụng, hiển thị trên màn hình chờ. */
+    private val _loadingState = MutableStateFlow(SplashLoadingState())
+    private val loadingState = _loadingState.asStateFlow()
+    private var initJob: Job? = null
 
     private fun switchScreen(screen: SplashOperation) {
         backStackViewModel.splashScreen.backStack.navigateOnce(screen)
@@ -150,37 +161,93 @@ class SplashActivity : BaseAppCompatActivity() {
                         onExitClick = { finishAffinity() },
                         availableAgreement = availableAgreement,
                         unpackItems = unpackItems,
-                        screenViewModel = backStackViewModel
+                        screenViewModel = backStackViewModel,
+                        loadingState = loadingState,
+                        onRetryLoading = { startInitialization() }
                     )
                 }
             }
         }
 
-        lifecycleScope.launch(Dispatchers.Main) {
+        startInitialization()
+    }
+
+    /**
+     * Chạy toàn bộ bước khởi tạo trên luồng nền, cập nhật tiến độ thật.
+     * Lỗi được hiển thị ngay trên màn hình chờ kèm nút thử lại, không chặn UI.
+     */
+    private fun startInitialization() {
+        if (initJob?.isActive == true) return
+        initJob = lifecycleScope.launch(Dispatchers.Main) {
+            _loadingState.value = SplashLoadingState(
+                progress = 0f,
+                message = getString(R.string.splash_loading_preparing)
+            )
             switchScreen(SplashOperation.Loading)
 
-            // 检查安装包架构与设备不匹配
-            if (!Architecture.isBuildArchCompatible(BuildKeys.BUILD_ARCH, Architecture.getDeviceArchitecture())) {
-                switchScreen(SplashOperation.ArchMismatch)
-                return@launch
-            }
-
-            withContext(Dispatchers.IO) {
-                checkAllTask()
-                val agreement = loadAvailableAgreement()
-                _availableAgreement.update { agreement }
-            }
-
-            // 检查协议同意情况
-            val acceptedAgreementVersion = launcherMMKV().getString(ACCEPTED_AGREEMENT_VERSION_KEY, null)
-            if (requiresAgreementConsent()) {
-                switchScreen(SplashOperation.Welcome)
-                // 曾同意过旧版的协议，发布对话框提醒
-                if (acceptedAgreementVersion != null) {
-                    showAgreementUpdateDialog()
+            try {
+                // 检查安装包架构与设备不匹配
+                if (!Architecture.isBuildArchCompatible(BuildKeys.BUILD_ARCH, Architecture.getDeviceArchitecture())) {
+                    switchScreen(SplashOperation.ArchMismatch)
+                    return@launch
                 }
-            } else {
-                checkTasksToMain()
+
+                // Đếm lại từ đầu để lần thử lại không cộng dồn sai.
+                finishedTaskCount.set(0)
+                _loadingState.update {
+                    it.copy(progress = 0.08f, message = getString(R.string.splash_loading_preparing))
+                }
+
+                withContext(Dispatchers.IO) {
+                    coroutineScope {
+                        // XOYO: nạp renderer và plugin song song với kiểm tra tài nguyên,
+                        // để MainActivity không phải quét plugin trên luồng chính
+                        val pluginJob = async { loadPluginsOffMain() }
+                        val checkJob = async {
+                            checkAllTask { checked, total, itemName ->
+                                _loadingState.update {
+                                    it.copy(
+                                        progress = 0.08f + 0.62f * checked / total.coerceAtLeast(1),
+                                        message = getString(R.string.splash_loading_checking, itemName)
+                                    )
+                                }
+                            }
+                        }
+                        awaitAll(pluginJob, checkJob)
+                    }
+                }
+
+                _loadingState.update {
+                    it.copy(progress = 0.78f, message = getString(R.string.splash_loading_agreement))
+                }
+                val agreement = withContext(Dispatchers.IO) {
+                    loadAvailableAgreement()
+                }
+                _availableAgreement.update { agreement }
+
+                _loadingState.update {
+                    it.copy(progress = 0.9f, message = getString(R.string.splash_loading_finishing))
+                }
+
+                // 检查协议同意情况
+                val acceptedAgreementVersion = launcherMMKV().getString(ACCEPTED_AGREEMENT_VERSION_KEY, null)
+                if (requiresAgreementConsent()) {
+                    switchScreen(SplashOperation.Welcome)
+                    // 曾同意过旧版的协议，发布对话框提醒
+                    if (acceptedAgreementVersion != null) {
+                        showAgreementUpdateDialog()
+                    }
+                } else {
+                    checkTasksToMain()
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (th: Throwable) {
+                Logger.error(TAG, "Failed to initialize the launcher", th)
+                _loadingState.value = SplashLoadingState(
+                    progress = null,
+                    error = th.message?.takeIf { it.isNotBlank() } ?: th.javaClass.simpleName
+                )
             }
         }
     }
@@ -237,18 +304,40 @@ class SplashActivity : BaseAppCompatActivity() {
         unpackItems.sort()
     }
 
-    private suspend fun checkAllTask() {
+    /**
+     * XOYO: nạp renderer và plugin ở luồng nền. Renderers và driver chỉ đọc cấu hình tĩnh
+     * và thư mục native của app, không cần file đã giải nén, nên có thể chạy trong lúc chờ.
+     * Khi MainActivity gọi lại, PluginLoader đã khởi tạo nên bỏ qua.
+     */
+    private fun loadPluginsOffMain() {
+        runCatching {
+            Renderers.init()
+            PluginLoader.loadAllPlugins(applicationContext, false)
+        }.onFailure { Logger.error(TAG, "Failed to load plugins on splash", it) }
+    }
+
+    private suspend fun checkAllTask(
+        onItemChecked: (checked: Int, total: Int, itemName: String) -> Unit = { _, _, _ -> }
+    ) {
         //检查应用 assets 目录
         listAssetsPath("runtimes").forEach { filePath ->
             Logger.info(TAG, "The launcher contains the runtime environment: $filePath")
         }
 
-        unpackItems.forEach { item ->
-            val state = item.task.checkState()
-            item.updateState(state)
-            if (state == InstallableItem.State.FINISHED) {
-                finishedTaskCount.incrementAndGet()
-            }
+        val total = unpackItems.size
+        val checked = AtomicInteger(0)
+        // XOYO: kiểm tra từng mục song song. Tiến độ đếm theo số mục đã xong.
+        coroutineScope {
+            unpackItems.map { item ->
+                async {
+                    val state = item.task.checkState()
+                    item.updateState(state)
+                    if (state == InstallableItem.State.FINISHED) {
+                        finishedTaskCount.incrementAndGet()
+                    }
+                    onItemChecked(checked.incrementAndGet(), total, item.name)
+                }
+            }.awaitAll()
         }
     }
 
@@ -342,6 +431,9 @@ class SplashActivity : BaseAppCompatActivity() {
                 }
             }
 
+            _loadingState.update {
+                it.copy(progress = 1f, message = getString(R.string.splash_loading_finishing))
+            }
             swapToMain()
             return true
         }

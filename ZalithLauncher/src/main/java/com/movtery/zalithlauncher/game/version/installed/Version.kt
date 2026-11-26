@@ -136,6 +136,9 @@ class Version(
      */
     fun getVersionPath(): File = File(getVersionsFolder(), versionName)
 
+    /** Ảnh hoặc video nền riêng của phiên bản này (XOYO). Không có file này thì dùng nền chung. */
+    fun getBackgroundFile(): File = File(getVersionPath(), "xoyo_background.file")
+
     /**
      * @return 获取版本名称
      */

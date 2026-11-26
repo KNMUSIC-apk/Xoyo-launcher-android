@@ -46,8 +46,7 @@ import com.movtery.zalithlauncher.game.account.wardrobe.SkinType
 import com.movtery.zalithlauncher.game.account.wardrobe.capeLocalRes
 import com.movtery.zalithlauncher.game.account.wardrobe.getLocalUUIDWithSkinModel
 import com.movtery.zalithlauncher.game.account.wardrobe.isSlimModel
-import com.movtery.zalithlauncher.game.account.wardrobe.WebImageKind
-import com.movtery.zalithlauncher.game.account.wardrobe.classifyPngImage
+import com.movtery.zalithlauncher.game.account.wardrobe.isCapeImage
 import com.movtery.zalithlauncher.game.account.wardrobe.isValid
 import com.movtery.zalithlauncher.game.account.wardrobe.validateSkinFile
 import com.movtery.zalithlauncher.game.account.yggdrasil.PlayerProfile
@@ -892,7 +891,9 @@ class AccountManageViewModel @AssistedInject constructor(
                         androidText(R.string.generic_warning),
                         androidText(R.string.account_cape_offline_only)
                     )
-                    file.classifyPngImage() != WebImageKind.CAPE -> emitError(
+                    // 64×32 vừa là skin vừa là cape hợp lệ, nên phải kiểm tra theo tỉ lệ 2:1
+                    // thay vì phân loại chung (cách cũ từ chối mọi cape chuẩn 64×32).
+                    !file.isCapeImage() -> emitError(
                         androidText(R.string.generic_warning),
                         androidText(R.string.account_cape_file_invalid)
                     )

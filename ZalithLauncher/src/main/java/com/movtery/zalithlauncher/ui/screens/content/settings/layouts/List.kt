@@ -30,11 +30,13 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.movtery.zalithlauncher.ui.components.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -120,10 +122,13 @@ private fun <E> BaseListSettingsCard(
                         middleLayout?.invoke(this@innerColumn)
                     }
                     trailingIcon?.let { trailing ->
+                        // XOYO: các nút phụ và nút mũi tên cùng 36dp, cách nhau 4dp, không chồng lên nhau
                         Row(
                             modifier = Modifier.align(Alignment.CenterVertically),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
                             content = trailing
                         )
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
                     val rotation by animateFloatAsState(
                         targetValue = if (expanded) -180f else 0f,
@@ -132,7 +137,7 @@ private fun <E> BaseListSettingsCard(
                     IconButton(
                         modifier = Modifier
                             .align(Alignment.CenterVertically)
-                            .size(34.dp)
+                            .size(36.dp)
                             .rotate(rotation),
                         enabled = enabled,
                         onClick = { onExpandChange(!expanded) }

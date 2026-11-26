@@ -25,6 +25,17 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.movtery.zalithlauncher.game.version.installed.VersionsManager
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -37,8 +48,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -49,7 +60,7 @@ import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.movtery.zalithlauncher.ui.components.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
@@ -87,8 +98,21 @@ import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.utils.animation.getAnimateTween
 import org.jackhuang.hmcl.addon.AddonProjectInfo
 
+/** Chiều rộng mỗi ô lọc trên thanh lọc ngang. Các mục tải về dùng chung chiều rộng này. */
+val SearchFilterItemWidth: Dp = 240.dp
+
+/** Ô tên và ô tìm kiếm rộng hơn các ô khác một chút. */
+private val SearchFilterWideWidth: Dp = 300.dp
+
+/** Khoảng cách giữa các ô lọc trên thanh lọc ngang. */
+private val SearchFilterGap: Dp = 10.dp
+
 /**
  * 搜索资源过滤器UI
+ *
+ * XOYO: bố cục theo ảnh tham chiếu của người dùng.
+ * Hàng trên là hai tab nguồn tài nguyên (Modrinth / CurseForge) cùng ô tìm kiếm.
+ * Hàng dưới là các viên lọc gọn, tự cuộn ngang khi màn hình hẹp.
  * @param enablePlatform 是否允许更改目标平台
  * @param searchPlatform 目标平台
  * @param searchName 搜索名称
@@ -102,7 +126,7 @@ import org.jackhuang.hmcl.addon.AddonProjectInfo
  * @param modloaders 可用模组加载器列表
  * @param modloader 模组加载器
  * @param onModLoaderChange 模组加载器变更时
- * @param extraFilter 额外的过滤器UI
+ * @param extraFilter 额外的过滤器UI, ví dụ nút nhập modpack
  */
 @Composable
 fun SearchFilter(
@@ -127,130 +151,401 @@ fun SearchFilter(
     modloaders: List<PlatformDisplayLabel> = emptyList(),
     modloader: PlatformDisplayLabel? = null,
     onModLoaderChange: (PlatformDisplayLabel?) -> Unit = {},
-    extraFilter: (LazyListScope.() -> Unit)? = null
+    extraFilter: (@Composable () -> Unit)? = null
 ) {
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = contentPadding,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    val categoryLabels = categories.map { stringResource(it.getDisplayName()) }
+    val autoLabel = stringResource(R.string.download_addon_filter_auto)
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(contentPadding),
+        verticalArrangement = Arrangement.spacedBy(SearchFilterGap)
     ) {
-        item {
-            SuggestionsText(
+        //Nguồn tài nguyên và ô tìm kiếm nằm cùng một hàng
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (enablePlatform) {
+                PlatformSourceTabs(
+                    searchPlatform = searchPlatform,
+                    onPlatformChange = onPlatformChange
+                )
+            }
+
+            SearchNameField(
+                modifier = Modifier.weight(1f),
                 value = searchName,
                 onValueChange = onSearchNameChange,
-                label = stringResource(R.string.download_addon_filter_search_name),
                 onSearch = onSearch,
-                suggestions = searchedMcMods,
-                suggestionLabel = { item ->
-                    Text(
-                        item.mainName(),
-                        style = MaterialTheme.typography.labelMedium
+                suggestions = searchedMcMods
+            )
+        }
+
+        //Các viên lọc, tự cuộn ngang khi không đủ chỗ
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            //Phiên bản game sẽ nhận tài nguyên (đổi ở danh sách phiên bản)
+            InstanceLabel()
+
+            FilterPill(
+                title = stringResource(R.string.download_addon_filter_category),
+                value = categoryLabels.joinToString(", ")
+                    .ifBlank { stringResource(R.string.download_addon_filter_all) },
+                highlight = categories.isNotEmpty()
+            ) { dismiss ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.download_addon_filter_all)) },
+                    onClick = {
+                        onCategoryChanged(emptyList())
+                        dismiss()
+                    }
+                )
+                allCategories.forEach { category ->
+                    val selected = categories.contains(category)
+                    DropdownMenuItem(
+                        text = { Text(stringResource(category.getDisplayName())) },
+                        leadingIcon = {
+                            Checkbox(checked = selected, onCheckedChange = null)
+                        },
+                        onClick = {
+                            onCategoryChanged(
+                                if (selected) categories - category else categories + category
+                            )
+                        }
                     )
-                    //英文名/次要名称
-                    if (item.subName().isNotBlank()) {
-                        Text(
-                            modifier = Modifier.alpha(0.7f),
-                            text = item.subName(),
-                            style = MaterialTheme.typography.labelSmall
+                }
+            }
+
+            FilterPill(
+                title = stringResource(R.string.download_addon_filter_game_version),
+                value = gameVersion.ifBlank { autoLabel },
+                highlight = gameVersion.isNotBlank()
+            ) { dismiss ->
+                DropdownMenuItem(
+                    text = { Text(autoLabel) },
+                    onClick = {
+                        onGameVersionChange("")
+                        onSearch()
+                        dismiss()
+                    }
+                )
+                searchedVersions.forEach { version ->
+                    DropdownMenuItem(
+                        text = { Text(version) },
+                        onClick = {
+                            onGameVersionChange(version)
+                            onSearch()
+                            dismiss()
+                        }
+                    )
+                }
+            }
+
+            if (enableModLoader) {
+                FilterPill(
+                    title = stringResource(R.string.download_addon_filter_modloader),
+                    value = modloader?.getDisplayName() ?: autoLabel,
+                    highlight = modloader != null
+                ) { dismiss ->
+                    DropdownMenuItem(
+                        text = { Text(autoLabel) },
+                        onClick = {
+                            onModLoaderChange(null)
+                            dismiss()
+                        }
+                    )
+                    modloaders.forEach { item ->
+                        DropdownMenuItem(
+                            text = { Text(item.getDisplayName()) },
+                            onClick = {
+                                onModLoaderChange(item)
+                                dismiss()
+                            }
                         )
                     }
-                },
-                onSuggestionClick = { item ->
-                    onSearchNameChange(
-                        item.subName().ifEmpty { item.abbrName() }
-                    )
-                    onSearch()
-                    onSearch()
                 }
-            )
-        }
-
-        item {
-            SuggestionsText(
-                value = gameVersion,
-                onValueChange = onGameVersionChange,
-                label = stringResource(R.string.download_addon_filter_game_version),
-                onSearch = onSearch,
-                suggestions = searchedVersions,
-                suggestionLabel = { item ->
-                    Text(
-                        text = item,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                },
-                onSuggestionClick = { item ->
-                    onGameVersionChange(item)
-                    onSearch()
-                }
-            )
-        }
-
-        extraFilter?.invoke(this@LazyColumn)
-
-        if (enablePlatform) {
-            item {
-                PlatformListLayout(
-                    modifier = Modifier.fillMaxWidth(),
-                    searchPlatform = searchPlatform,
-                    onPlatformChange = onPlatformChange,
-                )
             }
-        }
 
-        item {
-            FilterListLayout(
-                modifier = Modifier.fillMaxWidth(),
-                items = PlatformSortField.entries,
-                selectionMode = FilterSelectionMode.Single,
-                selectedItems = listOfNotNull(sortField),
-                onSelectionChange = { new ->
-                    new.first().takeIf { it != sortField }?.let { value ->
-                        onSortFieldChange(value)
-                    }
-                },
-                getItemLabel = { item ->
-                    stringResource(item.getDisplayName())
-                },
+            FilterPill(
                 title = stringResource(R.string.sort_by),
-                cancelable = false
-            )
-        }
+                value = stringResource(sortField.getDisplayName())
+            ) { dismiss ->
+                PlatformSortField.entries.forEach { field ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(field.getDisplayName())) },
+                        onClick = {
+                            if (field != sortField) onSortFieldChange(field)
+                            dismiss()
+                        }
+                    )
+                }
+            }
 
-        item {
-            FilterListLayout(
-                modifier = Modifier.fillMaxWidth(),
-                items = allCategories,
-                selectionMode = FilterSelectionMode.Multiple,
-                selectedItems = categories,
-                onSelectionChange = { news ->
-                    news.takeIf { it.toSet() != categories.toSet() }?.let { value ->
-                        onCategoryChanged(value)
+            extraFilter?.invoke()
+        }
+    }
+}
+
+/**
+ * Hai tab nguồn tài nguyên: Modrinth và CurseForge
+ */
+@Composable
+private fun PlatformSourceTabs(
+    searchPlatform: Platform,
+    onPlatformChange: (Platform) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = CircleShape,
+        color = cardColor(true),
+        contentColor = onCardColor()
+    ) {
+        Row(
+            modifier = Modifier.padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Platform.entries.forEach { platform ->
+                val selected = platform == searchPlatform
+                Surface(
+                    shape = CircleShape,
+                    color = if (selected) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    } else {
+                        Color.Transparent
+                    },
+                    contentColor = onCardColor(),
+                    onClick = {
+                        if (!selected) onPlatformChange(platform)
                     }
-                },
-                getItemLabel = { item ->
-                    stringResource(item.getDisplayName())
-                },
-                title = stringResource(R.string.download_addon_filter_category)
-            )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(16.dp),
+                            painter = painterResource(platform.getDrawable()),
+                            contentDescription = platform.displayName
+                        )
+                        Text(
+                            modifier = Modifier.alpha(if (selected) 1f else 0.7f),
+                            text = platform.displayName,
+                            style = MaterialTheme.typography.labelLarge,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
         }
+    }
+}
 
-        if (enableModLoader) {
-            item {
-                FilterListLayout(
-                    modifier = Modifier.fillMaxWidth(),
-                    items = modloaders,
-                    selectionMode = FilterSelectionMode.Single,
-                    selectedItems = listOfNotNull(modloader),
-                    onSelectionChange = { new ->
-                        val value = new.firstOrNull()
-                        if (value != modloader) onModLoaderChange(value)
+/**
+ * Ô tìm kiếm bo tròn, có biểu tượng kính lúp và gợi ý tên dự án
+ */
+@Composable
+private fun SearchNameField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSearch: () -> Unit,
+    suggestions: List<AddonProjectInfo>,
+    modifier: Modifier = Modifier
+) {
+    val focusManager = LocalFocusManager.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused = interactionSource.collectIsFocusedAsState().value
+    val showSuggestions = isFocused && suggestions.isNotEmpty()
+
+    ExposedDropdownMenuBox(
+        expanded = showSuggestions,
+        onExpandedChange = {
+            focusManager.clearFocus(false)
+        }
+    ) {
+        OwnOutlinedTextField(
+            modifier = modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
+            value = value,
+            onValueChange = onValueChange,
+            shape = CircleShape,
+            placeholder = {
+                Text(
+                    text = stringResource(R.string.download_addon_filter_search_name),
+                    style = MaterialTheme.typography.labelMedium
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    modifier = Modifier.size(20.dp),
+                    painter = painterResource(R.drawable.ic_search),
+                    contentDescription = null
+                )
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = Color.Transparent,
+                focusedContainerColor = cardColor(true),
+                unfocusedContainerColor = cardColor(true)
+            ),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Search
+            ),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    onSearch()
+                }
+            ),
+            interactionSource = interactionSource
+        )
+
+        ExposedDropdownMenu(
+            expanded = showSuggestions,
+            onDismissRequest = {
+                focusManager.clearFocus(false)
+            }
+        ) {
+            suggestions.forEach { item ->
+                DropdownMenuItem(
+                    text = {
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = item.mainName(),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            //英文名/次要名称
+                            if (item.subName().isNotBlank()) {
+                                Text(
+                                    modifier = Modifier.alpha(0.7f),
+                                    text = item.subName(),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
                     },
-                    getItemLabel = { item ->
-                        item.getDisplayName()
-                    },
-                    title = stringResource(R.string.download_addon_filter_modloader)
+                    onClick = {
+                        onValueChange(item.subName().ifEmpty { item.abbrName() })
+                        onSearch()
+                        focusManager.clearFocus(false)
+                    }
                 )
             }
+        }
+    }
+}
+
+/**
+ * Viên ghi phiên bản game sẽ nhận tài nguyên
+ */
+@Composable
+private fun InstanceLabel(modifier: Modifier = Modifier) {
+    val currentVersion by VersionsManager.currentVersion.collectAsStateWithLifecycle()
+    val instanceName = remember(currentVersion) {
+        currentVersion?.getVersionInfo()?.let { info ->
+            listOfNotNull(
+                info.minecraftVersion.takeIf { it.isNotBlank() },
+                info.loaderInfos.firstOrNull()?.loader?.displayName
+            ).joinToString(" ")
+        }
+    }
+
+    Surface(
+        modifier = modifier,
+        shape = CircleShape,
+        color = cardColor(true),
+        contentColor = onCardColor()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                modifier = Modifier.alpha(0.6f),
+                text = stringResource(R.string.download_addon_filter_instance),
+                style = MaterialTheme.typography.labelMedium
+            )
+            Text(
+                text = instanceName ?: stringResource(R.string.download_addon_filter_none),
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/**
+ * Viên lọc có menu xổ xuống
+ * @param highlight đang có giá trị lọc khác mặc định
+ * @param menuContent nội dung menu, gọi `dismiss` để đóng menu
+ */
+@Composable
+private fun FilterPill(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    highlight: Boolean = false,
+    menuContent: @Composable ColumnScope.(dismiss: () -> Unit) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        Surface(
+            shape = CircleShape,
+            color = if (highlight) {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+            } else {
+                cardColor(true)
+            },
+            contentColor = onCardColor(),
+            onClick = { expanded = true }
+        ) {
+            Row(
+                modifier = Modifier.padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    modifier = Modifier.alpha(0.6f),
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1
+                )
+                Text(
+                    modifier = Modifier.widthIn(max = 140.dp),
+                    text = value,
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Icon(
+                    modifier = Modifier.size(18.dp),
+                    painter = painterResource(R.drawable.ic_arrow_drop_down_rounded),
+                    contentDescription = null
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            menuContent { expanded = false }
         }
     }
 }
@@ -278,7 +573,7 @@ private fun <E> SuggestionsText(
     suggestions: List<E>,
     suggestionLabel: @Composable FlowRowScope.(E) -> Unit,
     onSuggestionClick: (E) -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.fillMaxWidth(),
 ) {
     val focusManager = LocalFocusManager.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -298,8 +593,8 @@ private fun <E> SuggestionsText(
             else RoundedCornerShape(16.0.dp)
         )
         OwnOutlinedTextField(
+            // Chiều rộng do người gọi quyết định (mặc định fillMaxWidth), để không ghi đè Modifier.width của thanh lọc
             modifier = modifier
-                .fillMaxWidth()
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
             value = value,
             onValueChange = onValueChange,

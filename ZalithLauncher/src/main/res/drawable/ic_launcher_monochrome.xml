@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Biểu tượng đơn sắc cho Android 13+ (themed icon). Hệ thống chỉ dùng kênh alpha. -->
+<!-- Biểu tượng đơn sắc Android 13+. Hệ thống chỉ dùng alpha, các mặt khối khác nhau về độ đậm. Sinh bởi gen_logo.py. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:pathData="M37,37 L71,71"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="13"
-        android:strokeLineCap="round" />
+        android:fillColor="#80FFFFFF"
+        android:pathData="M51.75,23.3 L52.31,23.01 L52.88,22.81 L53.44,22.69 L54,22.65 L54.56,22.69 L55.12,22.81 L55.69,23.01 L56.25,23.3 L79.46,36.7 L79.99,37.05 L80.45,37.43 L80.83,37.86 L81.15,38.32 L81.4,38.83 L81.57,39.38 L81.68,39.97 L81.71,40.6 L81.71,67.4 L81.68,68.03 L81.57,68.62 L81.4,69.17 L81.15,69.68 L80.83,70.14 L80.45,70.57 L79.99,70.95 L79.46,71.3 L56.25,84.7 L55.69,84.99 L55.12,85.19 L54.56,85.31 L54,85.35 L53.44,85.31 L52.88,85.19 L52.31,84.99 L51.75,84.7 L28.54,71.3 L28.01,70.95 L27.55,70.57 L27.17,70.14 L26.85,69.68 L26.6,69.17 L26.43,68.62 L26.32,68.03 L26.29,67.4 L26.29,40.6 L26.32,39.97 L26.43,39.38 L26.6,38.83 L26.85,38.32 L27.17,37.86 L27.55,37.43 L28.01,37.05 L28.54,36.7 Z" />
     <path
-        android:pathData="M71,37 L37,71"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="13"
-        android:strokeLineCap="round" />
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,34 L76,45 L54,56 L32,45 Z" />
+    <path
+        android:fillColor="#CCFFFFFF"
+        android:pathData="M32,45 L54,56 L54,78 L32,67 Z" />
+    <path
+        android:fillColor="#99FFFFFF"
+        android:pathData="M76,45 L76,67 L54,78 L54,56 Z" />
 </vector>

@@ -30,9 +30,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
+import com.movtery.zalithlauncher.ui.components.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.movtery.zalithlauncher.ui.components.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -64,7 +64,6 @@ import com.movtery.zalithlauncher.library.libraryData
 import com.movtery.zalithlauncher.path.URL_COMMUNITY
 import com.movtery.zalithlauncher.path.URL_MCMOD
 import com.movtery.zalithlauncher.path.URL_PROJECT
-import com.movtery.zalithlauncher.path.URL_SUPPORT
 import com.movtery.zalithlauncher.path.URL_WEBLATE
 import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.AnimatedLazyColumn
@@ -84,8 +83,6 @@ fun AboutInfoScreen(
     key: NestedNavKey.Settings,
     settingsScreenKey: TitledNavKey?,
     mainScreenKey: TitledNavKey?,
-    checkUpdate: () -> Unit,
-    onViewSponsors: () -> Unit,
     openLicense: (raw: Int) -> Unit,
     openLink: (url: String) -> Unit
 ) {
@@ -112,11 +109,6 @@ fun AboutInfoScreen(
                             text = stringResource(R.string.about_launcher_version, BuildConfig.VERSION_NAME),
                             button = {
                                 Button(
-                                    onClick = checkUpdate
-                                ) {
-                                    Text(text = stringResource(R.string.upgrade_title))
-                                }
-                                Button(
                                     onClick = { openLink(URL_PROJECT) }
                                 ) {
                                     Text(text = stringResource(R.string.about_launcher_project_link))
@@ -128,13 +120,7 @@ fun AboutInfoScreen(
                             icon = painterResource(R.drawable.img_avatar_movtery),
                             title = stringResource(R.string.about_launcher_author_movtery_title),
                             text = stringResource(R.string.about_launcher_author_movtery_text, launcherName),
-                            button = {
-                                Button(
-                                    onClick = { openLink(URL_SUPPORT) }
-                                ) {
-                                    Text(text = stringResource(R.string.about_sponsor))
-                                }
-                            }
+                            button = {}
                         )
                     }
                 }
@@ -149,29 +135,10 @@ fun AboutInfoScreen(
                         val launcherName = remember { launcherName() }
 
                         ButtonIconItem(
-                            icon = painterResource(R.drawable.img_sponsor),
-                            title = stringResource(R.string.about_sponsors_title),
-                            text = stringResource(R.string.about_sponsors_summary, launcherName),
-                            button = {
-                                Button(
-                                    onClick = onViewSponsors
-                                ) {
-                                    Text(text = stringResource(R.string.generic_view))
-                                }
-                            }
-                        )
-
-                        ButtonIconItem(
                             icon = painterResource(R.drawable.img_avatar_bangbang93),
                             title = "bangbang93",
                             text = stringResource(R.string.about_acknowledgements_bangbang93_text, BuildKeys.LAUNCHER_SHORT_NAME),
-                            button = {
-                                Button(
-                                    onClick = { openLink("https://ifdian.net/a/bangbang93") }
-                                ) {
-                                    Text(text = stringResource(R.string.about_sponsor))
-                                }
-                            }
+                            button = {}
                         )
                         LinkIconItem(
                             icon = painterResource(R.drawable.img_launcher_fcl),
@@ -197,13 +164,7 @@ fun AboutInfoScreen(
                             icon = painterResource(R.drawable.img_avatar_mcim),
                             title = "mcmod-info-mirror",
                             text = stringResource(R.string.about_acknowledgements_mcim_text, BuildKeys.LAUNCHER_SHORT_NAME),
-                            button = {
-                                Button(
-                                    onClick = { openLink("https://www.mcimirror.top/sponsor") }
-                                ) {
-                                    Text(text = stringResource(R.string.about_sponsor))
-                                }
-                            }
+                            button = {}
                         )
                         LinkIconItem(
                             icon = painterResource(R.drawable.img_platform_modrinth),
