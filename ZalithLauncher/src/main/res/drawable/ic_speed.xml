@@ -1,0 +1,22 @@
+<!--
+  ~ XOYO Launcher: biểu tượng hiệu năng (đồng hồ tốc độ), thay cho biểu tượng bảng điều khiển chung chung.
+  -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+  <path
+      android:pathData="M120,680 A360,360 0 0 1 840,680"
+      android:strokeColor="#1f1f1f"
+      android:strokeWidth="80"
+      android:strokeLineCap="round"/>
+  <path
+      android:pathData="M480,680 L650,470"
+      android:strokeColor="#1f1f1f"
+      android:strokeWidth="80"
+      android:strokeLineCap="round"/>
+  <path
+      android:pathData="M480,620 A60,60 0 1 0 480,740 A60,60 0 1 0 480,620Z"
+      android:fillColor="#1f1f1f"/>
+</vector>

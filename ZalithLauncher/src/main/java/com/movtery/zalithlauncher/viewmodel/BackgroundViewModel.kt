@@ -38,8 +38,6 @@ import androidx.lifecycle.viewModelScope
 import com.movtery.zalithlauncher.context.copyLocalFile
 import com.movtery.zalithlauncher.game.version.installed.Version
 
-import com.movtery.zalithlauncher.game.version.installed.VersionsManager
-
 import com.movtery.zalithlauncher.path.PathManager
 import com.movtery.zalithlauncher.setting.LauncherSettings
 import com.movtery.zalithlauncher.setting.enums.BackgroundBlur
@@ -59,9 +57,8 @@ class BackgroundViewModel: ViewModel() {
     /** Nền chung của launcher, do người dùng đặt trong Cài đặt */
     private val globalBackgroundFile: File = PathManager.FILE_LAUNCHER_BACKGROUND
 
-    /** File nền đang hiển thị: nền riêng của phiên bản đang chọn, không có thì dùng nền chung */
-    var backgroundFile: File by mutableStateOf(globalBackgroundFile)
-        private set
+    /** File nền của launcher. Nền riêng của phiên bản không dùng ở đây nữa, nó hiện trên thẻ phiên bản */
+    val backgroundFile: File = globalBackgroundFile
 
     /**
      * 背景文件是否有效（存在，且是有效的视频或图片）
@@ -82,6 +79,13 @@ class BackgroundViewModel: ViewModel() {
         private set
 
     var refreshTrigger by mutableStateOf(false)
+        private set
+
+    /**
+     * Tăng mỗi khi nền riêng của một phiên bản được đặt hoặc bỏ,
+     * để thẻ của phiên bản đó vẽ lại ảnh nền mới.
+     */
+    var versionBackgroundRevision by mutableStateOf(0)
         private set
 
     /**
@@ -149,11 +153,6 @@ class BackgroundViewModel: ViewModel() {
         viewModelScope.launch(Dispatchers.Main) {
             updateState()
         }
-        // XOYO: theo phiên bản đang chọn, đổi nền sang nền riêng của phiên bản đó
-        viewModelScope.launch {
-            VersionsManager.currentVersion.collect { applyVersion(it) }
-        }
-
         viewModelScope.launch {
             snapshotFlow {
                 BlurConfig(
@@ -178,28 +177,8 @@ class BackgroundViewModel: ViewModel() {
     }
 
     /**
-     * Đổi nền theo phiên bản đang chọn. Có nền riêng thì dùng, không thì quay về nền chung.
-     * @param force vẽ lại ngay cả khi đường dẫn không đổi (nền riêng vừa được thay)
-     */
-    private fun applyVersion(version: Version?, force: Boolean = false) {
-        val versionFile = version?.getBackgroundFile()?.takeIf { it.exists() }
-        val target = versionFile ?: globalBackgroundFile
-        if (target == backgroundFile && !force) return
-        backgroundFile = target
-        glassBlur.useFile(target)
-        viewModelScope.launch(Dispatchers.Main) { updateState() }
-    }
-
-    /** Vẽ lại nền nếu phiên bản vừa sửa đang được chọn */
-    private fun refreshIfCurrent(version: Version) {
-        val current = VersionsManager.currentVersion.value ?: return
-        if (current.getVersionName() == version.getVersionName()) {
-            applyVersion(current, force = true)
-        }
-    }
-
-    /**
-     * Đặt nền riêng cho một phiên bản. Có hiệu lực ngay nếu phiên bản đó đang được chọn.
+     * Đặt ảnh nền riêng cho một phiên bản. Ảnh này hiện trên thẻ của phiên bản đó,
+     * không thay nền chung của launcher.
      */
     suspend fun importVersionBackground(context: Context, result: Uri, version: Version) {
         withContext(Dispatchers.IO) {
@@ -212,15 +191,15 @@ class BackgroundViewModel: ViewModel() {
                 error("The selected file is not an image or a video!")
             }
         }
-        withContext(Dispatchers.Main) { refreshIfCurrent(version) }
+        withContext(Dispatchers.Main) { versionBackgroundRevision++ }
     }
 
-    /** Bỏ nền riêng của một phiên bản, quay về nền chung */
+    /** Bỏ ảnh nền riêng của một phiên bản, thẻ phiên bản quay về ảnh nền theo thế hệ */
     suspend fun clearVersionBackground(version: Version) {
         withContext(Dispatchers.IO) {
             FileUtils.deleteQuietly(version.getBackgroundFile())
         }
-        withContext(Dispatchers.Main) { refreshIfCurrent(version) }
+        withContext(Dispatchers.Main) { versionBackgroundRevision++ }
     }
 
     suspend fun delete() {

@@ -111,7 +111,6 @@ import com.movtery.zalithlauncher.ui.screens.content.VersionSettingsScreen
 import com.movtery.zalithlauncher.ui.screens.content.VersionsManageScreen
 import com.movtery.zalithlauncher.ui.screens.content.WebViewScreen
 import com.movtery.zalithlauncher.ui.screens.content.addoninfo.AddonInfoScreen
-import com.movtery.zalithlauncher.ui.screens.content.home.QuickAction
 import com.movtery.zalithlauncher.ui.screens.content.hub.ContentCenterScreen
 import com.movtery.zalithlauncher.ui.screens.content.hub.ServerHubScreen
 import com.movtery.zalithlauncher.ui.screens.content.hub.WorldManagerScreen
@@ -590,32 +589,7 @@ private fun NavigationUI(
                 useClassEquality = true
             )
         }
-        /**
-         * XOYO: xử lý thao tác nhanh trên Tổng quan.
-         * Mỗi thao tác chỉ mở đúng trang đã có sẵn, không tạo chức năng mới.
-         */
-        val onQuickAction: (QuickAction) -> Unit = { action ->
-            when (action) {
-                QuickAction.CREATE_PROFILE -> screenBackStackModel.navigateToDownload()
-                QuickAction.MANAGE_VERSIONS -> screenBackStackModel.navigateToDestination(NavDestination.VERSIONS)
-                QuickAction.INSTALL_MODS -> screenBackStackModel.navigateToDownload(screenBackStackModel.downloadModScreen)
-                QuickAction.INSTALL_SHADERS -> screenBackStackModel.navigateToDownload(screenBackStackModel.downloadShadersScreen)
-                QuickAction.INSTALL_RESOURCE_PACKS -> screenBackStackModel.navigateToDownload(screenBackStackModel.downloadResourcePackScreen)
-                QuickAction.MANAGE_WORLDS -> screenBackStackModel.navigateToDestination(NavDestination.WORLDS)
-                QuickAction.PERFORMANCE -> screenBackStackModel.navigateToDestination(NavDestination.PERFORMANCE)
-                QuickAction.OPEN_GAME_FOLDER -> {
-                    val target = VersionsManager.currentVersion.value?.takeIf { it.isValid() }
-                    if (target != null) {
-                        eventViewModel.sendEvent(
-                            EventViewModel.Event.OpenFileManager(rootPath = target.getGameDir().absolutePath)
-                        )
-                    } else {
-                        eventViewModel.sendToast(androidText(R.string.game_launch_no_version))
-                        screenBackStackModel.navigateToDestination(NavDestination.VERSIONS)
-                    }
-                }
-            }
-        }
+        // XOYO: Tổng quan không còn khối thao tác nhanh, mọi lối vào đã nằm trong sidebar.
 
         NestedNavDisplay(
             ownerKey = screenBackStackModel.mainScreen,
@@ -650,7 +624,6 @@ private fun NavigationUI(
                         onOpenLink = {
                             eventViewModel.sendEvent(EventViewModel.Event.OpenLink(it))
                         },
-                        onQuickAction = onQuickAction,
                         onNavigate = { destination ->
                             screenBackStackModel.navigateToDestination(destination)
                         },

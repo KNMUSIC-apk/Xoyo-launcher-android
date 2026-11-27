@@ -15,10 +15,13 @@ local.properties
 .key_alias.txt
 .curseforge_api.txt
 
-# Khóa ký và keystore (không bao giờ commit)
+# Khóa ký phát hành (không bao giờ commit)
 *.jks
 *.keystore
 xoyo_release.jks
+# Ngoại lệ: khóa debug công khai dùng chung cho mọi lần build, nhờ vậy APK mới
+# cài đè lên APK cũ được mà không phải gỡ app. Không dùng khóa này cho bản phát hành.
+!ZalithLauncher/xoyo_debug.p12
 LWJGL/build/
 LWJGL/*/build/
 

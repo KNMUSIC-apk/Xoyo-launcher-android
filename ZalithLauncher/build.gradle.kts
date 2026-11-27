@@ -28,6 +28,34 @@ val launcherUrl = project.findProperty("url_home") as? String ?: error("The \"ur
 val launcherVersionCode = (project.findProperty("launcher_version_code") as? String)?.toIntOrNull() ?: error("The \"launcher_version_code\" property is not set as an integer in gradle.properties.")
 val launcherVersionName = project.findProperty("launcher_version_name") as? String ?: error("The \"launcher_version_name\" property is not set in gradle.properties.")
 
+/**
+ * XOYO: versionCode tự tăng để Android luôn coi bản mới là bản cập nhật của bản cũ.
+ * - Trên CI: workflow truyền ORG_GRADLE_PROJECT_buildNumber = số lần chạy.
+ * - Dưới máy: lấy số commit của nhánh hiện tại.
+ * Nhờ vậy không phải sửa tay launcher_version_code mỗi lần phát hành.
+ */
+val launcherBuildNumber: Int = (project.findProperty("buildNumber") as? String)?.toIntOrNull()
+    ?: System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()
+    ?: runCatching {
+        ProcessBuilder("git", "rev-list", "--count", "HEAD")
+            .directory(rootDir)
+            .redirectErrorStream(true)
+            .start()
+            .inputStream
+            .bufferedReader()
+            .use { it.readText().trim().toInt() }
+    }.getOrDefault(0)
+
+/** versionCode hiệu lực: phần nền từ gradle.properties + số bản build */
+val effectiveVersionCode: Int = launcherVersionCode * 1_000_000 +
+        launcherBuildNumber.coerceIn(0, 999_999)
+
+/** Khóa ký phát hành (không commit) và khóa debug cố định đi kèm repo */
+val releaseKeystoreFile = file("xoyo_release.jks")
+val stableDebugKeystoreFile = file("xoyo_debug.p12")
+/** Mật khẩu cố định của khóa debug công khai trong repo (không phải bí mật) */
+val stableDebugStorePassword = "xoyolauncher"
+
 val defaultOAuthClientID = project.findProperty("oauth_client_id") as? String
 val defaultCurseForgeApiKey = project.findProperty("curseforge_api_key") as? String
 
@@ -225,13 +253,23 @@ android {
             keyAlias = getKeyFromLocal("KEY_ALIAS", ".key_alias.txt", "xoyo_release")
             keyPassword = getKeyFromLocal("KEY_PASSWORD", ".key_password.txt")
         }
+        // Khóa debug cố định nằm trong repo: mọi lần build đều ký bằng cùng một khóa,
+        // nên APK mới cài đè lên APK cũ được, không phải gỡ app rồi cài lại.
+        // Đây là khóa công khai, chỉ dùng cho bản debug; bản phát hành vẫn nên dùng xoyo_release.jks.
+        create("stableDebug") {
+            storeFile = stableDebugKeystoreFile
+            storeType = "PKCS12"
+            storePassword = stableDebugStorePassword
+            keyAlias = "xoyo_debug"
+            keyPassword = stableDebugStorePassword
+        }
     }
 
     defaultConfig {
         applicationId = xoyoApplicationId
         minSdk = 26
         targetSdk = 34
-        versionCode = launcherVersionCode
+        versionCode = effectiveVersionCode
         versionName = launcherVersionName
         manifestPlaceholders["launcher_name"] = launcherAPPName
     }
@@ -240,10 +278,11 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = if (file("xoyo_release.jks").isFile) {
-                signingConfigs.getByName("releaseBuild")
-            } else {
-                null
+            // Có khóa phát hành thì dùng khóa đó, không thì dùng khóa debug cố định trong repo
+            signingConfig = when {
+                file("xoyo_release.jks").isFile -> signingConfigs.getByName("releaseBuild")
+                stableDebugKeystoreFile.isFile -> signingConfigs.getByName("stableDebug")
+                else -> null
             }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -255,10 +294,11 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             // XOYO: ký bản debug bằng khóa cố định để mọi bản build cài đè lên bản trước, không phải gỡ app.
-            // Không có file xoyo_release.jks thì không gán gì, AGP tự dùng khóa debug mặc định như trước
-            // (gán null sẽ làm APK không có chữ ký và CI báo lỗi).
-            if (file("xoyo_release.jks").isFile) {
-                signingConfig = signingConfigs.getByName("releaseBuild")
+            // Ưu tiên khóa phát hành nếu có; nếu không thì dùng khóa debug cố định trong repo.
+            // Không có khóa nào thì không gán gì để AGP tự dùng khóa debug mặc định (gán null sẽ làm APK không có chữ ký).
+            when {
+                file("xoyo_release.jks").isFile -> signingConfig = signingConfigs.getByName("releaseBuild")
+                stableDebugKeystoreFile.isFile -> signingConfig = signingConfigs.getByName("stableDebug")
             }
         }
     }

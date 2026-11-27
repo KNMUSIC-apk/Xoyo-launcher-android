@@ -21,7 +21,7 @@ package com.movtery.zalithlauncher.ui.screens.content.download.game
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -37,9 +38,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -48,7 +50,6 @@ import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.nonInteractiveScrollbar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -59,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -67,7 +69,9 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -76,7 +80,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.game.versioninfo.MinecraftVersion
 import com.movtery.zalithlauncher.game.versioninfo.MinecraftVersions
-import com.movtery.zalithlauncher.game.versioninfo.models.isType
 import com.movtery.zalithlauncher.setting.LauncherSettings
 import com.movtery.zalithlauncher.ui.AndroidStringText
 import com.movtery.zalithlauncher.ui.androidText
@@ -101,7 +104,6 @@ import com.movtery.zalithlauncher.utils.classes.Quadruple
 import com.movtery.zalithlauncher.utils.formatDate
 import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.network.toLocal
-import com.movtery.zalithlauncher.utils.string.isEmptyOrBlank
 import com.movtery.zalithlauncher.viewmodel.EventViewModel
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.ResponseException
@@ -118,23 +120,37 @@ private sealed interface VersionState {
     /** 加载中 */
     data object Loading : VersionState
     /** 加载完成 */
-    data class None(val versions: List<MinecraftVersion>) : VersionState
+    data class None(val groups: List<VersionGroup>) : VersionState
     /** 加载出现异常 */
     data class Failure(val message: AndroidStringText) : VersionState
 }
 
 /**
+ * Nhóm phiên bản theo dòng, ví dụ 1.21, 1.20, 1.19.
+ * Danh sách bên trong đã sắp xếp mới nhất trước.
+ */
+private data class VersionGroup(
+    val key: String,
+    val versions: List<MinecraftVersion>
+) {
+    val latest: MinecraftVersion get() = versions.first()
+}
+
+/** Loại phiên bản đang chọn: mỗi lần chỉ xem một loại, giống thanh danh mục trong ảnh tham khảo */
+private enum class VersionCategory(val labelRes: Int) {
+    RELEASE(R.string.download_game_type_release),
+    SNAPSHOT(R.string.download_game_type_snapshot),
+    APRIL_FOOLS(R.string.download_game_type_april_fools),
+    OLD(R.string.download_game_type_old)
+}
+
+/**
  * 版本过滤条件
- * @param release 是否保留正式版本
- * @param snapshot 是否保留快照版本
- * @param old 是否保留旧版本
+ * @param category 版本类型
  * @param id 搜索并过滤版本ID
  */
 private data class VersionFilter(
-    val release: Boolean = true,
-    val snapshot: Boolean = false,
-    val aprilFools: Boolean = false,
-    val old: Boolean = false,
+    val category: VersionCategory = VersionCategory.RELEASE,
     val id: String = ""
 )
 
@@ -151,7 +167,7 @@ private class VersionsViewModel: ViewModel() {
         viewModelScope.launch {
             val allVersions = MinecraftVersions.allVersions.value
             versionState = VersionState.None(
-                versions = allVersions.filterVersions(versionFilter)
+                groups = allVersions.groupVersions(versionFilter)
             )
         }
     }
@@ -162,7 +178,7 @@ private class VersionsViewModel: ViewModel() {
             versionState = runCatching {
                 MinecraftVersions.refreshVersions(forceReload)
                 val allVersions = MinecraftVersions.allVersions.value
-                VersionState.None(allVersions.filterVersions(versionFilter))
+                VersionState.None(allVersions.groupVersions(versionFilter))
             }.getOrElse { e ->
                 Logger.warning(TAG, "Failed to get version manifest!", e)
                 val message: AndroidStringText = when(e) {
@@ -319,9 +335,10 @@ private fun SelectGameVersionContent(
                             }
                         )
 
-                        VersionList(
+                        VersionGrid(
                             modifier = Modifier.weight(1f),
-                            versions = state.versions,
+                            groups = state.groups,
+                            category = viewModel.versionFilter.category,
                             onVersionSelect = onVersionSelect,
                             openLink = { url ->
                                 eventViewModel.sendEvent(EventViewModel.Event.OpenLink(url))
@@ -334,22 +351,61 @@ private fun SelectGameVersionContent(
     }
 }
 
+private val VERSION_NUMBER_REGEX = Regex("^(\\d+)\\.(\\d+)")
+
+private const val GROUP_APRIL_FOOLS = "april_fools"
+private const val GROUP_OLD_BETA = "old_beta"
+private const val GROUP_OLD_ALPHA = "old_alpha"
+
 /**
- * 简易过滤器，过滤特定类型的版本
+ * Lọc theo loại đang chọn và tên cần tìm, sau đó gom thành từng nhóm dòng phiên bản.
+ * Giữ nguyên thứ tự mới nhất trước để nhóm mới nhất nằm ở đầu lưới.
  */
-private fun List<MinecraftVersion>.filterVersions(
+private fun List<MinecraftVersion>.groupVersions(
     versionFilter: VersionFilter
-) = this.filter { version ->
-    version.isType(
-        release = versionFilter.release,
-        snapshot = versionFilter.snapshot,
-        aprilFools = versionFilter.aprilFools,
-        old = versionFilter.old
-    )
-}.filter { version ->
-    //Fix：单独过滤版本名称
-    val versionId = versionFilter.id
-    versionId.isEmptyOrBlank() || version.version.id.contains(versionId)
+): List<VersionGroup> {
+    val keyword = versionFilter.id.trim()
+    return this.asSequence()
+        .filter { version ->
+            when (versionFilter.category) {
+                VersionCategory.RELEASE -> version.type == MinecraftVersion.Type.Release
+                VersionCategory.SNAPSHOT -> version.type == MinecraftVersion.Type.Snapshot
+                VersionCategory.APRIL_FOOLS -> version.type == MinecraftVersion.Type.AprilFools
+                VersionCategory.OLD -> version.type == MinecraftVersion.Type.OldBeta ||
+                        version.type == MinecraftVersion.Type.OldAlpha
+            }
+        }
+        .filter { version ->
+            keyword.isEmpty() || version.version.id.contains(keyword, ignoreCase = true)
+        }
+        .sortedDescending()
+        .groupBy { version -> version.groupKey() }
+        .map { (key, versions) -> VersionGroup(key = key, versions = versions) }
+}
+
+/** Snapshot kiểu cũ đặt tên theo tuần, ví dụ 21w13a */
+private val SNAPSHOT_YEAR_REGEX = Regex("^(\\d{2})w")
+
+/** Khoá nhóm: dòng phiên bản (1.21), năm của snapshot cũ (2021), hoặc Beta/Alpha/Cá tháng tư */
+private fun MinecraftVersion.groupKey(): String = when (type) {
+    MinecraftVersion.Type.AprilFools -> GROUP_APRIL_FOOLS
+    MinecraftVersion.Type.OldBeta -> GROUP_OLD_BETA
+    MinecraftVersion.Type.OldAlpha -> GROUP_OLD_ALPHA
+    else -> {
+        val id = version.id
+        VERSION_NUMBER_REGEX.find(id)?.value
+            ?: SNAPSHOT_YEAR_REGEX.find(id)?.groupValues?.getOrNull(1)?.let { year -> "20$year" }
+            ?: id.substringBefore('-', id)
+    }
+}
+
+/** Tên nhóm hiển thị trên thẻ */
+@Composable
+private fun versionGroupTitle(key: String): String = when (key) {
+    GROUP_APRIL_FOOLS -> stringResource(R.string.download_game_type_april_fools)
+    GROUP_OLD_BETA -> stringResource(R.string.download_game_type_old_beta)
+    GROUP_OLD_ALPHA -> stringResource(R.string.download_game_type_old_alpha)
+    else -> key
 }
 
 @Composable
@@ -379,35 +435,16 @@ private fun VersionHeader(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    //版本筛选条件
-                    VersionTypeItem(
-                        selected = versionFilter.release,
-                        onClick = {
-                            onVersionFilterChange(versionFilter.copy(release = versionFilter.release.not()))
-                        },
-                        text = stringResource(R.string.download_game_type_release)
-                    )
-                    VersionTypeItem(
-                        selected = versionFilter.snapshot,
-                        onClick = {
-                            onVersionFilterChange(versionFilter.copy(snapshot = versionFilter.snapshot.not()))
-                        },
-                        text = stringResource(R.string.download_game_type_snapshot)
-                    )
-                    VersionTypeItem(
-                        selected = versionFilter.aprilFools,
-                        onClick = {
-                            onVersionFilterChange(versionFilter.copy(aprilFools = versionFilter.aprilFools.not()))
-                        },
-                        text = stringResource(R.string.download_game_type_april_fools)
-                    )
-                    VersionTypeItem(
-                        selected = versionFilter.old,
-                        onClick = {
-                            onVersionFilterChange(versionFilter.copy(old = versionFilter.old.not()))
-                        },
-                        text = stringResource(R.string.download_game_type_old)
-                    )
+                    //Mỗi lần chỉ chọn một loại phiên bản
+                    VersionCategory.entries.forEach { category ->
+                        VersionTypeItem(
+                            selected = versionFilter.category == category,
+                            onClick = {
+                                onVersionFilterChange(versionFilter.copy(category = category))
+                            },
+                            text = stringResource(category.labelRes)
+                        )
+                    }
                 }
 
                 //搜索、刷新
@@ -467,35 +504,159 @@ private fun VersionTypeItem(
     )
 }
 
+/**
+ * Lưới thẻ phiên bản theo dòng (1.21, 1.20, ...).
+ * Bấm vào một thẻ để mở danh sách phiên bản của dòng đó ngay trong thẻ.
+ */
 @Composable
-private fun VersionList(
+private fun VersionGrid(
     modifier: Modifier = Modifier,
-    versions: List<MinecraftVersion>,
+    groups: List<VersionGroup>,
+    category: VersionCategory,
     onVersionSelect: (MinecraftVersion) -> Unit,
     openLink: (url: String) -> Unit
 ) {
-    val scrollState = rememberLazyListState()
-    LazyColumn(
-        modifier = modifier.nonInteractiveScrollbar(
-            state = scrollState.scrollIndicatorState!!,
-            orientation = Orientation.Vertical,
-        ),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-        state = scrollState,
+    if (groups.isEmpty()) {
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = stringResource(R.string.download_game_no_result),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        return
+    }
+
+    //Đổi loại phiên bản thì đóng thẻ đang mở
+    var expandedKey by remember(category) { mutableStateOf<String?>(null) }
+
+    LazyVerticalGrid(
+        modifier = modifier,
+        columns = GridCells.Adaptive(minSize = 170.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(versions) { version ->
-            VersionItemLayout(
+        items(
+            items = groups,
+            key = { group -> group.key },
+            span = { group ->
+                GridItemSpan(if (group.key == expandedKey) maxLineSpan else 1)
+            }
+        ) { group ->
+            VersionGroupCard(
+                group = group,
+                expanded = group.key == expandedKey,
+                onToggle = {
+                    expandedKey = if (expandedKey == group.key) null else group.key
+                },
+                onVersionSelect = onVersionSelect,
+                openLink = openLink
+            )
+        }
+    }
+}
+
+@Composable
+private fun VersionGroupCard(
+    group: VersionGroup,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    onVersionSelect: (MinecraftVersion) -> Unit,
+    openLink: (url: String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val shape: Shape = MaterialTheme.shapes.extraLarge
+    val banner: Painter = versionBanner(group.latest)
+    val title = versionGroupTitle(group.key)
+
+    Surface(
+        modifier = modifier,
+        shape = shape,
+        color = cardColor(),
+        contentColor = onCardColor()
+    ) {
+        Column {
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 6.dp),
-                version = version,
-                onClick = {
-                    onVersionSelect(version)
-                },
-                onAccessWiki = { wikiUrl ->
-                    openLink(wikiUrl)
-                },
-            )
+                    .aspectRatio(if (expanded) 3.2f else 1.9f)
+                    .clip(shape)
+                    .clickable(role = Role.Button, onClick = onToggle)
+            ) {
+                Image(
+                    modifier = Modifier.matchParentSize(),
+                    painter = banner,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop
+                )
+                //Lớp phủ tối để chữ luôn đọc được trên ảnh nền
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.Black.copy(alpha = 0.1f),
+                                    Color.Black.copy(alpha = 0.35f),
+                                    Color.Black.copy(alpha = 0.8f)
+                                )
+                            )
+                        )
+                )
+
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.download_game_group_version_count,
+                            group.versions.size
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.85f)
+                    )
+                }
+
+                Icon(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(horizontal = 12.dp, vertical = 12.dp)
+                        .size(20.dp)
+                        .rotate(if (expanded) 180f else 0f),
+                    painter = painterResource(R.drawable.ic_arrow_drop_down_rounded),
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
+
+            if (expanded) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    group.versions.forEach { version ->
+                        VersionItemLayout(
+                            modifier = Modifier.fillMaxWidth(),
+                            version = version,
+                            onClick = { onVersionSelect(version) },
+                            onAccessWiki = openLink
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -509,7 +670,6 @@ private fun VersionItemLayout(
     shape: Shape = MaterialTheme.shapes.large,
     influencedByBackground: Boolean = true,
     color: Color = cardColor(influencedByBackground),
-    contentColor: Color = onCardColor(),
     blur: Int = LauncherSettings.backgroundBlur.state,
 ) {
     val scale = remember { Animatable(initialValue = 0.95f) }
@@ -520,7 +680,7 @@ private fun VersionItemLayout(
     val (icon, versionType, wikiUrl, summary) = getVersionComponents(version)
     val banner = versionBanner(version)
     //Có ảnh nền thì chữ luôn dùng màu sáng để đọc được trên ảnh
-    val textColor = if (banner != null) Color.White else contentColor
+    val textColor = Color.White
 
     Surface(
         modifier = modifier.graphicsLayer(scaleY = scale.value, scaleX = scale.value),
@@ -535,28 +695,26 @@ private fun VersionItemLayout(
                 .clip(shape = shape)
                 .backgroundGlass(blur, color, influencedByBackground)
         ) {
-            if (banner != null) {
-                Image(
-                    modifier = Modifier.matchParentSize(),
-                    painter = banner,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop
-                )
-                //Lớp phủ tối dần từ trái sang phải để chữ vẫn rõ
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(
-                                    Color.Black.copy(alpha = 0.82f),
-                                    Color.Black.copy(alpha = 0.5f),
-                                    Color.Black.copy(alpha = 0.2f)
-                                )
+            Image(
+                modifier = Modifier.matchParentSize(),
+                painter = banner,
+                contentDescription = null,
+                contentScale = ContentScale.Crop
+            )
+            //Lớp phủ tối dần từ trái sang phải để chữ vẫn rõ
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.Black.copy(alpha = 0.82f),
+                                Color.Black.copy(alpha = 0.5f),
+                                Color.Black.copy(alpha = 0.2f)
                             )
                         )
-                )
-            }
+                    )
+            )
 
             Row(
                 modifier = Modifier
@@ -626,13 +784,11 @@ private fun VersionItemLayout(
     }
 }
 
-private val VERSION_NUMBER_REGEX = Regex("^(\\d+)\\.(\\d+)")
-
 /**
  * Ảnh nền minh hoạ theo thế hệ phiên bản, giúp danh sách phiên bản không còn trống trải
  */
 @Composable
-private fun versionBanner(version: MinecraftVersion): Painter? {
+private fun versionBanner(version: MinecraftVersion): Painter {
     val numbers = VERSION_NUMBER_REGEX.find(version.version.id)
     val major = numbers?.groupValues?.getOrNull(1)?.toIntOrNull()
     val minor = numbers?.groupValues?.getOrNull(2)?.toIntOrNull()
@@ -651,7 +807,6 @@ private fun versionBanner(version: MinecraftVersion): Painter? {
     }
     return painterResource(drawableId)
 }
-
 
 @Composable
 private fun getVersionComponents(

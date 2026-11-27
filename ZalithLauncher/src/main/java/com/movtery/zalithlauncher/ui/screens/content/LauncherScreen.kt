@@ -18,7 +18,6 @@
 
 package com.movtery.zalithlauncher.ui.screens.content
 
-import android.view.WindowManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,7 +35,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import com.movtery.zalithlauncher.ui.components.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -64,7 +62,6 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
@@ -113,7 +110,6 @@ import com.movtery.zalithlauncher.ui.screens.content.elements.PlayerFace
 import com.movtery.zalithlauncher.ui.screens.content.elements.VersionIconImage
 import com.movtery.zalithlauncher.ui.screens.content.home.DashboardOverview
 import com.movtery.zalithlauncher.ui.screens.content.home.LocalActionMenuDrag
-import com.movtery.zalithlauncher.ui.screens.content.home.QuickAction
 import com.movtery.zalithlauncher.ui.screens.content.home.actionMenuDragAnchor
 import com.movtery.zalithlauncher.ui.screens.content.home.actionMenuDragExclusion
 import com.movtery.zalithlauncher.ui.screens.content.home.rememberActionMenuDragState
@@ -142,7 +138,6 @@ fun LauncherScreen(
     onLaunchGame: (Version?) -> Unit,
     onQuickPlayServer: (Version?, String) -> Unit,
     onOpenLink: (String) -> Unit,
-    onQuickAction: (QuickAction) -> Unit,
     onNavigate: (NavDestination) -> Unit,
     startGuideOnce: (GuideKeys.Keys) -> Unit,
 ) {
@@ -243,7 +238,6 @@ fun LauncherScreen(
                         },
                         onQuickPlayServer = onQuickPlayServer,
                         onOpenVersionSettings = navigateToVersions,
-                        onQuickAction = onQuickAction,
                         onNavigate = onNavigate,
                         onOpenLink = onOpenLink
                     )
@@ -298,7 +292,6 @@ private fun ContentMenu(
     onLaunchGame: (Version) -> Unit,
     onQuickPlayServer: (Version?, String) -> Unit,
     onOpenVersionSettings: (Version) -> Unit,
-    onQuickAction: (QuickAction) -> Unit,
     onNavigate: (NavDestination) -> Unit,
     onOpenLink: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -325,7 +318,6 @@ private fun ContentMenu(
                                 .padding(horizontal = 12.dp),
                             onLaunchGame = onLaunchGame,
                             onOpenVersionSettings = onOpenVersionSettings,
-                            onQuickAction = onQuickAction,
                             onNavigate = onNavigate,
                             onOpenLink = onOpenLink
                         )
@@ -548,7 +540,7 @@ private fun VersionsContent(
                 }
             }
 
-            // XOYO: nút PLAY lớn nằm ở HeroPlayButton, phía dưới thẻ phiên bản
+            // XOYO: nút Khởi chạy đã chuyển sang thẻ "Phiên bản Minecraft" ở Tổng quan.
         }
     }
 }
@@ -748,72 +740,7 @@ private fun ActionMenuContent(
                     }
                 }
             }
-
-            HeroPlayButton(
-                version = version,
-                onLaunchGame = { onLaunchGame(null) }
-            )
         }
-    }
-}
-
-/** Nút PLAY lớn của Hero, kèm RAM đã cấp và mục tiêu FPS (tần số màn hình, không phải FPS đo được) */
-@Composable
-private fun HeroPlayButton(
-    version: Version?,
-    onLaunchGame: () -> Unit,
-) {
-    val refreshHz = rememberDisplayRefreshRate()
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Button(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            enabled = version != null,
-            shape = MaterialTheme.shapes.large,
-            onClick = onLaunchGame
-        ) {
-            Icon(
-                modifier = Modifier.size(20.dp),
-                painter = painterResource(R.drawable.ic_play_arrow_filled),
-                contentDescription = null
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.hero_play),
-                style = MaterialTheme.typography.titleSmall
-            )
-        }
-        if (version != null) {
-            val fpsText = refreshHz?.let {
-                stringResource(R.string.hero_stat_fps_target, it.roundToInt())
-            } ?: stringResource(R.string.hero_stat_fps_unknown)
-            Text(
-                text = listOf(
-                    stringResource(R.string.hero_stat_ram, version.getRamAllocation()),
-                    fpsText
-                ).joinToString("  ·  "),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
-            )
-        }
-    }
-}
-
-/** Tần số làm mới của màn hình (Hz), đọc một lần khi vào màn hình. Trả về null nếu không đọc được. */
-@Suppress("DEPRECATION")
-@Composable
-private fun rememberDisplayRefreshRate(): Float? {
-    val context = LocalContext.current
-    return remember(context) {
-        runCatching {
-            context.getSystemService(WindowManager::class.java).defaultDisplay.refreshRate
-        }.getOrNull()
     }
 }
 

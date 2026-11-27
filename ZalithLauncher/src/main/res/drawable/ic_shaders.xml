@@ -1,0 +1,17 @@
+<!--
+  ~ XOYO Launcher: biểu tượng shader (mặt trời chiếu sáng), thay cho bóng đèn vốn không đúng nghĩa.
+  -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+  <path
+      android:pathData="M480,300 A180,180 0 1 0 480,660 A180,180 0 1 0 480,300Z"
+      android:fillColor="#1f1f1f"/>
+  <path
+      android:pathData="M480,60 L480,180 M480,780 L480,900 M60,480 L180,480 M780,480 L900,480 M180,180 L265,265 M695,695 L780,780 M180,780 L265,695 M695,265 L780,180"
+      android:strokeColor="#1f1f1f"
+      android:strokeWidth="80"
+      android:strokeLineCap="round"/>
+</vector>

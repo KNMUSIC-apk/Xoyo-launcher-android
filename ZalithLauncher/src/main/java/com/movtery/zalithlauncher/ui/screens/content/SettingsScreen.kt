@@ -74,6 +74,7 @@ import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.content.elements.CategoryIcon
 import com.movtery.zalithlauncher.ui.screens.content.elements.CategoryItem
+import com.movtery.zalithlauncher.ui.screens.content.elements.CategoryTabRow
 import com.movtery.zalithlauncher.ui.screens.content.settings.AboutInfoScreen
 import com.movtery.zalithlauncher.ui.screens.content.settings.ControlManageScreen
 import com.movtery.zalithlauncher.ui.screens.content.settings.ControlSettingsScreen
@@ -148,112 +149,14 @@ private fun TabMenu(
     settingsScreenKey: TitledNavKey?,
     navigateTo: (TitledNavKey) -> Unit
 ) {
-    val ctx = rememberAnimatedContext(isVisible = isVisible)
-    val reducedMotion = LauncherSettings.launcherReducedMotion.state
-    val scrollState = rememberScrollState()
-    val density = LocalDensity.current
-
-    // Vị trí và độ rộng của từng mục trong hàng (px), để nền đánh dấu trượt tới mục đang chọn
-    val itemX = remember { mutableStateMapOf<TitledNavKey, Float>() }
-    val itemWidth = remember { mutableStateMapOf<TitledNavKey, Float>() }
-    val indicatorSpec: AnimationSpec<Float> = if (reducedMotion) {
-        snap()
-    } else {
-        spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
-    }
-    val indicatorX by animateFloatAsState(
-        targetValue = settingsScreenKey?.let { itemX[it] } ?: 0f,
-        animationSpec = indicatorSpec,
-        label = "settingsTabIndicatorX"
+    // XOYO: hàng danh mục ngang, dùng chung với màn Cài đặt phiên bản
+    CategoryTabRow(
+        modifier = modifier,
+        items = settingItems,
+        selectedKey = settingsScreenKey,
+        isVisible = isVisible,
+        navigateTo = navigateTo
     )
-    val indicatorWidth by animateFloatAsState(
-        targetValue = settingsScreenKey?.let { itemWidth[it] } ?: 0f,
-        animationSpec = indicatorSpec,
-        label = "settingsTabIndicatorWidth"
-    )
-
-    Box(
-        modifier = modifier
-            .padding(horizontal = 8.dp, vertical = 8.dp)
-            .animated(ctx, from = AnimatedDirection.Top)
-    ) {
-        Box(modifier = Modifier.horizontalScroll(scrollState)) {
-            if (indicatorWidth > 0f) {
-                Box(
-                    modifier = Modifier
-                        .offset { IntOffset(indicatorX.roundToInt(), 0) }
-                        .width(with(density) { indicatorWidth.toDp() })
-                        .height(40.dp)
-                        .clip(MaterialTheme.shapes.large)
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                )
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                settingItems.forEach { item ->
-                    if (item.division) {
-                        VerticalDivider(
-                            modifier = Modifier
-                                .padding(horizontal = 6.dp)
-                                .height(24.dp)
-                                .alpha(0.4f),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    CategoryTab(
-                        modifier = Modifier.onGloballyPositioned { coordinates ->
-                            itemX[item.key] = coordinates.positionInParent().x
-                            itemWidth[item.key] = coordinates.size.width.toFloat()
-                        },
-                        selected = settingsScreenKey == item.key,
-                        icon = item.icon,
-                        text = stringResource(item.textRes),
-                        onClick = { navigateTo(item.key) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CategoryTab(
-    modifier: Modifier = Modifier,
-    selected: Boolean,
-    icon: @Composable () -> Unit,
-    text: String,
-    onClick: () -> Unit
-) {
-    val contentColor by animateColorAsState(
-        targetValue = if (selected) {
-            MaterialTheme.colorScheme.onSecondaryContainer
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        },
-        animationSpec = tween(durationMillis = 200),
-        label = "settingsTabContent"
-    )
-
-    Row(
-        modifier = modifier
-            .height(40.dp)
-            .clip(MaterialTheme.shapes.large)
-            .clickable(role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        CompositionLocalProvider(LocalContentColor provides contentColor) {
-            icon()
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                softWrap = false
-            )
-        }
-    }
 }
 
 @Composable

@@ -117,7 +117,14 @@ import com.movtery.zalithlauncher.viewmodel.LocalBackgroundViewModel
 import kotlinx.coroutines.launch
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.map
+
+import android.graphics.BitmapFactory
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import com.movtery.zalithlauncher.utils.image.isImageFile
 
 private const val TAG = "VersionsManageElements"
 
@@ -707,6 +714,31 @@ private fun installedVersionBanner(minecraftVersion: String?): Painter {
 }
 
 /**
+ * Đọc ảnh nền riêng của phiên bản để vẽ lên thẻ phiên bản.
+ * Ảnh được giải mã ở kích thước thu nhỏ nên không tốn quá nhiều bộ nhớ khi danh sách dài.
+ */
+@Composable
+private fun rememberVersionBackground(version: Version, revision: Int): ImageBitmap? {
+    return produceState<ImageBitmap?>(initialValue = null, version, revision) {
+        value = withContext(Dispatchers.IO) {
+            val file = version.getBackgroundFile()
+            if (!file.exists() || !file.isImageFile()) return@withContext null
+            runCatching {
+                val targetWidth = 720
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeFile(file.absolutePath, bounds)
+                var sampleSize = 1
+                while (bounds.outWidth / (sampleSize * 2) >= targetWidth) sampleSize *= 2
+                BitmapFactory.decodeFile(
+                    file.absolutePath,
+                    BitmapFactory.Options().apply { inSampleSize = sampleSize }
+                )?.asImageBitmap()
+            }.getOrNull()
+        }
+    }.value
+}
+
+/**
  * Thẻ phiên bản đã cài, theo bố cục ảnh tham chiếu: ảnh nền theo thế hệ, logo phiên bản,
  * nhãn phiên bản và "Đã chọn", thông tin loader, và nút "Chọn" ở dưới. Phiên bản đang chọn có viền sáng.
  */
@@ -736,6 +768,10 @@ fun VersionItemLayout(
     val isValid = remember(version) { version.isValid() }
     val versionInfo = remember(version) { version.getVersionInfo() }
     val banner = installedVersionBanner(versionInfo?.minecraftVersion)
+    // XOYO: phiên bản có ảnh nền riêng (đặt trong menu 3 chấm) thì hiện ảnh đó trên thẻ,
+    // thay cho ảnh nền theo thế hệ Minecraft
+    val backgroundRevision = LocalBackgroundViewModel.current?.versionBackgroundRevision ?: 0
+    val customBanner = rememberVersionBackground(version, backgroundRevision)
 
     Surface(
         modifier = modifier.graphicsLayer(scaleY = scale.value, scaleX = scale.value),
@@ -761,12 +797,21 @@ fun VersionItemLayout(
                     .fillMaxWidth()
                     .height(96.dp)
             ) {
-                Image(
-                    modifier = Modifier.matchParentSize(),
-                    painter = banner,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop
-                )
+                if (customBanner != null) {
+                    Image(
+                        modifier = Modifier.matchParentSize(),
+                        bitmap = customBanner,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Image(
+                        modifier = Modifier.matchParentSize(),
+                        painter = banner,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -895,12 +940,12 @@ fun VersionItemLayout(
                 Row {
                     var menuExpanded by remember { mutableStateOf(false) }
 
-                    // XOYO: chọn ảnh hoặc video làm nền riêng cho phiên bản này
+                    // XOYO: chọn ảnh làm nền riêng cho thẻ phiên bản này
                     val bgViewModel = LocalBackgroundViewModel.current
                     val bgContext = LocalContext.current
                     val bgScope = rememberCoroutineScope()
                     val backgroundPicker = rememberLauncherForActivityResult(
-                        contract = MediaPickerContract(allowImages = true, allowVideos = true, allowMultiple = false)
+                        contract = MediaPickerContract(allowImages = true, allowVideos = false, allowMultiple = false)
                     ) { result ->
                         val uri = result?.firstOrNull() ?: return@rememberLauncherForActivityResult
                         bgScope.launch(Dispatchers.IO) {

@@ -170,7 +170,7 @@ private fun PlatformClasses.getDrawable() = when (this) {
     PlatformClasses.MOD_PACK -> R.drawable.ic_package_2_outlined
     PlatformClasses.RESOURCE_PACK -> R.drawable.ic_format_paint_outlined
     PlatformClasses.SAVES -> R.drawable.ic_public
-    PlatformClasses.SHADERS -> R.drawable.ic_lightbulb
+    PlatformClasses.SHADERS -> R.drawable.ic_shaders
 }
 
 private fun PlatformClasses.getText() = when (this) {

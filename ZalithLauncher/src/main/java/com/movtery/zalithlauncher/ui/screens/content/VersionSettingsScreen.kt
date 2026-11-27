@@ -65,6 +65,7 @@ import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.content.elements.CategoryIcon
 import com.movtery.zalithlauncher.ui.screens.content.elements.CategoryItem
+import com.movtery.zalithlauncher.ui.screens.content.elements.CategoryTabRow
 import com.movtery.zalithlauncher.ui.screens.content.versions.ModifyVersionScreen
 import com.movtery.zalithlauncher.ui.screens.content.versions.ModsManagerScreen
 import com.movtery.zalithlauncher.ui.screens.content.versions.ResourcePackManageScreen
@@ -115,16 +116,20 @@ fun VersionSettingsScreen(
             screenKey = key,
             currentKey = backScreenViewModel.mainScreen.currentKey
         ) { isVisible ->
-            Row(modifier = Modifier.fillMaxSize()) {
-                TabMenu(
+            // XOYO: danh mục cài đặt nằm thành hàng ngang phía trên, giống màn Cài đặt của launcher
+            Column(modifier = Modifier.fillMaxSize()) {
+                CategoryTabRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    items = settingItems,
+                    selectedKey = key.currentKey,
                     isVisible = isVisible,
-                    backStack = key.backStack,
-                    versionsScreenKey = key.currentKey,
-                    modifier = Modifier.fillMaxHeight()
+                    navigateTo = { settingKey -> key.backStack.navigateOnce(settingKey) }
                 )
 
                 NavigationUI(
-                    modifier = Modifier.fillMaxHeight(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
                     key = key,
                     modifyViewModel = modifyViewModel,
                     backScreenViewModel = backScreenViewModel,
@@ -162,62 +167,10 @@ private val settingItems = listOf(
     CategoryItem(NormalNavKey.Versions.ModsManager, { CategoryIcon(R.drawable.ic_extension_outlined, R.string.mods_manage) }, R.string.mods_manage, division = true),
     CategoryItem(NormalNavKey.Versions.SavesManager, { CategoryIcon(R.drawable.ic_public, R.string.saves_manage) }, R.string.saves_manage),
     CategoryItem(NormalNavKey.Versions.ResourcePackManager, { CategoryIcon(R.drawable.ic_format_paint_outlined, R.string.resource_pack_manage) }, R.string.resource_pack_manage),
-    CategoryItem(NormalNavKey.Versions.ShadersManager, { CategoryIcon(R.drawable.ic_lightbulb, R.string.shader_pack_manage) }, R.string.shader_pack_manage),
+    CategoryItem(NormalNavKey.Versions.ShadersManager, { CategoryIcon(R.drawable.ic_shaders, R.string.shader_pack_manage) }, R.string.shader_pack_manage),
     CategoryItem(NormalNavKey.Versions.ScreenshotsManager, { CategoryIcon(R.drawable.ic_photo_library_outlined, R.string.screenshots_manage) }, R.string.screenshots_manage),
     CategoryItem(NormalNavKey.Versions.ServerList, { CategoryIcon(R.drawable.ic_dns_outlined, R.string.servers_list) }, R.string.servers_list, division = true),
 )
-
-@Composable
-private fun TabMenu(
-    isVisible: Boolean,
-    backStack: NavBackStack<TitledNavKey>,
-    versionsScreenKey: TitledNavKey?,
-    modifier: Modifier = Modifier
-) {
-    val ctx = rememberAnimatedContext(isVisible = isVisible)
-
-    val scrollState = rememberScrollState()
-    Column(
-        modifier = modifier
-            .fadeEdge(scrollState)
-            .width(IntrinsicSize.Min)
-            .padding(start = 8.dp)
-            .animated(ctx, from = AnimatedDirection.Left)
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.height(12.dp))
-        settingItems.forEach { item ->
-            if (item.division) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(vertical = 12.dp)
-                        .fillMaxWidth(0.4f)
-                        .alpha(0.4f),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            NavigationRailItem(
-                selected = versionsScreenKey === item.key,
-                onClick = {
-                    backStack.navigateOnce(item.key)
-                },
-                icon = {
-                    item.icon()
-                },
-                label = {
-                    MarqueeText(
-                        text = stringResource(item.textRes),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-    }
-}
 
 @Composable
 private fun NavigationUI(
@@ -298,8 +251,9 @@ private fun NavigationUI(
                         version = version,
                         backToMainScreen = backToMainScreen,
                         onSwapMoreInfo = { projectId, platform ->
-                            backScreenViewModel.mainScreen.removeAndNavigateTo(
-                                NestedNavKey.AddonInfo::class,
+                            // XOYO: mở chi tiết mod như một bước mới thay vì thay thế màn cài đặt phiên bản,
+                            // nhờ vậy nút quay lại trở về danh sách mod vừa xem chứ không nhảy thẳng về sảnh
+                            backScreenViewModel.mainScreen.navigateTo(
                                 NestedNavKey.AddonInfo(platform, projectId, PlatformClasses.MOD)
                             )
                         },

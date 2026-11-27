@@ -1631,6 +1631,12 @@
     <string name="nav_more">Thêm</string>
 
     <!-- XOYO: home overview, quick actions, activity and discovery -->
+    <string name="home_version_card_title">Phiên bản Minecraft</string>
+    <string name="home_edition_java">Java Edition</string>
+    <string name="home_launch">Khởi chạy</string>
+    <string name="home_version_change">Đổi phiên bản</string>
+    <string name="download_game_group_version_count">%1$d phiên bản</string>
+    <string name="download_game_no_result">Không có phiên bản nào khớp bộ lọc</string>
     <string name="home_tab_overview">Tổng quan</string>
     <string name="home_tab_cards">Thẻ</string>
     <string name="dash_stats_title">Tổng quan</string>

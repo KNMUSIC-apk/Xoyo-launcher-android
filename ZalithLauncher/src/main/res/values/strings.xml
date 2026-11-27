@@ -3153,6 +3153,12 @@
     <string name="nav_more">More</string>
 
     <!-- XOYO: home overview, quick actions, activity and discovery -->
+    <string name="home_version_card_title">Minecraft Version</string>
+    <string name="home_edition_java">Java Edition</string>
+    <string name="home_launch">Launch</string>
+    <string name="home_version_change">Change version</string>
+    <string name="download_game_group_version_count">%1$d versions</string>
+    <string name="download_game_no_result">No versions match this filter</string>
     <string name="home_tab_overview">Overview</string>
     <string name="home_tab_cards">Cards</string>
     <string name="dash_stats_title">Overview</string>

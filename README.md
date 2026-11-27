@@ -11,7 +11,10 @@ Nhánh `zalith-base` đang được chuyển đổi từ mã của ZalithLaunche
 - Đã đổi application ID thành `com.xoyo.launcher`.
 - Đã có bảng màu XOYO (mặc định) và Monochrome, icon mới, nhãn "Unofficial Modified Version" trên màn hình chính.
 - Khi tạo bố cục điều khiển mới có thể chọn mẫu cảm ứng (dựa trên Cubiq Launcher, GPL-3.0; xem [NOTICE.md](NOTICE.md)).
-- Giao diện mới: sidebar trên màn hình rộng, thanh dưới và trang "Thêm" trên màn hình hẹp; trang chủ có Tổng quan (thao tác nhanh, lịch sử chơi, khám phá chỉ là liên kết) và nút PLAY lớn.
+- Giao diện mới: sidebar trên màn hình rộng, thanh dưới và trang "Thêm" trên màn hình hẹp.
+- Tổng quan trên trang chủ mở đầu bằng thẻ "Phiên bản Minecraft": chọn Java Edition, danh sách phiên bản đã cài và nút Khởi chạy. Khối thao tác nhanh và nút PLAY lớn ở thẻ bên cạnh đã được bỏ; các lối vào cũ vẫn còn trong sidebar.
+- Tải phiên bản (Trò chơi → chọn phiên bản): lọc theo một loại phiên bản, gom phiên bản theo dòng (1.21, 1.20, ...) thành thẻ có ảnh nền; bấm vào thẻ để mở danh sách phiên bản của dòng đó.
+- Icon điều hướng được rà lại: shader dùng biểu tượng mặt trời (thay bóng đèn), tìm theo ID dùng kính lúp trên tài liệu, LAN dùng biểu tượng wifi, hiệu năng dùng đồng hồ tốc độ; các icon còn lại giữ nguyên vì đúng nghĩa.
 - Trang mới: Thư viện game, Trung tâm hiệu năng (số liệu thật, phần không đọc được ghi rõ là không khả dụng), Trung tâm máy chủ, Quản lý thế giới, Trung tâm nội dung.
 - Nhóm Nội dung trên sidebar có Trò chơi, Tìm theo ID và Yêu thích. Thanh danh mục bên trái và nút Tải xuống trên thanh trên đã được bỏ.
 - Nhóm Tải về trên sidebar gồm Tải mod, Tải modpack, Tải gói tài nguyên, Tải shader và Tải thế giới. Nút "Tìm và tải về" trong Trung tâm nội dung và nút "Tải thế giới về" trong Quản lý thế giới đã được bỏ.
@@ -56,7 +59,19 @@ APK chỉ có kiến trúc `arm64-v8a`, tức là chỉ cài được trên đi�
 | Khóa phát hành | file `xoyo_release.jks` cạnh `ZalithLauncher/build.gradle.kts`, cùng `STORE_PASSWORD`, `KEY_PASSWORD`, `KEY_ALIAS` |
 | CurseForge API key | biến môi trường `CURSEFORGE_API_KEY` hoặc file `.curseforge_api.txt` (tùy chọn) |
 
-Nếu không có khóa phát hành, bản release sẽ không được ký. Bản debug dùng khóa debug mặc định của Android.
+| versionCode | tự tính: `launcher_version_code` × 1.000.000 + số lần chạy CI (hoặc số commit khi build dưới máy) |
+
+Nếu không có khóa phát hành, bản release sẽ không được ký. Bản debug dùng khóa debug cố định đi kèm repo.
+
+## Cập nhật không cần gỡ app
+
+Bản cài mới chỉ cài đè được lên bản cũ khi **cùng khóa ký** và **versionCode không nhỏ hơn**. Repo đã xử lý cả hai:
+
+- `ZalithLauncher/xoyo_debug.p12` là khóa debug công khai, dùng chung cho mọi lần build (alias `xoyo_debug`, mật khẩu `xoyolauncher`, hạn 2051). Nhờ vậy APK tải từ GitHub Actions cài đè lên bản trước, dữ liệu và phiên bản đã cài vẫn còn. Đây không phải khóa bí mật: ai có file cũng ký được bản debug, nên đừng dùng nó cho bản phát hành chính thức. Muốn khóa riêng thì đặt `xoyo_release.jks` và các biến `STORE_PASSWORD`, `KEY_PASSWORD`, `KEY_ALIAS` như bảng trên.
+- `versionCode` tự tăng theo số lần chạy CI (`ORG_GRADLE_PROJECT_buildNumber`) hoặc theo số commit khi build dưới máy, nên Android luôn coi bản mới là bản cập nhật.
+- Bản debug có application ID riêng (`com.xoyo.launcher.debug`) nên nằm cạnh bản release, không ghi đè lên nhau.
+
+Lần đầu chuyển sang khóa cố định, máy đang cài bản build bằng khóa tạm cũ vẫn phải gỡ app một lần; từ lần sau chỉ cần cài đè.
 
 ## Tài liệu
 
