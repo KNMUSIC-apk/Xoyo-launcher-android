@@ -18,11 +18,8 @@
 
 package com.movtery.zalithlauncher.ui.theme.festivals
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.movtery.zalithlauncher.ui.screens.content.versions.elements.MinecraftColorText
 import com.movtery.zalithlauncher.utils.festival.Festival
 import kotlinx.coroutines.delay
@@ -49,19 +49,17 @@ fun FestivalTitleText(
 ) {
     if (festivals.isEmpty()) return
 
-    val infiniteTransition = rememberInfiniteTransition(label = "title_text_scale")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 200,
-                easing = LinearEasing
-            ),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "title_text_scale_anim"
-    )
+    //循环缩放仅在启动器位于前台时进行：游戏覆盖启动器（ON_STOP）期间暂停，避免后台持续重组与重绘
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val scale = remember { Animatable(1f) }
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                scale.animateTo(1.1f, tween(durationMillis = 200, easing = LinearEasing))
+                scale.animateTo(1f, tween(durationMillis = 200, easing = LinearEasing))
+            }
+        }
+    }
 
     var festival by remember { mutableStateOf(festivals.first()) }
     if (festivals.size > 1) {
@@ -78,8 +76,8 @@ fun FestivalTitleText(
     val text = stringResource(festival.textRes)
     MinecraftColorText(
         modifier = modifier.graphicsLayer {
-            scaleX = scale
-            scaleY = scale
+            scaleX = scale.value
+            scaleY = scale.value
         },
         inputText = "§e$text",
         maxLines = maxLines,

@@ -49,6 +49,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.lerp
 import androidx.core.graphics.withSave
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.movtery.zalithlauncher.setting.LauncherSettings
 import com.movtery.zalithlauncher.setting.enums.BackgroundBlur
 import com.movtery.zalithlauncher.viewmodel.BackgroundViewModel
@@ -312,6 +315,8 @@ private class BackgroundCaptureNode(
     private fun syncCaptureLoop() {
         if (recordContent && Build.VERSION.SDK_INT < 31) {
             if (captureJob?.isActive == true) return
+            //启动器不在前台时（如游戏覆盖启动器，ON_STOP）暂停捕获，避免后台持续读回并模糊背景抢占 CPU/GPU
+            val lifecycleOwner = currentValueOf(LocalLifecycleOwner)
             captureJob = coroutineScope.launch {
                 snapshotFlow {
                     store.isValid && store.captureLayer != null &&
@@ -319,11 +324,13 @@ private class BackgroundCaptureNode(
                         LauncherSettings.launcherBackgroundOpacity.flow.value < 100
                 }.collectLatest { active ->
                     if (!active) return@collectLatest
-                    while (currentCoroutineContext().isActive) {
-                        val started = System.nanoTime()
-                        store.captureGlassFrame()
-                        val elapsedMs = (System.nanoTime() - started) / 1_000_000L
-                        delay((16L - elapsedMs).coerceAtLeast(0L).milliseconds)
+                    lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                        while (currentCoroutineContext().isActive) {
+                            val started = System.nanoTime()
+                            store.captureGlassFrame()
+                            val elapsedMs = (System.nanoTime() - started) / 1_000_000L
+                            delay((16L - elapsedMs).coerceAtLeast(0L).milliseconds)
+                        }
                     }
                 }
             }

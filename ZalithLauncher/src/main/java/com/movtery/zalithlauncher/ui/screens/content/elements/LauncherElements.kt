@@ -58,7 +58,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.gif.GifDecoder
@@ -646,11 +649,15 @@ private fun BackgroundImage(
     val isAnimated = isAnimatedState.value
 
     val frameTick = remember { mutableIntStateOf(0) }
+    val lifecycleOwner = LocalLifecycleOwner.current
     if (isAnimated) {
-        LaunchedEffect(Unit) {
-            while (isActive) {
-                withFrameNanos { }
-                frameTick.intValue++
+        LaunchedEffect(lifecycleOwner) {
+            //仅在启动器位于前台时逐帧驱动重绘：游戏覆盖启动器（ON_STOP）期间暂停，回到前台时自动恢复
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (isActive) {
+                    withFrameNanos { }
+                    frameTick.intValue++
+                }
             }
         }
     }

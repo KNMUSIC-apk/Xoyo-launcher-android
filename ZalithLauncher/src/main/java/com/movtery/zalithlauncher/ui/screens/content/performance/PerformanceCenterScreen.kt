@@ -41,7 +41,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.game.performance.CustomPreset
 import com.movtery.zalithlauncher.game.performance.DeviceStats
@@ -113,33 +116,37 @@ fun PerformanceCenterScreen(
         var thermal by remember { mutableStateOf<Float?>(null) }
 
         // Chỉ lấy số liệu khi màn hình đang hiển thị, để không tốn pin ở nền
-        LaunchedEffect(isVisible) {
+        //同时要求启动器位于前台：游戏覆盖启动器（ON_STOP）期间停止采样，回到前台时自动恢复
+        val lifecycleOwner = LocalLifecycleOwner.current
+        LaunchedEffect(isVisible, lifecycleOwner) {
             if (!isVisible) return@LaunchedEffect
-            var previousCpu: DeviceStats.CpuTotals? = null
-            while (true) {
-                val sample = withContext(Dispatchers.IO) {
-                    val currentCpu = DeviceStats.readCpuTotals()
-                    val before = previousCpu
-                    DeviceSample(
-                        ram = DeviceStats.readRam(context),
-                        cpu = if (before != null && currentCpu != null) {
-                            DeviceStats.cpuUsagePercent(before, currentCpu)
-                        } else {
-                            null
-                        },
-                        cpuReadable = currentCpu != null,
-                        battery = DeviceStats.readBatteryTempCelsius(context),
-                        thermal = DeviceStats.readMaxThermalCelsius(),
-                        cpuTotals = currentCpu
-                    )
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                var previousCpu: DeviceStats.CpuTotals? = null
+                while (true) {
+                    val sample = withContext(Dispatchers.IO) {
+                        val currentCpu = DeviceStats.readCpuTotals()
+                        val before = previousCpu
+                        DeviceSample(
+                            ram = DeviceStats.readRam(context),
+                            cpu = if (before != null && currentCpu != null) {
+                                DeviceStats.cpuUsagePercent(before, currentCpu)
+                            } else {
+                                null
+                            },
+                            cpuReadable = currentCpu != null,
+                            battery = DeviceStats.readBatteryTempCelsius(context),
+                            thermal = DeviceStats.readMaxThermalCelsius(),
+                            cpuTotals = currentCpu
+                        )
+                    }
+                    previousCpu = sample.cpuTotals
+                    ram = sample.ram
+                    cpuPercent = sample.cpu
+                    cpuReadable = sample.cpuReadable
+                    batteryTemp = sample.battery
+                    thermal = sample.thermal
+                    delay(2_000L)
                 }
-                previousCpu = sample.cpuTotals
-                ram = sample.ram
-                cpuPercent = sample.cpu
-                cpuReadable = sample.cpuReadable
-                batteryTemp = sample.battery
-                thermal = sample.thermal
-                delay(2_000L)
             }
         }
 

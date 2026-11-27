@@ -97,7 +97,9 @@ object Terracotta {
                     compareAndSet(current, obj)
                 }
 
-                delay(1L.milliseconds)
+                //原为 1ms：每秒上千次原生调用与 JSON 解析，游戏运行时持续占用 CPU。
+                //状态以 index 单调递增合并，降低频率只会合并中间态，不影响最终状态
+                delay(100L.milliseconds)
             }
         }
 
