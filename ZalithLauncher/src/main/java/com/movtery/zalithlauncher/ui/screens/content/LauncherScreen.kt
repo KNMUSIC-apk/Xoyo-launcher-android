@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -238,8 +239,7 @@ fun LauncherScreen(
                         },
                         onQuickPlayServer = onQuickPlayServer,
                         onOpenVersionSettings = navigateToVersions,
-                        onNavigate = onNavigate,
-                        onOpenLink = onOpenLink
+                        onNavigate = onNavigate
                     )
                 }
 
@@ -293,37 +293,24 @@ private fun ContentMenu(
     onQuickPlayServer: (Version?, String) -> Unit,
     onOpenVersionSettings: (Version) -> Unit,
     onNavigate: (NavDestination) -> Unit,
-    onOpenLink: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Nút ẩn/hiện Tổng quan để nhìn rõ nền phía sau. Trạng thái được lưu lại cho lần mở sau.
-    val overviewHidden = LauncherSettings.launcherHomeOverviewHidden.state
-
     CompositionLocalProvider(
         LocalHomeCardLauncher provides onLaunchGame,
         LocalHomeCardVersionSettings provides onOpenVersionSettings,
         LocalServerCardQuickPlay provides onQuickPlayServer
     ) {
         Box(modifier = modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                ) {
-                    if (!overviewHidden) {
-                        DashboardOverview(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 12.dp),
-                            onLaunchGame = onLaunchGame,
-                            onOpenVersionSettings = onOpenVersionSettings,
-                            onNavigate = onNavigate,
-                            onOpenLink = onOpenLink
-                        )
-                    }
-                }
-            }
+            // Trang chủ: thẻ phiên bản và khởi chạy ở góc dưới bên trái, như ảnh tham chiếu
+            DashboardOverview(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth(0.62f)
+                    .widthIn(max = 620.dp)
+                    .padding(start = 16.dp, end = 12.dp, bottom = 36.dp),
+                onLaunchGame = onLaunchGame,
+                onNavigate = onNavigate
+            )
             // Nhãn bắt buộc theo điều khoản bổ sung của ZalithLauncher2 khi phát hành bản chỉnh sửa
             Text(
                 modifier = Modifier

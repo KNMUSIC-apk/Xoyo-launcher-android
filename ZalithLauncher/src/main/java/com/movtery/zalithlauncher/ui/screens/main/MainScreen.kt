@@ -386,28 +386,6 @@ private fun <E: TitledNavKey> TopBar(
                     }
                 }
 
-                //XOYO: nút ẩn nội dung Tổng quan, nằm ngay trước tên launcher
-                if (inLauncherScreen) {
-                    val overviewHidden = LauncherSettings.launcherHomeOverviewHidden.state
-                    CompactIconButton(
-                        modifier = Modifier.size(32.dp),
-                        onClick = {
-                            LauncherSettings.launcherHomeOverviewHidden.save(!overviewHidden)
-                        }
-                    ) {
-                        Icon(
-                            modifier = Modifier.size(20.dp),
-                            painter = painterResource(
-                                if (overviewHidden) R.drawable.ic_visibility_off_outlined
-                                else R.drawable.ic_visibility_outlined
-                            ),
-                            contentDescription = stringResource(
-                                if (overviewHidden) R.string.home_overview_show
-                                else R.string.home_overview_hide
-                            )
-                        )
-                    }
-                }
             }
             val parentRes = mainScreenKey?.title
             val childRes = (mainScreenKey as? BackStackNavKey<*>)?.currentKey?.title
