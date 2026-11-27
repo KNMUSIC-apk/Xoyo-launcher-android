@@ -795,10 +795,14 @@ private fun versionBanner(version: MinecraftVersion): Painter {
     val drawableId = when (version.type) {
         MinecraftVersion.Type.Release -> when {
             major == null || minor == null -> R.drawable.img_ver_classic
-            major >= 2 || minor >= 21 -> R.drawable.img_ver_trial
+            //XOYO: dòng phiên bản theo năm (26, 27...) dùng ảnh riêng, khác với 1.21
+            major >= 2 -> R.drawable.img_ver_year
+            minor >= 21 -> R.drawable.img_ver_trial
             minor == 20 -> R.drawable.img_ver_cherry
             minor == 19 -> R.drawable.img_ver_wild
-            minor == 18 || minor == 17 -> R.drawable.img_ver_caves
+            minor == 18 -> R.drawable.img_ver_caves
+            //XOYO: 1.17 (Caves & Cliffs Part I) tách riêng khỏi 1.18
+            minor == 17 -> R.drawable.img_ver_mountains
             minor == 16 -> R.drawable.img_ver_nether
             else -> R.drawable.img_ver_classic
         }
