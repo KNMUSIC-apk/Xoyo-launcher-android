@@ -1,27 +1,38 @@
 <!--
-  ~ XOYO Launcher: biểu tượng kết nối LAN (sóng wifi), thay cho biểu tượng nhóm người.
+  ~ XOYO Launcher: biểu tượng nhóm người (dựa trên icon "users" của Lucide, giấy phép ISC),
+  ~ dùng cho mục Chơi LAN.
   -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="960"
-    android:viewportHeight="960">
+    android:viewportWidth="24"
+    android:viewportHeight="24">
   <path
-      android:pathData="M140,340 A420,420 0 0 1 820,340"
+      android:pathData="M16,21 v-2 a4,4 0 0,0 -4,-4 H6 a4,4 0 0,0 -4,4 v2"
+      android:fillColor="#00000000"
       android:strokeColor="#1f1f1f"
-      android:strokeWidth="80"
-      android:strokeLineCap="round"/>
+      android:strokeWidth="2"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"/>
   <path
-      android:pathData="M250,500 A290,290 0 0 1 710,500"
+      android:pathData="M5,7 A4,4 0 1,0 13,7 A4,4 0 1,0 5,7 Z"
+      android:fillColor="#00000000"
       android:strokeColor="#1f1f1f"
-      android:strokeWidth="80"
-      android:strokeLineCap="round"/>
+      android:strokeWidth="2"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"/>
   <path
-      android:pathData="M360,660 A160,160 0 0 1 600,660"
+      android:pathData="M16,3.128 a4,4 0 0,1 0,7.744"
+      android:fillColor="#00000000"
       android:strokeColor="#1f1f1f"
-      android:strokeWidth="80"
-      android:strokeLineCap="round"/>
+      android:strokeWidth="2"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"/>
   <path
-      android:pathData="M480,780 A60,60 0 1 0 480,900 A60,60 0 1 0 480,780Z"
-      android:fillColor="#1f1f1f"/>
+      android:pathData="M22,21 v-2 a4,4 0 0,0 -3,-3.87"
+      android:fillColor="#00000000"
+      android:strokeColor="#1f1f1f"
+      android:strokeWidth="2"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"/>
 </vector>
