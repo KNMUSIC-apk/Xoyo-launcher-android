@@ -38,19 +38,37 @@ import kotlin.reflect.KClass
  * 兼容嵌套NavDisplay的返回事件处理
  */
 fun <E: TitledNavKey> onBack(currentBackStack: NavBackStack<E>) {
-    when (val key = currentBackStack.lastOrNull()) {
+    popOneStep(currentBackStack)
+}
+
+/**
+ * XOYO: ngăn xếp còn lịch sử để lùi bên trong hay không, kể cả trong màn hình con lồng nhiều tầng.
+ * Chỉ còn một màn hình gốc và không có màn hình con nào còn lịch sử thì trả về false.
+ */
+fun NavBackStack<*>.hasInnerHistory(): Boolean {
+    if (size > 1) return true
+    val top = lastOrNull()
+    return top is BackStackNavKey<*> && top.backStack.hasInnerHistory()
+}
+
+/**
+ * XOYO: lùi đúng một bước ở tầng sâu nhất còn lịch sử, không xóa cả màn hình cha.
+ * Ví dụ: Tải xuống → Mod → chi tiết mod, nhấn Lùi sẽ về danh sách mod chứ không về sảnh.
+ */
+private fun popOneStep(stack: NavBackStack<*>) {
+    when (val key = stack.lastOrNull()) {
         //普通的屏幕，直接退出当前堆栈的上层
-        is NormalNavKey -> currentBackStack.removeLastOrNull()
+        is NormalNavKey -> stack.removeLastOrNull()
         is BackStackNavKey<*> -> {
-            if (key.backStack.size <= 1) {
-                //嵌套屏幕的堆栈处于最后一个屏幕的状态
-                //可以退出当前堆栈的上层了
-                currentBackStack.removeLastOrNull()
+            if (key.backStack.hasInnerHistory()) {
+                //XOYO: stack con còn lịch sử thì lùi bên trong nó (có thể xuống tiếp tầng dưới)
+                popOneStep(key.backStack)
             } else {
-                //退出子堆栈的上层屏幕
-                key.backStack.removeLastOrNull()
+                //嵌套屏幕的堆栈处于最后一个屏幕的状态，退出当前堆栈的上层
+                stack.removeLastOrNull()
             }
         }
+        else -> stack.removeLastOrNull()
     }
 }
 

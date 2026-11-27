@@ -117,6 +117,7 @@ import com.movtery.zalithlauncher.ui.screens.content.hub.WorldManagerScreen
 import com.movtery.zalithlauncher.ui.screens.content.library.GameLibraryScreen
 import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
 import com.movtery.zalithlauncher.ui.screens.content.performance.PerformanceCenterScreen
+import com.movtery.zalithlauncher.ui.screens.hasInnerHistory
 import com.movtery.zalithlauncher.ui.screens.navigateTo
 import com.movtery.zalithlauncher.ui.screens.onBack
 import com.movtery.zalithlauncher.ui.screens.rememberTransitionSpec
@@ -236,16 +237,14 @@ fun MainScreen(
                         isTasksExpanded = isTaskMenuExpanded,
                         contentColor = onBackgroundColor(),
                         onScreenBack = {
-                            //XOYO: không bao giờ để ngăn xếp màn hình gốc rỗng.
-                            //Ngăn xếp rỗng làm cả app hiện màn hình trắng và nút Back hệ thống đóng launcher.
-                            //Hết lịch sử thì quay về Trang chủ, giống nút Home.
+                            //XOYO: lùi đúng một bước trong nội dung đang mở (ví dụ chi tiết mod → danh sách mod).
+                            //Chỉ khi hết lịch sử ở mọi tầng mới về Trang chủ, giống nút Home.
+                            //Không để ngăn xếp màn hình gốc rỗng, nếu không app sẽ hiện màn hình trắng.
                             val backStack = screenBackStackModel.mainScreen.backStack
-                            val topKey = backStack.lastOrNull()
-                            val nestedCanPop = topKey is BackStackNavKey<*> && topKey.backStack.size > 1
-                            if (backStack.size <= 1 && !nestedCanPop) {
-                                toMainScreen()
-                            } else {
+                            if (backStack.hasInnerHistory()) {
                                 onBack(backStack)
+                            } else {
+                                toMainScreen()
                             }
                         },
                         toMainScreen = toMainScreen,
