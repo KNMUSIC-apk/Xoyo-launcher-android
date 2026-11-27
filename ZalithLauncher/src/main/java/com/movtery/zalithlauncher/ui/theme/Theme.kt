@@ -19,7 +19,6 @@
 package com.movtery.zalithlauncher.ui.theme
 
 import android.os.Build
-import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MotionScheme
@@ -50,7 +49,6 @@ import com.movtery.zalithlauncher.utils.festival.Festival
 import com.movtery.zalithlauncher.utils.festival.LocalFestivals
 import com.movtery.zalithlauncher.viewmodel.BackgroundViewModel
 import com.movtery.zalithlauncher.viewmodel.LocalBackgroundViewModel
-import top.yukonga.miuix.kmp.utils.MiuixOverscrollFactory
 import java.io.File
 
 private val embermireLight = lightColorScheme(
@@ -694,10 +692,10 @@ fun ZalithLauncherTheme(
     val customFontPath = LauncherSettings.launcherCustomFontPath.state
     val typography = remember(customFontPath) { launcherTypography(customFontPath) }
 
+    // Không bật overscroll của miuix toàn cục: nó gây crash IllegalStateException khi cuộn lưới LazyVerticalGrid.
     CompositionLocalProvider(
         LocalBackgroundViewModel provides backgroundViewModel,
         LocalFestivals provides festivals,
-        LocalOverscrollFactory provides MiuixOverscrollFactory,
     ) {
         MaterialExpressiveTheme(
             colorScheme = displayScheme,
