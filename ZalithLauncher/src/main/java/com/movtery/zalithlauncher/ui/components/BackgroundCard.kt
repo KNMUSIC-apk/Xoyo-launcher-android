@@ -65,7 +65,7 @@ fun BackgroundCard(
     ),
     elevation: CardElevation = flatCardElevation(),
     blur: Int = LauncherSettings.backgroundBlur.state,
-    border: BorderStroke? = null,
+    border: BorderStroke? = if (isLiquidGlassEnabled()) liquidRimBorder() else null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
@@ -108,7 +108,7 @@ fun BackgroundCard(
         shape = shape,
         colors = colors,
         elevation = elevation,
-        border = border,
+        border = border ?: if (isLiquidGlassEnabled()) liquidRimBorder() else null,
         onClick = onClick,
         enabled = enabled,
     ) {

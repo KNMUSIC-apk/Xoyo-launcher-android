@@ -1831,6 +1831,8 @@
     <!-- XOYO: độ mờ chữ, Liquid Glass, font tùy chỉnh, ẩn/hiện tổng quan trên trang chủ -->
     <string name="settings_launcher_text_opacity_title">Độ mờ chữ</string>
     <string name="settings_launcher_text_opacity_summary">Kéo tăng để chữ rõ hơn và không bị chìm vào nền. Kéo giảm để chữ trong suốt hơn.</string>
+    <string name="settings_launcher_liquid_glass_title">Liquid Glass</string>
+    <string name="settings_launcher_liquid_glass_summary">Nút, thanh trượt và thẻ có hiệu ứng kính. Tắt để dùng giao diện Material gốc.</string>
     <string name="settings_launcher_font_title">Font chữ</string>
     <string name="settings_launcher_font_summary">Chọn file .ttf hoặc .otf để dùng cho toàn bộ launcher. Bấm Đặt lại để về font mặc định.</string>
     <string name="settings_launcher_font_import_error">Không nhập được font</string>

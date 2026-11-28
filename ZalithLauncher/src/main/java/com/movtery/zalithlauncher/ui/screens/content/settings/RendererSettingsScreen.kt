@@ -31,7 +31,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.movtery.zalithlauncher.ui.components.CompactIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -155,7 +155,7 @@ fun RendererSettingsScreen(
                         },
                         trailingIcon = {
                             if (configurableRenderer != null) {
-                                IconButton(
+                                CompactIconButton(
                                     modifier = Modifier.size(36.dp),
                                     onClick = { showConfigDialog = true }
                                 ) {
@@ -165,7 +165,7 @@ fun RendererSettingsScreen(
                                     )
                                 }
                             }
-                            IconButton(
+                            CompactIconButton(
                                 modifier = Modifier.size(36.dp),
                                 onClick = {
                                     eventViewModel.sendDLPlugin(
@@ -228,7 +228,7 @@ fun RendererSettingsScreen(
                             DriverSummaryLayout(it)
                         },
                         trailingIcon = {
-                            IconButton(
+                            CompactIconButton(
                                 modifier = Modifier.size(36.dp),
                                 onClick = {
                                     eventViewModel.sendDLPlugin(

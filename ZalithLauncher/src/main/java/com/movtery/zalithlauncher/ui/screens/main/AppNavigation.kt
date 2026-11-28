@@ -34,7 +34,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.movtery.zalithlauncher.ui.components.IconButton
+import com.movtery.zalithlauncher.ui.components.isLiquidGlassEnabled
+import com.movtery.zalithlauncher.ui.components.liquidGlass
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -54,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -67,6 +70,7 @@ import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.ContentKind
+import com.movtery.zalithlauncher.ui.components.verticalScrollWithBar
 import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
@@ -248,6 +252,7 @@ fun AppSidebar(
 ) {
     val expanded = LauncherSettings.launcherSidebarExpanded.state
     val reducedMotion = LauncherSettings.launcherReducedMotion.state
+    val liquid = isLiquidGlassEnabled()
 
     //Trạng thái mở của từng nhóm thu gọn. Mặc định đóng, trừ các nhóm trong DefaultOpenNavGroups.
     val openGroups = remember { mutableStateListOf(*DefaultOpenNavGroups.toTypedArray()) }
@@ -291,11 +296,12 @@ fun AppSidebar(
             .width(width)
             .fillMaxHeight()
             .padding(6.dp)
+            .then(if (liquid) Modifier.liquidGlass(panelShape, cardColor(true)) else Modifier)
             .then(swipeModifier),
         shape = panelShape,
-        color = cardColor(true),
+        color = if (liquid) Color.Transparent else cardColor(true),
         contentColor = onCardColor(),
-        shadowElevation = 0.dp
+        shadowElevation = if (liquid) 8.dp else 0.dp
     ) {
         Column(
             modifier = Modifier
@@ -606,9 +612,10 @@ fun AppBottomBar(
     onMore: () -> Unit,
     moreSelected: Boolean,
 ) {
+    val liquid = isLiquidGlassEnabled()
     NavigationBar(
-        containerColor = cardColor(true),
-        modifier = Modifier
+        containerColor = if (liquid) Color.Transparent else cardColor(true),
+        modifier = if (liquid) Modifier.liquidGlass(RectangleShape, cardColor(true)) else Modifier
     ) {
         CompactPrimaryDestinations.forEach { destination ->
             NavigationBarItem(
