@@ -117,6 +117,7 @@ import com.movtery.zalithlauncher.ui.screens.content.hub.WorldManagerScreen
 import com.movtery.zalithlauncher.ui.screens.content.library.GameLibraryScreen
 import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
 import com.movtery.zalithlauncher.ui.screens.content.performance.PerformanceCenterScreen
+import com.movtery.zalithlauncher.ui.screens.content.LiquidIslandScreen
 import com.movtery.zalithlauncher.ui.screens.hasInnerHistory
 import com.movtery.zalithlauncher.ui.screens.navigateTo
 import com.movtery.zalithlauncher.ui.screens.onBack
@@ -620,6 +621,11 @@ private fun NavigationUI(
                     PerformanceCenterScreen(
                         backStackViewModel = screenBackStackModel,
                         eventViewModel = eventViewModel
+                    )
+                }
+                entry<NormalNavKey.LiquidIsland> {
+                    LiquidIslandScreen(
+                        backStackViewModel = screenBackStackModel
                     )
                 }
                 entry<NormalNavKey.ServerHub> {

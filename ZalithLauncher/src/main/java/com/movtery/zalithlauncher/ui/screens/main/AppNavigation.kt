@@ -120,6 +120,7 @@ enum class NavDestination(val iconRes: Int, val titleRes: Int, val group: NavGro
     HOME(R.drawable.ic_home_filled, R.string.nav_home, NavGroup.MAIN),
     PROFILES(R.drawable.ic_videogame_asset_outlined, R.string.nav_profiles, NavGroup.MAIN),
     VERSIONS(R.drawable.ic_box, R.string.nav_versions, NavGroup.MAIN),
+    MUSIC(R.drawable.ic_music_note, R.string.nav_music, NavGroup.MAIN),
     GAME_DOWNLOAD(R.drawable.ic_sports_esports_outlined, R.string.download_category_game, NavGroup.CONTENT),
     MODS(R.drawable.ic_extension_outlined, R.string.nav_mods, NavGroup.CONTENT),
     MODPACKS(R.drawable.ic_archive_filled, R.string.nav_modpacks, NavGroup.CONTENT),
@@ -178,6 +179,7 @@ fun navDestinationOf(key: TitledNavKey?): NavDestination? = when (key) {
     is NormalNavKey.ServerHub -> NavDestination.SERVERS
     is NormalNavKey.AccountManager -> NavDestination.ACCOUNTS
     is NormalNavKey.PerformanceCenter -> NavDestination.PERFORMANCE
+    is NormalNavKey.LiquidIsland -> NavDestination.MUSIC
     is NormalNavKey.Multiplayer -> NavDestination.LAN
     is NestedNavKey.Settings -> NavDestination.SETTINGS
     else -> null
@@ -202,6 +204,7 @@ fun ScreenBackStackViewModel.navigateToDestination(destination: NavDestination) 
         NavDestination.SERVERS -> mainScreen.clearWith(NormalNavKey.ServerHub)
         NavDestination.ACCOUNTS -> mainScreen.clearWith(NormalNavKey.AccountManager())
         NavDestination.PERFORMANCE -> mainScreen.clearWith(NormalNavKey.PerformanceCenter)
+        NavDestination.MUSIC -> mainScreen.clearWith(NormalNavKey.LiquidIsland)
         NavDestination.GAME_DOWNLOAD -> navigateToDownload(downloadGameScreen)
         NavDestination.SEARCH_ID -> navigateToDownload(NormalNavKey.SearchId)
         NavDestination.FAVORITES -> navigateToDownload(downloadFavoritesScreen)

@@ -83,8 +83,10 @@ import com.movtery.zalithlauncher.game.sdl.SdlTextSender
 import com.movtery.zalithlauncher.game.support.touch_controller.touchControllerInputModifier
 import com.movtery.zalithlauncher.game.support.touch_controller.touchControllerTouchModifier
 import com.movtery.zalithlauncher.game.version.installed.Version
+import com.movtery.zalithlauncher.music.rememberLiquidPlayback
 import com.movtery.zalithlauncher.setting.ControlSettings
 import com.movtery.zalithlauncher.setting.GameUiSettings
+import com.movtery.zalithlauncher.setting.LiquidIslandSettings
 import com.movtery.zalithlauncher.setting.MiscSettings
 import com.movtery.zalithlauncher.setting.enums.isLauncherInDarkTheme
 import com.movtery.zalithlauncher.setting.enums.toAction
@@ -109,6 +111,7 @@ import com.movtery.zalithlauncher.ui.screens.game.elements.DraggableGameBall
 import com.movtery.zalithlauncher.ui.screens.game.elements.ForceCloseOperation
 import com.movtery.zalithlauncher.ui.screens.game.elements.GameMenuSubscreen
 import com.movtery.zalithlauncher.ui.screens.game.elements.GamepadModePromptDialog
+import com.movtery.zalithlauncher.ui.screens.game.elements.LiquidIslandPanel
 import com.movtery.zalithlauncher.ui.screens.game.elements.LogBox
 import com.movtery.zalithlauncher.ui.screens.game.elements.LogState
 import com.movtery.zalithlauncher.ui.screens.game.elements.ReplacementControlOperation
@@ -166,6 +169,8 @@ private class GameViewModel(
     var sendKeycodeState by mutableStateOf<SendKeycodeState>(SendKeycodeState.None)
     /** 更换控制布局操作状态 */
     var replacementControlState by mutableStateOf<ReplacementControlState>(ReplacementControlState.None)
+    /** XOYO: bảng Liquid Island có đang mở trong game không */
+    var liquidIslandVisible by mutableStateOf(false)
     /** 被控制布局层标记为仅滑动的指针列表 */
     var moveOnlyPointers = mutableSetOf<PointerId>()
     /** 鼠标触摸指针处理层占用指针列表 */
@@ -803,8 +808,33 @@ fun GameScreen(
             stutterCount = viewModel.stutterCount,
             onShowToast = { text, duration ->
                 eventViewModel.sendToast(text, duration)
+            },
+            onOpenLiquidIsland = {
+                viewModel.gameMenuState = MenuState.HIDE
+                viewModel.liquidIslandVisible = true
             }
         )
+
+        //XOYO: Liquid Island vẽ cùng lớp Compose với các lớp điều khiển nên không rời khỏi Minecraft
+        val liquidIslandEnabled = LiquidIslandSettings.enabled.state &&
+                LiquidIslandSettings.playerEnabled.state &&
+                LiquidIslandSettings.inGameOverlay.state
+        if (liquidIslandEnabled && !viewModel.isEditingLayout) {
+            val autoShow = LiquidIslandSettings.autoShowOnPlay.state
+            val liquidPlayback = rememberLiquidPlayback(
+                enabled = viewModel.liquidIslandVisible || autoShow
+            )
+            if (autoShow) {
+                LaunchedEffect(liquidPlayback.isPlaying) {
+                    if (liquidPlayback.isPlaying) viewModel.liquidIslandVisible = true
+                }
+            }
+            if (viewModel.liquidIslandVisible) {
+                LiquidIslandPanel(
+                    onClose = { viewModel.liquidIslandVisible = false }
+                )
+            }
+        }
 
         if (ControlSettings.gamepadControl.state) {
             //手柄事件捕获层

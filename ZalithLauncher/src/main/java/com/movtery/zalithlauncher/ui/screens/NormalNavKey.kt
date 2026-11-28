@@ -83,6 +83,10 @@ sealed interface NormalNavKey : TitledNavKey {
     @Serializable data object PerformanceCenter : NormalNavKey {
         @Contextual override val title: AndroidStringText = androidText(R.string.nav_performance)
     }
+    /** XOYO: Liquid Island - trình phát nhạc */
+    @Serializable data object LiquidIsland : NormalNavKey {
+        @Contextual override val title: AndroidStringText = androidText(R.string.nav_music)
+    }
     /** XOYO：trung tâm máy chủ */
     @Serializable data object ServerHub : NormalNavKey {
         @Contextual override val title: AndroidStringText = androidText(R.string.nav_servers)

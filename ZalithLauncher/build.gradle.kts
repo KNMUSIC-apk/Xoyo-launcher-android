@@ -493,6 +493,7 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.session)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.webkit)
     implementation(libs.documentfile)
