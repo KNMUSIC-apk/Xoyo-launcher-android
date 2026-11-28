@@ -125,7 +125,7 @@ fun LiquidIslandPanel(
         animationSpec = if (animations) {
             spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)
         } else {
-            spring(stiffness = Spring.StiffnessVeryHigh)
+            spring(stiffness = Spring.StiffnessHigh)
         },
         label = "liquidIslandLibrary"
     )

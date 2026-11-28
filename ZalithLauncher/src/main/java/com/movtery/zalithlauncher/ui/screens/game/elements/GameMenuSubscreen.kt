@@ -259,8 +259,9 @@ private fun GameActionContent(
             )
         }
         //XOYO: Liquid Island - điều khiển nhạc mà không rời khỏi game
-        if (LiquidIslandSettings.enabled.state) {
-            item {
+        //state là getter @Composable nên đọc bên trong item, không đọc trong LazyListScope
+        item {
+            if (LiquidIslandSettings.enabled.state) {
                 MenuTextButton(
                     modifier = Modifier.fillMaxWidth(),
                     text = stringResource(R.string.game_menu_option_liquid_island),

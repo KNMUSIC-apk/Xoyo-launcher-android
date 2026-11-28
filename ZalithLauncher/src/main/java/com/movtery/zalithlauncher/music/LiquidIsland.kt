@@ -141,7 +141,7 @@ object LiquidIsland {
     fun currentQueue(): List<LiquidSong> {
         val controller = controllerFlow.value ?: return emptyList()
         return (0 until controller.mediaItemCount).mapNotNull { index ->
-            controller.getMediaItemAt(index).let { item -> LiquidSong.from(item, item.durationMs) }
+            controller.getMediaItemAt(index).let { item -> LiquidSong.from(item, 0L) }
         }
     }
 }
@@ -170,9 +170,8 @@ fun rememberLiquidPlayback(enabled: Boolean = true, pollMillis: Long = 500L): Li
 
 private fun MediaController.readPlayback(): LiquidPlayback {
     val item = currentMediaItem
-    val knownDuration = duration.takeIf { it > 0L }
-        ?: item?.durationMs?.takeIf { it > 0L }
-        ?: 0L
+    // MediaItem không mang thời lượng; chỉ lấy từ trình phát
+    val knownDuration = duration.takeIf { it > 0L } ?: 0L
     return LiquidPlayback(
         connected = true,
         isPlaying = isPlaying,
