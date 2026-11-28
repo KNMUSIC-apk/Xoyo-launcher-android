@@ -102,3 +102,8 @@ Giao diện được thiết kế theo đặc tả của dự án. Không sao ch
 ## Thư viện bên thứ ba
 
 Các thư viện và thành phần native đi kèm (thư mục `libs/`, `ZalithLauncher/src/main/jni/`, `LWJGL/`) giữ nguyên giấy phép và thông báo bản quyền của chúng. Cần rà soát lại danh sách này trước khi phát hành.
+
+### Starling (Rust Edition)
+
+- `StarlingEngine/`: mã engine Rust của Starling (https://github.com/starling-client/starling, nhánh `starling`, commit `0e5bb58`), giấy phép MIT. Xem `StarlingEngine/LICENSE` và `StarlingEngine/THIRD_PARTY_NOTICES.md`. Dự án này không đóng gói mã hay tài nguyên Minecraft; người chơi tự có file game của họ.
+- Các fork đi kèm trong `StarlingEngine/third_party/`: wgpu-hal, winit, android-activity, naga, libmimalloc-sys. Giấy phép và ghi chú nằm trong `StarlingEngine/THIRD_PARTY_NOTICES.md`.

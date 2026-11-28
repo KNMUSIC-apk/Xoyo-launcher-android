@@ -124,6 +124,18 @@ Khác:
 
 ---
 
+### 2.5 Starling (Rust Edition), được người duyệt cho phép ngày 2026-11-28
+
+Người duyệt đã đồng ý đổi build và native để tích hợp Starling thật (xem mục 7). Được sửa thêm đúng các mục sau:
+- `StarlingEngine/**`: mã Starling vendor từ `starling-client/starling`, nhánh `starling`, commit `0e5bb58` (MIT). Không sửa tay trong `crates/` hay `third_party/`. Muốn cập nhật thì vendor lại từ upstream.
+- `.github/workflows/xoyo-ci.yml`: thêm job `starling-native`. Không đổi job `build`.
+- `ZalithLauncher/build.gradle.kts`, `settings.gradle.kts`, `gradle/libs.versions.toml`: nối task build `libhorizon_android.so` qua cargo-ndk và nhóm Java của Starling.
+- `ZalithLauncher/src/main/AndroidManifest.xml`: khai báo NativeActivity của Starling.
+- `ZalithLauncher/src/main/java/com/movtery/zalithlauncher/rust/**`: trang Rust Edition và cầu nối khởi chạy. Java Edition không đổi.
+- `NOTICE.md`: chỉ thêm mục mới cho Starling.
+
+---
+
 ## 3. Hợp đồng UI ↔ Logic
 
 Dự án dùng Compose nên không có `id` view. Hợp đồng gồm bốn phần: API ViewModel, sự kiện `EventViewModel`, khóa cài đặt, và lớp NavKey. Mọi tên dưới đây là **bắt buộc giữ**. Chữ ký chi tiết của những hàm không ghi đủ tham số: xem file đã nêu.
@@ -325,6 +337,8 @@ Yêu cầu mới, ngày 2026-11-26 (chưa có người duyệt trả lời):
 - [2026-11-26] [A.I #1] cần [A.I #2]: chuyển trang bằng lò xo. `rememberTransitionSpec` trong `ui/screens/_Navigation.kt` (mục 2.2) đang dùng tween. Khi A.I #2 duyệt file này, đổi sang `XoyoMotion.soft()` trong `ui/theme/Motion.kt`. lý do: yêu cầu animation spring toàn ứng dụng.
 - [2026-11-26] [Người duyệt] câu hỏi: sidebar nay vuốt ngang để mở hoặc thu gọn (ngưỡng 48dp, `AppSidebar` trong `AppNavigation.kt`). Có giữ không? lý do: thêm cử chỉ, người dùng chưa nêu cụ thể.
 - [2026-11-26] [A.I #2] đã làm thay bởi Claude theo yêu cầu người dùng (A.I #2 hết token): nạp plugin song song trong splash (`SplashActivity`); kiểm tra tài nguyên song song; nền riêng theo phiên bản (`Version.getBackgroundFile`, `BackgroundViewModel`, mục menu trên thẻ phiên bản); rail loại tải nối vào `navigateToDownload` (`DownloadScreen.kt`, `DownloadTypeRail.kt`). Chưa làm: chuyển trang bằng lò xo (`SwapClock` dùng độ trễ snap để tránh chồng lớp, cần thiết kế lại có kiểm chứng trên máy); bỏ `awaitEnterStart` ở `BaseScreen` (giờ chỉ Welcome và Unpacking còn dùng, giữ để không lệch timeline chuyển trang).
+
+- [2026-11-28] [Người duyệt] quyết định: (1) gỡ Liquid Island (trình phát nhạc, có ở PR #2) và giữ nguyên Liquid Glass; phần giao diện Liquid Island làm ảnh hưởng được khôi phục về trạng thái trước đó (commit `00089c3`, CI xanh). (2) duyệt đổi build và native để tích hợp Starling thật làm Rust Edition, phạm vi mục 2.5. lý do: yêu cầu của người dùng ngày 2026-11-28.
 
 ---
 
