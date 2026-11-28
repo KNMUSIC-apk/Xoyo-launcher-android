@@ -174,3 +174,53 @@ jobs:
             --title "XOYO Launcher debug $TAG" \
             --notes "Bản debug tự động từ commit $GITHUB_SHA. Đây là bản chỉnh sửa không chính thức (Unofficial Modified Version), chỉ dùng để thử nghiệm."
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.assets[].browser_download_url'
+
+  starling-native:
+    name: Build Starling (libhorizon_android.so)
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Cài Android NDK 28.2 (Starling)
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "ndk;28.2.13676358"
+
+      - name: Cài Rust 1.99.1 và target arm64
+        uses: dtolnay/rust-toolchain@1.99.1
+        with:
+          components: rust-src
+          targets: aarch64-linux-android
+
+      - name: Cache Rust (StarlingEngine)
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: StarlingEngine
+
+      - name: Cài cargo-ndk 3.5.4
+        run: cargo install cargo-ndk --version 3.5.4 --locked
+
+      - name: Build libhorizon_android.so (arm64, profile quick)
+        working-directory: StarlingEngine
+        env:
+          RUSTC_BOOTSTRAP: "1"
+          CARGO_INCREMENTAL: "0"
+          HORIZON_GAME_BUILD_ID: xoyo-${{ github.sha }}
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/28.2.13676358"
+          CLANG_RT=$(find "$ANDROID_NDK_HOME" -name 'libclang_rt.builtins-aarch64-android.a' | sort | tail -1)
+          test -n "$CLANG_RT" || { echo "Không tìm thấy libclang_rt.builtins-aarch64-android.a"; exit 1; }
+          export RUSTFLAGS="-C link-arg=-Wl,-z,max-page-size=16384 -C link-arg=-Wl,--build-id=sha1 -Z has-thread-local=yes -C link-arg=$CLANG_RT"
+          cargo ndk -t arm64-v8a --platform 26 build -Zbuild-std=std,panic_unwind --profile quick -p horizon-android
+          test -f target/aarch64-linux-android/quick/libhorizon_android.so
+
+      - name: Đưa libhorizon_android.so lên làm artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libhorizon_android-arm64-v8a
+          path: StarlingEngine/target/aarch64-linux-android/quick/libhorizon_android.so
+          if-no-files-found: error

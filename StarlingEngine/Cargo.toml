@@ -1,0 +1,125 @@
+[workspace]
+members = [
+    "crates/horizon-addresses",
+    "crates/horizon-android",
+    "crates/horizon-anticheat",
+    "crates/horizon-assets",
+    "crates/horizon-bench",
+    "crates/horizon-chat-filter",
+    "crates/horizon-client",
+    "crates/horizon-client-core",
+    "crates/horizon-client-input",
+    "crates/horizon-client-lib",
+    "crates/horizon-client-render",
+    "crates/horizon-command",
+    "crates/horizon-core",
+    "crates/horizon-cosmetics",
+    "crates/horizon-dualsense",
+    "crates/horizon-engine-slots",
+    "crates/horizon-friends",
+    "crates/horizon-game-discovery",
+    "crates/horizon-guest-stack",
+    "crates/horizon-hdr",
+    "crates/horizon-hooks",
+    "crates/horizon-items",
+    "crates/horizon-java-properties",
+    "crates/horizon-mcp",
+    "crates/horizon-mod-api",
+    "crates/horizon-mod-api-gen",
+    "crates/horizon-mod-api-macros",
+    "crates/horizon-mod-host",
+    "crates/horizon-mod-package",
+    "crates/horizon-mod-point-emit",
+    "crates/horizon-mod-point-shape",
+    "crates/horizon-mod-points",
+    "crates/horizon-mod-render",
+    "crates/horizon-mod-runtime",
+    "crates/horizon-mod-source",
+    "crates/horizon-mod-surface",
+    "crates/horizon-mod-vocab",
+    "crates/horizon-mod-wasm",
+    "crates/horizon-narrator",
+    "crates/horizon-optifine",
+    "crates/horizon-perf",
+    "crates/horizon-perf-format",
+    "crates/horizon-perf-share",
+    "crates/horizon-platform",
+    "crates/horizon-polytone",
+    "crates/horizon-port-pack",
+    "crates/horizon-prepare",
+    "crates/horizon-protocol",
+    "crates/horizon-server-files",
+    "crates/horizon-shader-api",
+    "crates/horizon-shaders",
+    "crates/horizon-system",
+    "crates/horizon-telemetry",
+    "crates/horizon-theme",
+    "crates/horizon-threads",
+    "crates/horizon-world",
+    "crates/starling-account",
+    "crates/starling-catalog",
+]
+exclude = ["third_party/wgpu-hal", "third_party/naga", "third_party/libmimalloc-sys", "third_party/winit", "third_party/android-activity"]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+rust-version = "1.95"
+
+[workspace.lints.clippy]
+too_many_arguments = "allow"
+type_complexity = "allow"
+needless_range_loop = "allow"
+large_enum_variant = "allow"
+
+[patch.crates-io]
+wgpu-hal = { path = "third_party/wgpu-hal" }
+winit = { path = "third_party/winit" }
+android-activity = { path = "third_party/android-activity" }
+naga = { path = "third_party/naga" }
+libmimalloc-sys = { path = "third_party/libmimalloc-sys" }
+
+
+[profile.release.package.horizon-mod-api-gen]
+opt-level = 3
+
+[profile.release.package.syn]
+opt-level = 3
+
+[profile.release.package.proc-macro2]
+opt-level = 3
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+
+# Optimized but quick-to-link builds for iteration: cargo build --profile fast
+
+[profile.fast]
+inherits = "release"
+lto = false
+codegen-units = 16
+incremental = true
+
+# The Android APK's iteration builds (packaging/android/build_apk.py): fast's optimization, with
+# incremental compilation's own split, so an edit re-optimizes only the parts it touched
+# (codegen-units 16 re-optimized a sixteenth of the game for any change). Measure with fast.
+
+[profile.quick]
+inherits = "fast"
+codegen-units = 256
+# Each codegen unit optimized on its own: with the default thin local LTO a one-line edit in
+# game/ re-optimized much of the crate (6 minutes for the APK; checking it takes 17 s).
+lto = "off"
+
+# The crates edits land in, lightly optimized; the dependencies stay fully optimized.
+
+[profile.quick.package.horizon-client]
+opt-level = 1
+
+[profile.quick.package.horizon-android]
+opt-level = 1
+
+[profile.quick.package.horizon-client-lib]
+opt-level = 1
