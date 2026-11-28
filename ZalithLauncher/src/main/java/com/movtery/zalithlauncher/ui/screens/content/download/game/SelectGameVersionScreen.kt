@@ -804,6 +804,11 @@ private fun versionBanner(version: MinecraftVersion): Painter {
             //XOYO: 1.17 (Caves & Cliffs Part I) tách riêng khỏi 1.18
             minor == 17 -> R.drawable.img_ver_mountains
             minor == 16 -> R.drawable.img_ver_nether
+            minor == 15 -> R.drawable.img_ver_bees
+            minor == 14 -> R.drawable.img_ver_village
+            minor == 13 -> R.drawable.img_ver_aquatic
+            minor == 12 -> R.drawable.img_ver_color
+            minor == 11 -> R.drawable.img_ver_exploration
             else -> R.drawable.img_ver_classic
         }
         MinecraftVersion.Type.Snapshot -> R.drawable.img_ver_trial
