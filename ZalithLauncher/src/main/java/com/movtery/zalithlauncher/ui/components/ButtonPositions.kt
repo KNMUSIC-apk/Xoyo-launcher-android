@@ -82,18 +82,15 @@ private fun PositionButtonBase(
     content: @Composable RowScope.() -> Unit
 ) {
     val shape = rememberButtonPosShape(position)
-    val liquid = isLiquidGlassEnabled()
     CompositionLocalProvider(
         LocalMinimumInteractiveComponentSize provides 0.dp,
         LocalTextStyle provides MaterialTheme.typography.labelLarge
     ) {
         Surface(
-            modifier = modifier
-                .then(if (liquid) Modifier.liquidGlass(shape, containerColor, enabled) else Modifier)
-                .semantics { role = Role.Button },
+            modifier = modifier.semantics { role = Role.Button },
             shape = shape,
             onClick = onClick,
-            color = if (liquid) Color.Transparent else containerColor,
+            color = containerColor,
             contentColor = contentColor,
             tonalElevation = 0.dp,
             shadowElevation = shadowElevation,

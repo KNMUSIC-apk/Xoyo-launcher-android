@@ -60,7 +60,6 @@ import com.movtery.zalithlauncher.game.sdl.SdlBridge
 import com.movtery.zalithlauncher.setting.ControlSettings
 import com.movtery.zalithlauncher.game.record.ScreenRecordController
 import com.movtery.zalithlauncher.setting.GameUiSettings
-import com.movtery.zalithlauncher.setting.LiquidIslandSettings
 import com.movtery.zalithlauncher.setting.RendererSettings
 import com.movtery.zalithlauncher.setting.enums.FpsDisplayMode
 import com.movtery.zalithlauncher.setting.enums.GamepadInputMode
@@ -124,8 +123,7 @@ fun GameMenuSubscreen(
     onEditLayout: () -> Unit,
     onShowToast: (AndroidStringText, Int) -> Unit,
     onToggleRecording: () -> Unit,
-    stutterCount: Int,
-    onOpenLiquidIsland: () -> Unit = {}
+    stutterCount: Int
 ) {
     DualMenuSubscreen(
         state = state,
@@ -208,8 +206,7 @@ fun GameMenuSubscreen(
                 onRefreshWindowSize = onRefreshWindowSize,
                 onShowToast = onShowToast,
                 onToggleRecording = onToggleRecording,
-                stutterCount = stutterCount,
-                onOpenLiquidIsland = onOpenLiquidIsland
+                stutterCount = stutterCount
             )
         }
     )
@@ -225,7 +222,6 @@ private fun GameActionContent(
     onShowToast: (AndroidStringText, Int) -> Unit,
     onToggleRecording: () -> Unit,
     stutterCount: Int,
-    onOpenLiquidIsland: () -> Unit,
     modifier: Modifier = Modifier,
     color: Color = cardColor(false),
     contentColor: Color = onCardColor(),
@@ -257,19 +253,6 @@ private fun GameActionContent(
                 color = color,
                 contentColor = contentColor,
             )
-        }
-        //XOYO: Liquid Island - điều khiển nhạc mà không rời khỏi game
-        //state là getter @Composable nên đọc bên trong item, không đọc trong LazyListScope
-        item {
-            if (LiquidIslandSettings.enabled.state) {
-                MenuTextButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = stringResource(R.string.game_menu_option_liquid_island),
-                    onClick = onOpenLiquidIsland,
-                    color = color,
-                    contentColor = contentColor,
-                )
-            }
         }
         //XOYO: ghi hình màn hình trong game
         item {

@@ -47,8 +47,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import com.movtery.zalithlauncher.ui.components.CompactIconButton
-import com.movtery.zalithlauncher.ui.components.IconButton
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -89,8 +88,6 @@ import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.CardTitleLayout
 import com.movtery.zalithlauncher.ui.components.TextRailItem
-import com.movtery.zalithlauncher.ui.components.isLiquidGlassEnabled
-import com.movtery.zalithlauncher.ui.components.liquidGlass
 import com.movtery.zalithlauncher.ui.guide.sendStartGuideOnce
 import com.movtery.zalithlauncher.ui.screens.BackStackNavKey
 import com.movtery.zalithlauncher.ui.screens.NavStateHost
@@ -117,7 +114,6 @@ import com.movtery.zalithlauncher.ui.screens.content.hub.WorldManagerScreen
 import com.movtery.zalithlauncher.ui.screens.content.library.GameLibraryScreen
 import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
 import com.movtery.zalithlauncher.ui.screens.content.performance.PerformanceCenterScreen
-import com.movtery.zalithlauncher.ui.screens.content.LiquidIslandScreen
 import com.movtery.zalithlauncher.ui.screens.hasInnerHistory
 import com.movtery.zalithlauncher.ui.screens.navigateTo
 import com.movtery.zalithlauncher.ui.screens.onBack
@@ -351,7 +347,7 @@ private fun <E: TitledNavKey> TopBar(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         // XOYO: nút quay lại và home cùng cỡ 40dp với nút Cài đặt (icon 24dp), không còn nhỏ hơn
-                        CompactIconButton(
+                        IconButton(
                             modifier = Modifier.size(40.dp),
                             onClick = {
                                 if (!inLauncherScreen) {
@@ -368,7 +364,7 @@ private fun <E: TitledNavKey> TopBar(
                             )
                         }
 
-                        CompactIconButton(
+                        IconButton(
                             modifier = Modifier.size(40.dp),
                             onClick = {
                                 if (!inLauncherScreen) {
@@ -500,16 +496,9 @@ private fun TopBarRailItem(
     onClick: () -> Unit = {},
     textStyle: TextStyle = MaterialTheme.typography.labelMedium
 ) {
-    // Nút trên góc phải dùng liquid glass giống các nút khác; pill đang chọn cũng bán trong suốt.
-    val liquid = isLiquidGlassEnabled()
-    val glassShape = MaterialTheme.shapes.extraLarge
     TextRailItem(
-        modifier = if (liquid) modifier.liquidGlass(glassShape, Color.Transparent) else modifier,
-        backgroundColor = if (liquid) {
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-        } else {
-            MaterialTheme.colorScheme.secondaryContainer
-        },
+        modifier = modifier,
+        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
         onClick = onClick,
         text = {
             AnimatedVisibility(visible = selected) {
@@ -621,11 +610,6 @@ private fun NavigationUI(
                     PerformanceCenterScreen(
                         backStackViewModel = screenBackStackModel,
                         eventViewModel = eventViewModel
-                    )
-                }
-                entry<NormalNavKey.LiquidIsland> {
-                    LiquidIslandScreen(
-                        backStackViewModel = screenBackStackModel
                     )
                 }
                 entry<NormalNavKey.ServerHub> {

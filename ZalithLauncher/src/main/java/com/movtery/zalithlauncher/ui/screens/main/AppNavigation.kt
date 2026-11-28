@@ -34,9 +34,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Icon
-import com.movtery.zalithlauncher.ui.components.IconButton
-import com.movtery.zalithlauncher.ui.components.isLiquidGlassEnabled
-import com.movtery.zalithlauncher.ui.components.liquidGlass
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -56,7 +54,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -70,7 +67,6 @@ import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.ContentKind
-import com.movtery.zalithlauncher.ui.components.verticalScrollWithBar
 import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
@@ -120,7 +116,6 @@ enum class NavDestination(val iconRes: Int, val titleRes: Int, val group: NavGro
     HOME(R.drawable.ic_home_filled, R.string.nav_home, NavGroup.MAIN),
     PROFILES(R.drawable.ic_videogame_asset_outlined, R.string.nav_profiles, NavGroup.MAIN),
     VERSIONS(R.drawable.ic_box, R.string.nav_versions, NavGroup.MAIN),
-    MUSIC(R.drawable.ic_music_note, R.string.nav_music, NavGroup.MAIN),
     GAME_DOWNLOAD(R.drawable.ic_sports_esports_outlined, R.string.download_category_game, NavGroup.CONTENT),
     MODS(R.drawable.ic_extension_outlined, R.string.nav_mods, NavGroup.CONTENT),
     MODPACKS(R.drawable.ic_archive_filled, R.string.nav_modpacks, NavGroup.CONTENT),
@@ -179,7 +174,6 @@ fun navDestinationOf(key: TitledNavKey?): NavDestination? = when (key) {
     is NormalNavKey.ServerHub -> NavDestination.SERVERS
     is NormalNavKey.AccountManager -> NavDestination.ACCOUNTS
     is NormalNavKey.PerformanceCenter -> NavDestination.PERFORMANCE
-    is NormalNavKey.LiquidIsland -> NavDestination.MUSIC
     is NormalNavKey.Multiplayer -> NavDestination.LAN
     is NestedNavKey.Settings -> NavDestination.SETTINGS
     else -> null
@@ -204,7 +198,6 @@ fun ScreenBackStackViewModel.navigateToDestination(destination: NavDestination) 
         NavDestination.SERVERS -> mainScreen.clearWith(NormalNavKey.ServerHub)
         NavDestination.ACCOUNTS -> mainScreen.clearWith(NormalNavKey.AccountManager())
         NavDestination.PERFORMANCE -> mainScreen.clearWith(NormalNavKey.PerformanceCenter)
-        NavDestination.MUSIC -> mainScreen.clearWith(NormalNavKey.LiquidIsland)
         NavDestination.GAME_DOWNLOAD -> navigateToDownload(downloadGameScreen)
         NavDestination.SEARCH_ID -> navigateToDownload(NormalNavKey.SearchId)
         NavDestination.FAVORITES -> navigateToDownload(downloadFavoritesScreen)
@@ -255,7 +248,6 @@ fun AppSidebar(
 ) {
     val expanded = LauncherSettings.launcherSidebarExpanded.state
     val reducedMotion = LauncherSettings.launcherReducedMotion.state
-    val liquid = isLiquidGlassEnabled()
 
     //Trạng thái mở của từng nhóm thu gọn. Mặc định đóng, trừ các nhóm trong DefaultOpenNavGroups.
     val openGroups = remember { mutableStateListOf(*DefaultOpenNavGroups.toTypedArray()) }
@@ -299,12 +291,11 @@ fun AppSidebar(
             .width(width)
             .fillMaxHeight()
             .padding(6.dp)
-            .then(if (liquid) Modifier.liquidGlass(panelShape, cardColor(true)) else Modifier)
             .then(swipeModifier),
         shape = panelShape,
-        color = if (liquid) Color.Transparent else cardColor(true),
+        color = cardColor(true),
         contentColor = onCardColor(),
-        shadowElevation = if (liquid) 8.dp else 0.dp
+        shadowElevation = 0.dp
     ) {
         Column(
             modifier = Modifier
@@ -615,10 +606,9 @@ fun AppBottomBar(
     onMore: () -> Unit,
     moreSelected: Boolean,
 ) {
-    val liquid = isLiquidGlassEnabled()
     NavigationBar(
-        containerColor = if (liquid) Color.Transparent else cardColor(true),
-        modifier = if (liquid) Modifier.liquidGlass(RectangleShape, cardColor(true)) else Modifier
+        containerColor = cardColor(true),
+        modifier = Modifier
     ) {
         CompactPrimaryDestinations.forEach { destination ->
             NavigationBarItem(
